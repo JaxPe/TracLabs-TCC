@@ -1,0 +1,39 @@
+using Microsoft.EntityFrameworkCore;
+using TracLabs.Application.Interfaces.Repositories;
+using TracLabs.Domain.Entities;
+
+namespace TracLabs.Infrastructure.Persistence.Repositories;
+
+public class StandardEquipmentRepository
+    : BaseRepository<StandardEquipment>, IStandardEquipmentRepository
+{
+    public StandardEquipmentRepository(TracLabsDbContext context) : base(context) { }
+
+    public async Task<IReadOnlyList<StandardEquipment>> GetExpiringSoonAsync(
+        int withinDays, CancellationToken ct = default)
+    {
+        var cutoff = DateTime.UtcNow.AddDays(withinDays);
+        return await _dbSet
+            .Where(s => s.CalibrationDueDate <= cutoff && s.CalibrationDueDate >= DateTime.UtcNow)
+            .OrderBy(s => s.CalibrationDueDate)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<StandardEquipment>> GetExpiredAsync(
+        CancellationToken ct = default)
+        => await _dbSet
+            .Where(s => s.CalibrationDueDate < DateTime.UtcNow)
+            .OrderBy(s => s.CalibrationDueDate)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<StandardEquipment>> GetValidStandardsAsync(
+        CancellationToken ct = default)
+        => await _dbSet
+            .Where(s => s.CalibrationDueDate >= DateTime.UtcNow)
+            .OrderBy(s => s.InstrumentType)
+            .ToListAsync(ct);
+
+    public async Task<StandardEquipment?> GetByLabTagAsync(
+        string labTag, CancellationToken ct = default)
+        => await _dbSet.FirstOrDefaultAsync(s => s.LabTag == labTag, ct);
+}
