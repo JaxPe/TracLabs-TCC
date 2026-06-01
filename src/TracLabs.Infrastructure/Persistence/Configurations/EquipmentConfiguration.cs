@@ -61,7 +61,7 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
             .OnDelete(DeleteBehavior.Restrict); // Não deletar client em cascata
 
         // Relacionamento com CalibrationRecord
-N        builder.HasMany(e => e.CalibrationHistory)
+        builder.HasMany(e => e.CalibrationHistory)
             .WithOne(c => c.Equipment)
             .HasForeignKey(c => c.EquipmentId)
             .OnDelete(DeleteBehavior.Restrict);

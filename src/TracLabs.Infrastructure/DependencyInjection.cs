@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TracLabs.Application.Interfaces;
+using TracLabs.Application.Interfaces.Repositories;
 using TracLabs.Infrastructure.Persistence;
 using TracLabs.Infrastructure.Persistence.Repositories;
 
