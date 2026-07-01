@@ -1,0 +1,33 @@
+# Uso:
+#   docker compose -f compose.dev.yaml up -d        (sobe o banco em background)
+#   docker compose -f compose.dev.yaml down         (para o banco)
+#   docker compose -f compose.dev.yaml down -v      (para e apaga os dados)
+
+services:
+  db:
+    image: postgres:18.4-alpine3.24
+    restart: unless-stopped
+
+    env_file:
+      - .env.development
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    # Em desenvolvimento expõe na 5432 do host diretamente,
+    # porque a API roda no host e precisa alcançar o banco.
+    # A connection string em appsettings.Development.json usa
+    # Host=localhost;Port=5432 — não "db" como no Compose completo,
+    # porque "db" só é resolvido dentro da rede interna do Docker.
+    ports:
+      - "5432:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traclabs_user -d traclabs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
