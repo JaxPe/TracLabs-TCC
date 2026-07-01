@@ -1,13 +1,13 @@
-// src/TracLabs.Infrastructure/DependencyInjection.cs
-// Reasoning: Infrastructure knows its own concrete implementations
-// (TracLabsDbContext, EquipmentRepository, etc.) and registers them
-// against the interfaces defined in Application/Domain.
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using TracLabs.Application.Interfaces;
 using TracLabs.Application.Interfaces.Repositories;
+using TracLabs.Infrastructure.Identity;
 using TracLabs.Infrastructure.Persistence;
 using TracLabs.Infrastructure.Persistence.Repositories;
 
@@ -15,35 +15,70 @@ namespace TracLabs.Infrastructure;
 
 public static class DependencyInjection
 {
-    /// <summary>
-    /// Registers all Infrastructure layer services into the DI container.
-    /// Call this from Program.cs: builder.Services.AddInfrastructure(configuration);
-    /// </summary>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ── Database ─────────────────────────────────────────────────────────────
+        // ── Banco de dados ────────────────────────────────────────────────────
         services.AddDbContext<TracLabsDbContext>(options =>
             options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
-                // This tells EF Core migrations live in Infrastructure, not API
                 b => b.MigrationsAssembly(typeof(TracLabsDbContext).Assembly.FullName)
             )
         );
 
-        // ── Repositories ──────────────────────────────────────────────────────────
-        // Each interface (defined in Application) is mapped to its concrete
-        // implementation (defined here in Infrastructure).
-        // Scoped = one instance per HTTP request, which is correct for DB operations.
+        // ── Identity ──────────────────────────────────────────────────────────
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            // Requisitos de senha — ajuste conforme a política do laboratório
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 8;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
+
+            // Lockout após 5 tentativas erradas por 15 minutos
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<TracLabsDbContext>()
+        .AddDefaultTokenProviders();
+
+        // ── JWT ───────────────────────────────────────────────────────────────
+        var jwtSettings = configuration.GetSection("JwtSettings");
+        var secret = jwtSettings["Secret"]
+            ?? throw new InvalidOperationException("JWT Secret não configurado.");
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtSettings["Issuer"],
+                ValidAudience = jwtSettings["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(secret))
+            };
+        });
+
+        // ── Serviços ──────────────────────────────────────────────────────────
+        services.AddScoped<IJwtService, JwtService>();
+
+        // ── Repositórios ──────────────────────────────────────────────────────
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();
         services.AddScoped<IStandardEquipmentRepository, StandardEquipmentRepository>();
         services.AddScoped<ICalibrationRepository, CalibrationRepository>();
         services.AddScoped<ICertificateRepository, CertificateRepository>();
-
-        // ── Unit of Work ──────────────────────────────────────────────────────────
-        // Wraps the DbContext transaction — ensures multiple repository operations
-        // succeed or fail together (atomicity).
+        services.AddScoped<IClientRepository, ClientRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
