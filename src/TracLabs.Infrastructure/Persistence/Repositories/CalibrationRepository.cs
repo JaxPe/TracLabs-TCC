@@ -21,9 +21,9 @@ public class CalibrationRepository
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<CalibrationRecord>> GetByTechnicianIdAsync(
-        Guid technicianId, CancellationToken ct = default)
+        string technicianId, CancellationToken ct = default)
         => await _dbSet
-            .Where(c => c.TechnicianId == technicianId.ToString())
+            .Where(c => c.TechnicianId == technicianId)
             .OrderByDescending(c => c.CalibrationDate)
             .ToListAsync(ct);
 

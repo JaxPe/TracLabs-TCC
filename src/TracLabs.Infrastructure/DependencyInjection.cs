@@ -10,6 +10,7 @@ using TracLabs.Application.Interfaces.Repositories;
 using TracLabs.Infrastructure.Identity;
 using TracLabs.Infrastructure.Persistence;
 using TracLabs.Infrastructure.Persistence.Repositories;
+using TracLabs.Infrastructure.Services;
 
 namespace TracLabs.Infrastructure;
 
@@ -72,6 +73,7 @@ public static class DependencyInjection
 
         // ── Serviços ──────────────────────────────────────────────────────────
         services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<IVolumeCalibrationService, VolumeCalibrationService>();
 
         // ── Repositórios ──────────────────────────────────────────────────────
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();

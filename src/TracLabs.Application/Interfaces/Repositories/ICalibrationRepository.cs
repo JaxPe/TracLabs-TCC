@@ -21,7 +21,7 @@ public interface ICalibrationRepository : IRepository<CalibrationRecord>
     /// Useful for technician performance reports and audit trails.
     /// </summary>
     Task<IReadOnlyList<CalibrationRecord>> GetByTechnicianIdAsync(
-        Guid technicianId,
+        string technicianId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
