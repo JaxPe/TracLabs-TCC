@@ -1,7 +1,7 @@
 # Uso:
-#   docker compose -f compose.dev.yaml up -d        (sobe o banco em background)
-#   docker compose -f compose.dev.yaml down         (para o banco)
-#   docker compose -f compose.dev.yaml down -v      (para e apaga os dados)
+#   docker compose -f compose.yaml up -d        (sobe o banco em background)
+#   docker compose -f compose.yaml down         (para o banco)
+#   docker compose -f compose.yaml down -v      (para e apaga os dados)
 
 services:
   db:
@@ -12,7 +12,7 @@ services:
       - .env.development
 
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
 
     # Em desenvolvimento expõe na 5432 do host diretamente,
     # porque a API roda no host e precisa alcançar o banco.

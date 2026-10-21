@@ -143,7 +143,7 @@ dotnet run --project src/TracLabs.API
 ```
 
 Com a aplicação em execução no ambiente de desenvolvimento (`Development`), acesse a documentação interativa do **Swagger UI** em:
-- `http://localhost:5062/swagger` (ou na porta HTTPS configurada em `Properties/launchSettings.json`).
+- `http://localhost:5269/swagger` (ou na porta HTTPS configurada em `Properties/launchSettings.json`).
 
 ---
 
