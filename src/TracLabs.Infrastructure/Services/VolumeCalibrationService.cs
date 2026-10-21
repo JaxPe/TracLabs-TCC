@@ -150,35 +150,44 @@ public class VolumeCalibrationService : IVolumeCalibrationService
         });
 
         // 7.2 Balança - Incerteza do Certificado na Massa Vazia (Mv)
-        budget.Add(new UncertaintyBudgetComponentDto
+        // Conforme a planilha e a ISO 4787, só é considerada quando há pesagem real do frasco vazio
+        // (método por diferença / calibração por conteúdo 'In'). No método por escoamento/tara ('Ex'),
+        // a tara é zerada na balança e apenas o líquido entregue é pesado.
+        if (meanEmptyMass > 0)
         {
-            SourceName = "Balança - Calibração Massa Vazia (Mv)",
-            Symbol = "Mv",
-            EstimatedValue = request.Measurements.Average(m => m.EmptyMassGrams),
-            Unit = "g",
-            StandardUncertainty = uBalanceCert,
-            Distribution = "Normal",
-            Divisor = request.BalanceCoverageFactor,
-            SensitivityCoefficient = -ciMass,
-            UncertaintyContributionMl = Math.Abs(ciMass * uBalanceCert),
-            DegreesOfFreedom = 1000m
-        });
+            budget.Add(new UncertaintyBudgetComponentDto
+            {
+                SourceName = "Balança - Calibração Massa Vazia (Mv)",
+                Symbol = "Mv",
+                EstimatedValue = meanEmptyMass,
+                Unit = "g",
+                StandardUncertainty = uBalanceCert,
+                Distribution = "Normal",
+                Divisor = request.BalanceCoverageFactor,
+                SensitivityCoefficient = -ciMass,
+                UncertaintyContributionMl = Math.Abs(ciMass * uBalanceCert),
+                DegreesOfFreedom = 1000m
+            });
+        }
 
         // 7.3 Balança - Resolução Digital (distribuição retangular a / sqrt(3))
-        var uBalanceResolution = (request.BalanceResolutionGrams / 2m) / (decimal)Math.Sqrt(3);
-        budget.Add(new UncertaintyBudgetComponentDto
+        if (request.BalanceResolutionGrams > 0)
         {
-            SourceName = "Balança - Resolução da Leitura",
-            Symbol = "Mresol",
-            EstimatedValue = request.BalanceResolutionGrams,
-            Unit = "g",
-            StandardUncertainty = uBalanceResolution,
-            Distribution = "Retangular",
-            Divisor = (decimal)Math.Sqrt(3),
-            SensitivityCoefficient = ciMass,
-            UncertaintyContributionMl = Math.Abs(ciMass * uBalanceResolution),
-            DegreesOfFreedom = 1000m
-        });
+            var uBalanceResolution = (request.BalanceResolutionGrams / 2m) / (decimal)Math.Sqrt(3);
+            budget.Add(new UncertaintyBudgetComponentDto
+            {
+                SourceName = "Balança - Resolução da Leitura",
+                Symbol = "Mresol",
+                EstimatedValue = request.BalanceResolutionGrams,
+                Unit = "g",
+                StandardUncertainty = uBalanceResolution,
+                Distribution = "Retangular",
+                Divisor = (decimal)Math.Sqrt(3),
+                SensitivityCoefficient = ciMass,
+                UncertaintyContributionMl = Math.Abs(ciMass * uBalanceResolution),
+                DegreesOfFreedom = 1000m
+            });
+        }
 
         // 7.4 Massa Específica da Água (rw)
         var uWaterDensity = request.WaterDensityCoverageFactor > 0
