@@ -115,7 +115,7 @@ TracLabs/
 ### 1. Clonar o repositório
 
 ```bash
-git clone https://github.com/jpbarroco/TracLabs.git
+git clone https://github.com/JaxPe/TracLabs.git
 cd TracLabs
 ```
 
