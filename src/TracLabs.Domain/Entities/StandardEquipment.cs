@@ -39,6 +39,12 @@ public class StandardEquipment : BaseEntity
     
     /// <summary>Coverage factor used (typically k=2 for ~95% confidence).</summary>
     public decimal CoverageFactor { get; private set; } = 2;
+
+    /// <summary>
+    /// Instrument resolution / scale division (menor divisão da escala ou resolução digital).
+    /// Fundamental para cálculo da componente de incerteza por distribuição retangular (d / (2*sqrt(3))).
+    /// </summary>
+    public decimal Resolution { get; private set; }
     
     // ── Calibration Validity ────────────────────────────────────────────────────
     
@@ -72,12 +78,15 @@ public class StandardEquipment : BaseEntity
         string labTag, string model, string manufacturer, string serialNumber,
         string instrumentType, decimal error, decimal expandedUncertainty,
         decimal coverageFactor, DateTime lastCalibrationDate, DateTime calibrationDueDate,
-        string certificateNumber, string calibratingLaboratory)
+        string certificateNumber, string calibratingLaboratory,
+        decimal resolution = 0m)
     {
         if (coverageFactor <= 0)
             throw new ArgumentException("Coverage factor must be positive.", nameof(coverageFactor));
         if (calibrationDueDate <= lastCalibrationDate)
             throw new ArgumentException("Due date must be after last calibration date.");
+        if (resolution < 0)
+            throw new ArgumentException("Resolution cannot be negative.", nameof(resolution));
             
         LabTag = labTag;
         Model = model;
@@ -92,6 +101,7 @@ public class StandardEquipment : BaseEntity
         CalibrationDueDate = calibrationDueDate;
         CalibrationCertificateNumber = certificateNumber;
         CalibratingLaboratory = calibratingLaboratory;
+        Resolution = resolution;
     }
     
     /// <summary>
@@ -100,10 +110,13 @@ public class StandardEquipment : BaseEntity
     public void UpdateCalibrationData(
         decimal newError, decimal newExpandedUncertainty, decimal coverageFactor,
         DateTime calibrationDate, DateTime dueDate,
-        string newCertificateNumber, string calibratingLaboratory)
+        string newCertificateNumber, string calibratingLaboratory,
+        decimal? newResolution = null)
     {
         if (dueDate <= calibrationDate)
             throw new ArgumentException("Due date must be after calibration date.");
+        if (newResolution.HasValue && newResolution.Value < 0)
+            throw new ArgumentException("Resolution cannot be negative.", nameof(newResolution));
             
         Error = newError;
         Correction = -newError;
@@ -113,6 +126,9 @@ public class StandardEquipment : BaseEntity
         CalibrationDueDate = dueDate;
         CalibrationCertificateNumber = newCertificateNumber;
         CalibratingLaboratory = calibratingLaboratory;
+        if (newResolution.HasValue)
+            Resolution = newResolution.Value;
+
         MarkAsUpdated();
     }
 }

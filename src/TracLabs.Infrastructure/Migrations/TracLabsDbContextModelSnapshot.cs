@@ -294,6 +294,22 @@ namespace TracLabs.Infrastructure.Migrations
                     b.ToTable("certificates", (string)null);
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.CertificateSequence", b =>
+                {
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Year");
+
+                    b.ToTable("certificate_sequences", (string)null);
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -505,6 +521,10 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Resolution")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
