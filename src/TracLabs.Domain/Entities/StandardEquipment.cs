@@ -36,7 +36,7 @@ public class StandardEquipment : BaseEntity
     // ── Localização, Critérios e Planos (ISO 17025 6.4.13 c, d, f & g) ─────────
 
     /// <summary>Localização física atual do padrão no laboratório (ex: "Laboratório de Volume - Sala 101").</summary>
-    public string CurrentLocation { get; private set; } = "Laboratório de Calibração";
+    public string CurrentLocation { get; private set; } = string.Empty;
 
     /// <summary>
     /// Critérios de aceitação metrológica do padrão (ex: "EMA <= 0,0005 g; U <= 0,0002 g").
@@ -44,7 +44,7 @@ public class StandardEquipment : BaseEntity
     public string? AcceptanceCriteria { get; private set; }
 
     /// <summary>Intervalo nominal de calibração em meses (ex: 12 ou 24 meses).</summary>
-    public int CalibrationIntervalMonths { get; private set; } = 12;
+    public int CalibrationIntervalMonths { get; private set; }
 
     /// <summary>
     /// Documentação de materiais de referência (ISO 17025 6.4.13 f) — aplicável quando o padrão
@@ -58,7 +58,7 @@ public class StandardEquipment : BaseEntity
     // ── Ciclo de Status do Padrão ───────────────────────────────────────────────
 
     /// <summary>Status atual do padrão no ciclo de vida do laboratório.</summary>
-    public StandardEquipmentStatus Status { get; private set; } = StandardEquipmentStatus.Calibrated;
+    public StandardEquipmentStatus Status { get; private set; }
 
     // ── Metrological Data (from this standard's own calibration certificate) ───
     
@@ -81,7 +81,7 @@ public class StandardEquipment : BaseEntity
     public decimal ExpandedUncertainty { get; private set; }
     
     /// <summary>Coverage factor used (typically k=2 for ~95% confidence).</summary>
-    public decimal CoverageFactor { get; private set; } = 2;
+    public decimal CoverageFactor { get; private set; }
 
     /// <summary>
     /// Instrument resolution / scale division (menor divisão da escala ou resolução digital).
@@ -145,7 +145,7 @@ public class StandardEquipment : BaseEntity
         string? name = null,
         string? softwareVersion = null,
         string? firmwareVersion = null,
-        string currentLocation = "Laboratório de Calibração",
+        string? currentLocation = null,
         string? acceptanceCriteria = null,
         int calibrationIntervalMonths = 12,
         string? referenceMaterialDocumentation = null,

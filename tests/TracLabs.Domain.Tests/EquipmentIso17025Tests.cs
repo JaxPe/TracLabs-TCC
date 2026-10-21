@@ -5,82 +5,87 @@ using Xunit;
 
 namespace TracLabs.Domain.Tests;
 
+/// <summary>
+/// Testes de validação dos requisitos do item 6.4.13 da ISO/IEC 17025 aplicados ao escopo
+/// de calibração volumétrica (balões volumétricos, picnômetros, pipetas, balanças analíticas padrão).
+/// </summary>
 public class EquipmentIso17025Tests
 {
-    private Equipment CreateClientEquipment()
+    private Equipment CreateClientVolumetricEquipment()
     {
         return new Equipment(
-            labTag: "EQ-CLI-001",
-            model: "Mitutoyo 500-196-30",
-            manufacturer: "Mitutoyo",
-            serialNumber: "SN987654",
-            instrumentType: "Paquímetro Digital",
+            labTag: "VOL-CLI-001",
+            model: "Classe A 100 mL",
+            manufacturer: "Brand",
+            serialNumber: "SN-VOL-100",
+            instrumentType: "Balão Volumétrico",
             rangeMin: 0m,
-            rangeMax: 150m,
-            unit: "mm",
-            resolution: 0.01m,
+            rangeMax: 100m,
+            unit: "mL",
+            resolution: 0.1m,
             clientId: Guid.NewGuid(),
-            name: "Paquímetro Digital 150mm",
-            softwareVersion: null,
-            firmwareVersion: "v1.0",
-            currentLocation: "Bancada Dimensional 01",
-            acceptanceCriteria: "Erro máximo permissível: ± 0,02 mm",
-            maintenancePlan: "Limpeza das faces de medição e lubrificação",
-            initialConditionNotes: "Leve risco na carcaça plástica, faces de medição limpas.");
+            name: "Balão Volumétrico 100 mL Classe A",
+            softwareVersion: null, // vidraria não possui software nem firmware
+            firmwareVersion: null,
+            currentLocation: "Laboratório de Calibração de Volume - Triagem",
+            acceptanceCriteria: "Capacidade nominal 100 mL, Erro Máximo Permissível (EMP) ± 0,10 mL conforme ISO 1042 / ISO 4787",
+            maintenancePlan: "Descontaminação com detergente neutro apropriado para vidraria volumétrica e secagem à temperatura ambiente",
+            initialConditionNotes: "Vidraria íntegra, traço de referência do menisco perfeitamente nítido, esmerilhado sem trincas.");
     }
 
-    private StandardEquipment CreateUsableStandard()
+    private StandardEquipment CreateUsableVolumeStandard()
     {
         return new StandardEquipment(
-            labTag: "PAD-BLC-001",
-            model: "Grau 0",
-            manufacturer: "Mitutoyo",
-            serialNumber: "SN-BLOCKS-01",
-            instrumentType: "Jogo de Blocos Padrão",
-            error: 0.00005m,
-            expandedUncertainty: 0.0001m,
+            labTag: "PAD-BAL-001",
+            model: "XP205",
+            manufacturer: "Mettler Toledo",
+            serialNumber: "SN-XP205-VOL-01",
+            instrumentType: "Balança Analítica",
+            error: 0.0001m,
+            expandedUncertainty: 0.0002m,
             coverageFactor: 2.0m,
             lastCalibrationDate: DateTime.UtcNow.AddMonths(-3),
             calibrationDueDate: DateTime.UtcNow.AddMonths(9),
-            certificateNumber: "CAL-BLOCOS-2026",
-            calibratingLaboratory: "Lab RBC Credenciado",
+            certificateNumber: "CAL-RBC-MASSA-2026",
+            calibratingLaboratory: "Laboratório RBC de Metrologia em Massa",
             resolution: 0.00001m,
-            name: "Jogo de Blocos Padrão Aço",
-            softwareVersion: null, // mecânico / vidraria / bloco -> opcional nulo
-            firmwareVersion: null,
-            currentLocation: "Sala Climatizada - Armário Padrões",
-            acceptanceCriteria: "ISO 3650 Grau 0",
-            calibrationIntervalMonths: 12);
+            name: "Balança Analítica Semi-Micro XP205",
+            softwareVersion: null,
+            firmwareVersion: "v1.4.2",
+            currentLocation: "Sala Climatizada de Volume - Mesa Antivibratória",
+            acceptanceCriteria: "EMA <= 0,0005 g; Incerteza expandida U <= 0,0002 g",
+            calibrationIntervalMonths: 12,
+            maintenancePlan: "Checagem intermediária mensal com pesos-padrão classe E2 e calibração anual RBC");
     }
 
     [Fact]
     public void Equipment_ISO17025_Records_ShouldBePreservedAndRetrievable()
     {
         // Arrange
-        var equipment = CreateClientEquipment();
+        var equipment = CreateClientVolumetricEquipment();
 
-        // Act - Registro de manutenção (6.4.13 g)
+        // Act - Registro de manutenção/limpeza técnica mandatória para calibração gravimétrica (6.4.13 g)
         var maint = equipment.AddMaintenanceRecord(
             DateTime.UtcNow,
             MaintenanceType.CleaningOrDecontamination,
-            "Limpeza ultrassônica das faces de medição",
-            "Técnico de Triagem",
-            "Faces desengraxadas com álcool isopropílico.");
+            "Limpeza química com solução desengraxante e enxágue com água deionizada grau 3 para eliminação de filme graxo nas paredes internas",
+            "Técnico de Laboratório",
+            "Paredes internas sem formação de gotículas residuais, secagem completa.");
 
-        // Act - Registro de avaria / dano (6.4.13 h)
+        // Act - Registro de avaria / dano no recebimento (6.4.13 h e ISO 17025 7.4.3)
         var occ = equipment.ReportOccurrence(
             DateTime.UtcNow,
-            OccurrenceType.Damage,
-            "Risco superficial constatado no bico interno superior",
-            "Fotografado e notificado ao cliente antes do início da calibração",
-            "Recebimento",
+            OccurrenceType.ReceivingNonConformity,
+            "Leve desgaste na numeração impressa na base do gargalo, linha de graduação intacta",
+            "Fotografado e registrado no formulário de recebimento da ordem de serviço",
+            "Recepção de Amostras",
             resolvedDate: DateTime.UtcNow);
 
         // Assert
-        equipment.Name.Should().Be("Paquímetro Digital 150mm");
-        equipment.CurrentLocation.Should().Be("Bancada Dimensional 01");
-        equipment.AcceptanceCriteria.Should().Be("Erro máximo permissível: ± 0,02 mm");
-        equipment.InitialConditionNotes.Should().Contain("Leve risco");
+        equipment.Name.Should().Be("Balão Volumétrico 100 mL Classe A");
+        equipment.CurrentLocation.Should().Be("Laboratório de Calibração de Volume - Triagem");
+        equipment.AcceptanceCriteria.Should().Contain("± 0,10 mL");
+        equipment.InitialConditionNotes.Should().Contain("Vidraria íntegra");
         equipment.MaintenanceHistory.Should().ContainSingle().Which.Should().Be(maint);
         equipment.OccurrenceHistory.Should().ContainSingle().Which.Should().Be(occ);
     }
@@ -89,8 +94,8 @@ public class EquipmentIso17025Tests
     public void CalibrationRecord_WithUsableStandard_ShouldSucceed()
     {
         // Arrange
-        var clientEquipment = CreateClientEquipment();
-        var standard = CreateUsableStandard();
+        var clientEquipment = CreateClientVolumetricEquipment();
+        var standard = CreateUsableVolumeStandard();
 
         // Act
         var record = new CalibrationRecord(
@@ -100,7 +105,7 @@ public class EquipmentIso17025Tests
             technicianName: "Maria Santos",
             calibrationDate: DateTime.UtcNow,
             nextCalibrationDue: DateTime.UtcNow.AddYears(1),
-            temperatureCelsius: 20.0m,
+            temperatureCelsius: 20.1m,
             humidityPercent: 55.0m);
 
         // Assert
@@ -112,8 +117,8 @@ public class EquipmentIso17025Tests
     public void CalibrationRecord_WithStandardInCalibration_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var clientEquipment = CreateClientEquipment();
-        var standard = CreateUsableStandard();
+        var clientEquipment = CreateClientVolumetricEquipment();
+        var standard = CreateUsableVolumeStandard();
         standard.SendToCalibration("Laboratório Externo RBC");
 
         // Act
@@ -136,9 +141,9 @@ public class EquipmentIso17025Tests
     public void CalibrationRecord_WithStandardOutOfService_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var clientEquipment = CreateClientEquipment();
-        var standard = CreateUsableStandard();
-        standard.PutOutOfService("Danificado durante transporte", "Auditor");
+        var clientEquipment = CreateClientVolumetricEquipment();
+        var standard = CreateUsableVolumeStandard();
+        standard.PutOutOfService("Prato da balança danificado e descalibrado após choque mecânico", "Supervisor da Qualidade");
 
         // Act
         var act = () => new CalibrationRecord(
@@ -159,21 +164,22 @@ public class EquipmentIso17025Tests
     [Fact]
     public void CalibrationRecord_WithExpiredStandard_ShouldThrowInvalidOperationException()
     {
-        // Arrange — standard vencido
-        var clientEquipment = CreateClientEquipment();
+        // Arrange — standard de termômetro de água com calibração vencida
+        var clientEquipment = CreateClientVolumetricEquipment();
         var expiredStandard = new StandardEquipment(
-            labTag: "PAD-EXP-001",
-            model: "M1",
-            manufacturer: "Inmetro",
-            serialNumber: "SN-EXP-01",
-            instrumentType: "Peso Padrão",
-            error: 0m,
-            expandedUncertainty: 0.001m,
+            labTag: "PAD-TERM-001",
+            model: "Pt100 Digital",
+            manufacturer: "Fluke",
+            serialNumber: "SN-TERM-99",
+            instrumentType: "Termômetro Digital da Água",
+            error: 0.01m,
+            expandedUncertainty: 0.005m,
             coverageFactor: 2m,
-            lastCalibrationDate: DateTime.UtcNow.AddMonths(-24),
+            lastCalibrationDate: DateTime.UtcNow.AddMonths(-25),
             calibrationDueDate: DateTime.UtcNow.AddDays(-1), // expirado ontem
-            certificateNumber: "CAL-VENCIDO",
-            calibratingLaboratory: "Lab");
+            certificateNumber: "CAL-TERM-EXPIRADO",
+            calibratingLaboratory: "Lab Temperatura RBC",
+            resolution: 0.01m);
 
         // Act
         var act = () => new CalibrationRecord(

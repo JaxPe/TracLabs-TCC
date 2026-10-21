@@ -45,7 +45,7 @@ public class Equipment : BaseEntity
     // ── Localização e Condições (ISO 17025 6.4.13 c, d & h) ─────────────────────
 
     /// <summary>Localização física atual do equipamento no laboratório (ex: "Área de Recepção", "Bancada 02").</summary>
-    public string CurrentLocation { get; private set; } = "Recepção / Triagem";
+    public string CurrentLocation { get; private set; } = string.Empty;
 
     /// <summary>Critérios de aceitação definidos pelo cliente ou especificação técnica/normativa.</summary>
     public string? AcceptanceCriteria { get; private set; }
@@ -84,7 +84,7 @@ public class Equipment : BaseEntity
     // ── Calibration Tracking (ISO 17025 6.4.13 e) ───────────────────────────────
     
     /// <summary>Current calibration status of this equipment.</summary>
-    public EquipmentStatus Status { get; private set; } = EquipmentStatus.Received;
+    public EquipmentStatus Status { get; private set; }
     
     /// <summary>
     /// Collection of all calibration records for this equipment.
@@ -119,8 +119,9 @@ public class Equipment : BaseEntity
         string instrumentType, decimal rangeMin, decimal rangeMax,
         string unit, decimal resolution, Guid clientId,
         string? name = null, string? softwareVersion = null, string? firmwareVersion = null,
-        string currentLocation = "Recepção / Triagem", string? acceptanceCriteria = null,
-        string? maintenancePlan = null, string? initialConditionNotes = null)
+        string? currentLocation = null, string? acceptanceCriteria = null,
+        string? maintenancePlan = null, string? initialConditionNotes = null,
+        EquipmentStatus status = EquipmentStatus.Received)
     {
         // Domain validation — do not allow invalid state to ever exist
         if (string.IsNullOrWhiteSpace(labTag))
@@ -148,6 +149,7 @@ public class Equipment : BaseEntity
         AcceptanceCriteria = acceptanceCriteria;
         MaintenancePlan = maintenancePlan;
         InitialConditionNotes = initialConditionNotes;
+        Status = status;
     }
     
     // ── Domain Methods ───────────────────────────────────────────────────────────
