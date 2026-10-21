@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Não tratar avisos de vulnerabilidade de pacotes NuGet em desenvolvimento como erro fatal de compilação -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>

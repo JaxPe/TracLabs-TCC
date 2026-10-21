@@ -27,6 +27,7 @@ public class StandardEquipmentConfiguration : IEntityTypeConfiguration<StandardE
         builder.Property(s => s.Correction).HasPrecision(18, 6);
         builder.Property(s => s.ExpandedUncertainty).HasPrecision(18, 6);
         builder.Property(s => s.CoverageFactor).HasPrecision(5, 2);
+        builder.Property(s => s.Resolution).HasPrecision(18, 6);
 
         builder.Property(s => s.CalibrationCertificateNumber)
             .IsRequired()

@@ -19,6 +19,7 @@ public class TracLabsDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CalibrationRecord> CalibrationRecords => Set<CalibrationRecord>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<Client> Clients => Set<Client>();
+    public DbSet<CertificateSequence> CertificateSequences => Set<CertificateSequence>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

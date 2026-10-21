@@ -35,16 +35,41 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
             .OrderByDescending(c => c.IssuedAt)
             .ToListAsync(ct);
 
+    /// <summary>
+    /// Gera e reserva de forma atômica o próximo número sequencial de certificado no formato CERT-YYYY-NNNNN.
+    /// Utiliza bloqueio pessimista (SELECT ... FOR UPDATE) na tabela 'certificate_sequences' para
+    /// eliminar race conditions em ambientes com emissões simultâneas, atendendo aos requisitos
+    /// de integridade e rastreabilidade da norma ABNT NBR ISO/IEC 17025:2017 item 7.8.
+    /// Reseta automaticamente a sequência a cada virada de ano civil.
+    /// </summary>
     public async Task<string> GenerateNextCertificateNumberAsync(
         CancellationToken ct = default)
     {
         var year = DateTime.UtcNow.Year;
+        CertificateSequence? sequence = null;
 
-        // Conta quantos certificados já foram emitidos no ano corrente
-        var count = await _dbSet
-            .CountAsync(c => c.CreatedAt.Year == year, ct);
+        // Em PostgreSQL, aplicamos lock pessimista na linha para serializar acessos simultâneos
+        if (_context.Database.IsNpgsql())
+        {
+            sequence = await _context.CertificateSequences
+                .FromSqlInterpolated($"SELECT * FROM certificate_sequences WHERE \"Year\" = {year} FOR UPDATE")
+                .FirstOrDefaultAsync(ct);
+        }
+        else
+        {
+            sequence = await _context.CertificateSequences
+                .FirstOrDefaultAsync(s => s.Year == year, ct);
+        }
 
-        // Formato: CERT-2025-00001
-        return $"CERT-{year}-{(count + 1):D5}";
+        if (sequence is null)
+        {
+            sequence = new CertificateSequence(year, 0);
+            await _context.CertificateSequences.AddAsync(sequence, ct);
+        }
+
+        var nextNumber = sequence.Increment();
+        await _context.SaveChangesAsync(ct);
+
+        return $"CERT-{year}-{nextNumber:D5}";
     }
 }
