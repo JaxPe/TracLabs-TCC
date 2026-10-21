@@ -38,7 +38,7 @@ O **TracLabs** resolve esse problema oferecendo:
   - Perfis de acesso diferenciados: `Tecnico` e `Supervisor` (criados automaticamente via *seed* na inicialização da API).
 - **Gestão de Ativos e Clientes**:
   - Cadastro de clientes (`Client`) com suporte a CPF/CNPJ.
-  - Controle de equipamentos de clientes (`Equipment`) e ciclo de status (`PendingCalibration`, `InCalibration`, `Calibrated`, `OutOfService`).
+  - Controle de equipamentos de clientes (`Equipment`) e ciclo de status (`Received`, `Approved`, `InCalibration`, `Calibrated`, `CertificateIssued`, `Returned` e `NonConforming`).
   - Cadastro de padrões de referência do laboratório (`StandardEquipment`), incluindo número de certificado, órgão emissor, resolução, correção, incerteza expandida ($U$), fator de abrangência ($k$) e validade.
 - **Calibração Gravimétrica de Volume**:
   - Cálculo automatizado de volume corrigido a $20\text{ }^\circ\text{C}$ ($V_{20}$) e balanço completo de incerteza de medição.
@@ -166,6 +166,7 @@ dotnet test
 - [ ] **Fase 3 — Núcleo do Sistema (Em andamento)**:
   - [x] Motor de cálculo metrológico gravimétrico de volume (`VolumeCalibrationService` — ISO 4787 / DOC-CGCRE-027 / GUM)
   - [x] Controle de sequência de certificados (`CertificateSequence`)
+  - [ ] Ciclo de status para padrões de referência (`StandardEquipment`: `PendingCalibration`, `InCalibration`, `Calibrated`, `OutOfService`)
   - [ ] Casos de uso CQRS (Commands/Queries com MediatR) e Endpoints de Calibração/Equipamentos
   - [ ] Emissão de certificados em PDF (QuestPDF conforme ABNT NBR ISO/IEC 17025)
   - [ ] Importação de planilhas Excel (EPPlus) e alertas de vencimento de padrões
