@@ -1,13 +1,19 @@
+using TracLabs.Domain.Enums;
+
 namespace TracLabs.Domain.Entities;
 
 /// <summary>
 /// Represents a piece of equipment submitted to the laboratory for calibration service.
 /// This is the CLIENT's instrument, not the lab's own standard.
+/// Incorporates mandatory equipment records per ABNT NBR ISO/IEC 17025:2017 clause 6.4.13.
 /// </summary>
 public class Equipment : BaseEntity
 {
-    // ── Identification ──────────────────────────────────────────────────────────
+    // ── Identification (ISO 17025 6.4.13 a & b) ──────────────────────────────────
     
+    /// <summary>Nome do equipamento (ex: "Balança Semi-Analítica", "Micrômetro Externo").</summary>
+    public string Name { get; private set; } = string.Empty;
+
     /// <summary>Internal tag/code assigned by the lab (e.g. "EQ-2025-001").</summary>
     public string LabTag { get; private set; } = string.Empty;
     
@@ -25,6 +31,33 @@ public class Equipment : BaseEntity
     /// In a production system this would reference a lookup table.
     /// </summary>
     public string InstrumentType { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Versão do software (opcional — quando o equipamento for digital/computadorizado).
+    /// </summary>
+    public string? SoftwareVersion { get; private set; }
+
+    /// <summary>
+    /// Versão do firmware (opcional — quando o equipamento possuir eletrônica embarcada).
+    /// </summary>
+    public string? FirmwareVersion { get; private set; }
+
+    // ── Localização e Condições (ISO 17025 6.4.13 c, d & h) ─────────────────────
+
+    /// <summary>Localização física atual do equipamento no laboratório (ex: "Área de Recepção", "Bancada 02").</summary>
+    public string CurrentLocation { get; private set; } = "Recepção / Triagem";
+
+    /// <summary>Critérios de aceitação definidos pelo cliente ou especificação técnica/normativa.</summary>
+    public string? AcceptanceCriteria { get; private set; }
+
+    /// <summary>Plano de manutenção preventiva (quando aplicável ou contratado pelo cliente).</summary>
+    public string? MaintenancePlan { get; private set; }
+
+    /// <summary>
+    /// Registro de estado e avarias no ato do recebimento (ISO 17025 item 7.4.3 e 6.4.13 h).
+    /// E.g. "Arranhões no display", "Apresenta leve folga no fuso".
+    /// </summary>
+    public string? InitialConditionNotes { get; private set; }
     
     // ── Measurement Range ───────────────────────────────────────────────────────
     
@@ -48,7 +81,7 @@ public class Equipment : BaseEntity
     /// <summary>Navigation property — EF Core will populate this.</summary>
     public Client? Client { get; private set; }
     
-    // ── Calibration Tracking ────────────────────────────────────────────────────
+    // ── Calibration Tracking (ISO 17025 6.4.13 e) ───────────────────────────────
     
     /// <summary>Current calibration status of this equipment.</summary>
     public EquipmentStatus Status { get; private set; } = EquipmentStatus.Received;
@@ -60,8 +93,21 @@ public class Equipment : BaseEntity
     public IReadOnlyCollection<CalibrationRecord> CalibrationHistory => 
         _calibrationHistory.AsReadOnly();
     
-    // Backing field — EF Core requires this pattern for encapsulated collections
     private readonly List<CalibrationRecord> _calibrationHistory = new();
+
+    // ── Histórico de Manutenções e Ocorrências (ISO 17025 6.4.13 g & h) ─────────
+
+    /// <summary>Histórico de manutenções realizadas (preventivas, corretivas, limpezas).</summary>
+    public IReadOnlyCollection<EquipmentMaintenanceRecord> MaintenanceHistory =>
+        _maintenanceHistory.AsReadOnly();
+
+    private readonly List<EquipmentMaintenanceRecord> _maintenanceHistory = new();
+
+    /// <summary>Histórico de danos, avarias, anomalias e modificações.</summary>
+    public IReadOnlyCollection<EquipmentOccurrenceRecord> OccurrenceHistory =>
+        _occurrenceHistory.AsReadOnly();
+
+    private readonly List<EquipmentOccurrenceRecord> _occurrenceHistory = new();
     
     // ── Constructor ─────────────────────────────────────────────────────────────
     
@@ -71,7 +117,10 @@ public class Equipment : BaseEntity
     public Equipment(
         string labTag, string model, string manufacturer, string serialNumber,
         string instrumentType, decimal rangeMin, decimal rangeMax,
-        string unit, decimal resolution, Guid clientId)
+        string unit, decimal resolution, Guid clientId,
+        string? name = null, string? softwareVersion = null, string? firmwareVersion = null,
+        string currentLocation = "Recepção / Triagem", string? acceptanceCriteria = null,
+        string? maintenancePlan = null, string? initialConditionNotes = null)
     {
         // Domain validation — do not allow invalid state to ever exist
         if (string.IsNullOrWhiteSpace(labTag))
@@ -91,9 +140,64 @@ public class Equipment : BaseEntity
         Unit = unit;
         Resolution = resolution;
         ClientId = clientId;
+
+        Name = string.IsNullOrWhiteSpace(name) ? instrumentType : name;
+        SoftwareVersion = softwareVersion;
+        FirmwareVersion = firmwareVersion;
+        CurrentLocation = string.IsNullOrWhiteSpace(currentLocation) ? "Recepção / Triagem" : currentLocation;
+        AcceptanceCriteria = acceptanceCriteria;
+        MaintenancePlan = maintenancePlan;
+        InitialConditionNotes = initialConditionNotes;
     }
     
     // ── Domain Methods ───────────────────────────────────────────────────────────
+
+    /// <summary>Atualiza a localização física atual do equipamento no laboratório.</summary>
+    public void UpdateLocation(string newLocation)
+    {
+        if (string.IsNullOrWhiteSpace(newLocation))
+            throw new ArgumentException("A localização não pode ser vazia.", nameof(newLocation));
+
+        CurrentLocation = newLocation;
+        MarkAsUpdated();
+    }
+
+    /// <summary>Atualiza as versões opcionais de software e firmware.</summary>
+    public void UpdateSoftwareVersions(string? softwareVersion, string? firmwareVersion)
+    {
+        SoftwareVersion = softwareVersion;
+        FirmwareVersion = firmwareVersion;
+        MarkAsUpdated();
+    }
+
+    /// <summary>Define ou atualiza o critério formal de aceitação metrológica.</summary>
+    public void SetAcceptanceCriteria(string? acceptanceCriteria)
+    {
+        AcceptanceCriteria = acceptanceCriteria;
+        MarkAsUpdated();
+    }
+
+    /// <summary>Registra uma manutenção realizada no equipamento (ISO 17025 6.4.13 g).</summary>
+    public EquipmentMaintenanceRecord AddMaintenanceRecord(
+        DateTime date, MaintenanceType type, string description, string performedBy, string? resultSummary = null)
+    {
+        var record = new EquipmentMaintenanceRecord(
+            date, type, description, performedBy, resultSummary, equipmentId: Id);
+        _maintenanceHistory.Add(record);
+        MarkAsUpdated();
+        return record;
+    }
+
+    /// <summary>Registra uma ocorrência, avaria, dano ou reparo sofrido pelo equipamento (ISO 17025 6.4.13 h).</summary>
+    public EquipmentOccurrenceRecord ReportOccurrence(
+        DateTime date, OccurrenceType type, string description, string actionTaken, string reportedBy, DateTime? resolvedDate = null)
+    {
+        var record = new EquipmentOccurrenceRecord(
+            date, type, description, actionTaken, reportedBy, resolvedDate, equipmentId: Id);
+        _occurrenceHistory.Add(record);
+        MarkAsUpdated();
+        return record;
+    }
     
     /// <summary>
     /// Transitions the equipment to "In Calibration" status.

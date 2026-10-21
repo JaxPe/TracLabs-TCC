@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TracLabs.Application.Interfaces.Repositories;
 using TracLabs.Domain.Entities;
+using TracLabs.Domain.Enums;
 
 namespace TracLabs.Infrastructure.Persistence.Repositories;
 
@@ -14,7 +15,9 @@ public class StandardEquipmentRepository
     {
         var cutoff = DateTime.UtcNow.AddDays(withinDays);
         return await _dbSet
-            .Where(s => s.CalibrationDueDate <= cutoff && s.CalibrationDueDate >= DateTime.UtcNow)
+            .Where(s => s.Status == StandardEquipmentStatus.Calibrated &&
+                        s.CalibrationDueDate <= cutoff &&
+                        s.CalibrationDueDate >= DateTime.UtcNow)
             .OrderBy(s => s.CalibrationDueDate)
             .ToListAsync(ct);
     }
@@ -22,14 +25,16 @@ public class StandardEquipmentRepository
     public async Task<IReadOnlyList<StandardEquipment>> GetExpiredAsync(
         CancellationToken ct = default)
         => await _dbSet
-            .Where(s => s.CalibrationDueDate < DateTime.UtcNow)
+            .Where(s => s.CalibrationDueDate < DateTime.UtcNow ||
+                        s.Status == StandardEquipmentStatus.PendingCalibration)
             .OrderBy(s => s.CalibrationDueDate)
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<StandardEquipment>> GetValidStandardsAsync(
         CancellationToken ct = default)
         => await _dbSet
-            .Where(s => s.CalibrationDueDate >= DateTime.UtcNow)
+            .Where(s => s.Status == StandardEquipmentStatus.Calibrated &&
+                        s.CalibrationDueDate >= DateTime.UtcNow)
             .OrderBy(s => s.InstrumentType)
             .ToListAsync(ct);
 

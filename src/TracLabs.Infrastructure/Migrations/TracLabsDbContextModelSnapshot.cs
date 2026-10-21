@@ -389,11 +389,28 @@ namespace TracLabs.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AcceptanceCriteria")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentLocation")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("FirmwareVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("InitialConditionNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("InstrumentType")
                         .IsRequired()
@@ -408,6 +425,10 @@ namespace TracLabs.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("MaintenancePlan")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<string>("Manufacturer")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -417,6 +438,11 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<decimal>("RangeMax")
                         .HasPrecision(18, 6)
@@ -434,6 +460,10 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SoftwareVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -458,11 +488,123 @@ namespace TracLabs.Infrastructure.Migrations
                     b.ToTable("equipment", (string)null);
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.EquipmentMaintenanceRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("MaintenanceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ResultSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("StandardEquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("StandardEquipmentId");
+
+                    b.ToTable("equipment_maintenance_records", (string)null);
+                });
+
+            modelBuilder.Entity("TracLabs.Domain.Entities.EquipmentOccurrenceRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionTaken")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("EquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("OccurrenceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReportedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("ResolvedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("StandardEquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("StandardEquipmentId");
+
+                    b.ToTable("equipment_occurrence_records", (string)null);
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.StandardEquipment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AcceptanceCriteria")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("CalibratingLaboratory")
                         .IsRequired()
@@ -477,6 +619,9 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<DateTime>("CalibrationDueDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("CalibrationIntervalMonths")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Correction")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
@@ -488,6 +633,11 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CurrentLocation")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<decimal>("Error")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
@@ -495,6 +645,10 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<decimal>("ExpandedUncertainty")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("FirmwareVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("InstrumentType")
                         .IsRequired()
@@ -512,6 +666,10 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<DateTime>("LastCalibrationDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("MaintenancePlan")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<string>("Manufacturer")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -522,6 +680,15 @@ namespace TracLabs.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("ReferenceMaterialDocumentation")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<decimal>("Resolution")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
@@ -530,6 +697,15 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SoftwareVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -711,6 +887,40 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Navigation("Client");
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.EquipmentMaintenanceRecord", b =>
+                {
+                    b.HasOne("TracLabs.Domain.Entities.Equipment", "Equipment")
+                        .WithMany("MaintenanceHistory")
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TracLabs.Domain.Entities.StandardEquipment", "StandardEquipment")
+                        .WithMany("MaintenanceHistory")
+                        .HasForeignKey("StandardEquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Equipment");
+
+                    b.Navigation("StandardEquipment");
+                });
+
+            modelBuilder.Entity("TracLabs.Domain.Entities.EquipmentOccurrenceRecord", b =>
+                {
+                    b.HasOne("TracLabs.Domain.Entities.Equipment", "Equipment")
+                        .WithMany("OccurrenceHistory")
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("TracLabs.Domain.Entities.StandardEquipment", "StandardEquipment")
+                        .WithMany("OccurrenceHistory")
+                        .HasForeignKey("StandardEquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Equipment");
+
+                    b.Navigation("StandardEquipment");
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.CalibrationRecord", b =>
                 {
                     b.Navigation("Certificate");
@@ -724,6 +934,17 @@ namespace TracLabs.Infrastructure.Migrations
             modelBuilder.Entity("TracLabs.Domain.Entities.Equipment", b =>
                 {
                     b.Navigation("CalibrationHistory");
+
+                    b.Navigation("MaintenanceHistory");
+
+                    b.Navigation("OccurrenceHistory");
+                });
+
+            modelBuilder.Entity("TracLabs.Domain.Entities.StandardEquipment", b =>
+                {
+                    b.Navigation("MaintenanceHistory");
+
+                    b.Navigation("OccurrenceHistory");
                 });
 #pragma warning restore 612, 618
         }

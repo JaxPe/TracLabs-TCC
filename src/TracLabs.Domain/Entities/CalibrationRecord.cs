@@ -142,7 +142,58 @@ public class CalibrationRecord : BaseEntity
         Result = CalibrationResult.Pending;
     }
 
+    public CalibrationRecord(
+        Equipment equipment,
+        StandardEquipment standardEquipment,
+        string technicianId,
+        string technicianName,
+        DateTime calibrationDate,
+        DateTime nextCalibrationDue,
+        decimal temperatureCelsius,
+        decimal humidityPercent)
+        : this(
+            equipment?.Id ?? throw new ArgumentNullException(nameof(equipment)),
+            standardEquipment?.Id ?? throw new ArgumentNullException(nameof(standardEquipment)),
+            technicianId,
+            technicianName,
+            calibrationDate,
+            nextCalibrationDue,
+            temperatureCelsius,
+            humidityPercent)
+    {
+        ValidateStandardEquipment(standardEquipment);
+        Equipment = equipment;
+        StandardEquipment = standardEquipment;
+    }
+
+    /// <summary>
+    /// Valida se o equipamento padrão atende aos requisitos metrológicos e de status para calibração.
+    /// Impede o uso de padrões vencidos, fora de serviço ou em processo de recalibração.
+    /// </summary>
+    public static void ValidateStandardEquipment(StandardEquipment standard)
+    {
+        ArgumentNullException.ThrowIfNull(standard);
+
+        if (!standard.IsUsableForCalibration)
+        {
+            throw new InvalidOperationException(
+                $"O padrão '{standard.LabTag}' não pode ser utilizado para calibração. " +
+                $"Status atual: '{standard.Status}', Validade: '{standard.CalibrationDueDate:dd/MM/yyyy}'.");
+        }
+    }
+
     // ── Domain Methods ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Associa o equipamento padrão validando sua prontidão metrológica e de status.
+    /// </summary>
+    public void AssignStandardEquipment(StandardEquipment standard)
+    {
+        ValidateStandardEquipment(standard);
+        StandardEquipment = standard;
+        StandardEquipmentId = standard.Id;
+        MarkAsUpdated();
+    }
 
     /// <summary>
     /// Records the metrological results calculated by the Application layer.
