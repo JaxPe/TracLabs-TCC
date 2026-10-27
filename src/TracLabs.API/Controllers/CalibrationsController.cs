@@ -14,7 +14,7 @@ using TracLabs.Application.Features.Equipment.DTOs;
 namespace TracLabs.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class CalibrationsController : ControllerBase
 {
@@ -78,3 +78,4 @@ public class CalibrationsController : ControllerBase
         return Ok(result);
     }
 }
+

@@ -19,7 +19,7 @@ using TracLabs.Domain.Enums;
 namespace TracLabs.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class StandardEquipmentController : ControllerBase
 {
@@ -147,3 +147,4 @@ public class StandardEquipmentController : ControllerBase
         return Ok(result);
     }
 }
+

@@ -1,0 +1,1076 @@
+{
+  "info": {
+    "_postman_id": "traclabs-api-collection-v1",
+    "name": "TracLabs API (v1)",
+    "description": "Collection completa para testes da TracLabs API v1 (Metrologia e ISO/IEC 17025).\nContém separação entre Supervisor e Técnico, validações automáticas de 403 Forbidden e encadeamento de tokens e IDs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5259",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "supervisorToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tecnicoToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "standardId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "equipmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "calibrationId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Status da API (Público)",
+      "item": [
+        {
+          "name": "Consultar Status do Banco (Padrão TabNews)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Database status é healthy', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.dependencies.database.status).to.eql('healthy');",
+                  "    pm.expect(json.dependencies.database.version).to.not.be.null;",
+                  "    pm.expect(json.dependencies.database.latency.firstQuery).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Supervisor (Gestão & Acesso Total)",
+      "item": [
+        {
+          "name": "1.1 Autenticação",
+          "item": [
+            {
+              "name": "Login como Supervisor",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Login com sucesso', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.token).to.not.be.empty;",
+                      "    pm.collectionVariables.set('supervisorToken', json.token);",
+                      "    pm.collectionVariables.set('token', json.token);",
+                      "    console.log('Token do Supervisor configurado!');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"supervisor@traclabs.com\",\n  \"password\": \"Password123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "auth", "login"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Gestão de Clientes",
+          "item": [
+            {
+              "name": "Criar Cliente (Salva clientId)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Cliente criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('clientId', json.id);",
+                      "    console.log('clientId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Laboratório Farmacêutico Beta Ltda\",\n  \"taxId\": \"22333444000199\",\n  \"taxIdType\": 0,\n  \"email\": \"contato@betalab.com.br\",\n  \"phone\": \"11988887777\",\n  \"contactPerson\": \"Dr. Roberto Silveira\",\n  \"street\": \"Av. Brasil, 500\",\n  \"city\": \"Campinas\",\n  \"state\": \"SP\",\n  \"postalCode\": \"13010100\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients"]
+                }
+              }
+            },
+            {
+              "name": "Listar Clientes",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients"]
+                }
+              }
+            },
+            {
+              "name": "Obter Cliente por ID",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                }
+              }
+            },
+            {
+              "name": "Atualizar Cliente",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Laboratório Farmacêutico Beta S.A.\",\n  \"email\": \"financeiro@betalab.com.br\",\n  \"phone\": \"11977776666\",\n  \"contactPerson\": \"Dra. Juliana Costa\",\n  \"street\": \"Av. Brasil, 600\",\n  \"city\": \"Campinas\",\n  \"state\": \"SP\",\n  \"postalCode\": \"13010100\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                }
+              }
+            },
+            {
+              "name": "Obter Cliente com Equipamentos",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}/equipment",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}", "equipment"]
+                }
+              }
+            },
+            {
+              "name": "Excluir Cliente (Soft Delete)",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Ciclo de Vida dos Padrões (ISO 17025)",
+          "item": [
+            {
+              "name": "Cadastrar Padrão Metrológico (Salva standardId)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('standardId', json.id);",
+                      "    console.log('standardId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-BAL-010\",\n  \"name\": \"Balança Analítica Padrão Especial\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balança Analítica\",\n  \"resolution\": 0.00001,\n  \"error\": 0.00002,\n  \"expandedUncertainty\": 0.00004,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-RBC-2026-999\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC\",\n  \"acceptanceCriteria\": \"Erro <= 0.00005 g\",\n  \"currentLocation\": \"Sala Limpa A\",\n  \"calibrationIntervalMonths\": 12\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment"]
+                }
+              }
+            },
+            {
+              "name": "Listar Padrões Aptos para Uso",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/usable",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "usable"]
+                }
+              }
+            },
+            {
+              "name": "Listar Padrões com Calibração a Vencer",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/expiring?withinDays=60",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "expiring"],
+                  "query": [
+                    {
+                      "key": "withinDays",
+                      "value": "60"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Obter Padrão por ID",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}"]
+                }
+              }
+            },
+            {
+              "name": "Enviar Padrão para Calibração Externa",
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/send-to-calibration",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "send-to-calibration"]
+                }
+              }
+            },
+            {
+              "name": "Registrar Retorno e Resultado de Calibração Externa",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"certificateNumber\": \"CERT-RBC-2026-100\",\n  \"calibrationDate\": \"2026-10-25T00:00:00Z\",\n  \"nextDueDate\": \"2027-10-25T00:00:00Z\",\n  \"calibratingLaboratory\": \"Instituto Metrológico Nacional\",\n  \"newError\": 0.000015,\n  \"newExpandedUncertainty\": 0.000035,\n  \"newCoverageFactor\": 2.0,\n  \"meetsAcceptanceCriteria\": true,\n  \"notes\": \"Calibração periódica aprovada sem desvios.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/register-calibration",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "register-calibration"]
+                }
+              }
+            },
+            {
+              "name": "Retirar Padrão de Uso (Put Out of Service)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Manutenção preventiva programada dos sensores ópticos.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/put-out-of-service",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "put-out-of-service"]
+                }
+              }
+            },
+            {
+              "name": "Reativar Padrão",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Verificação intermediária realizada com pesos padrão classe E2. Desvio zero.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/reactivate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "reactivate"]
+                }
+              }
+            },
+            {
+              "name": "Registrar Manutenção no Padrão",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Limpeza do prato de pesagem e câmara de vidro.\",\n  \"maintenanceType\": \"Preventiva\",\n  \"maintenanceDate\": \"2026-10-27T00:00:00Z\",\n  \"performedBy\": \"Técnico de Suporte Externo\",\n  \"notes\": \"Equipamento calibrado e nivelado.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/maintenances",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "maintenances"]
+                }
+              }
+            },
+            {
+              "name": "Relatar Ocorrência no Padrão",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Flutuação temporária de leitura devido a corrente de ar externa.\",\n  \"occurrenceType\": \"Alerta Operacional\",\n  \"reportedDate\": \"2026-10-27T00:00:00Z\",\n  \"reportedBy\": \"Supervisor Teste\",\n  \"correctiveAction\": \"Portas da sala limpa reajustadas.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/occurrences",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "occurrences"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Gestão de Equipamentos de Clientes",
+          "item": [
+            {
+              "name": "Cadastrar Equipamento (Salva equipmentId)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Equipamento criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('equipmentId', json.id);",
+                      "    console.log('equipmentId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PIP-CLI-010\",\n  \"name\": \"Micropipeta Monocanal Variável\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-776655\",\n  \"instrumentType\": \"Micropipeta\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"unit\": \"µL\",\n  \"resolution\": 1,\n  \"clientId\": \"{{clientId}}\",\n  \"currentLocation\": \"Bancada Metrológica 01\",\n  \"acceptanceCriteria\": \"Erro sistemático <= 1.0%\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment"]
+                }
+              }
+            },
+            {
+              "name": "Buscar / Listar Equipamentos",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment"]
+                }
+              }
+            },
+            {
+              "name": "Obter Equipamento por ID",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}"]
+                }
+              }
+            },
+            {
+              "name": "Atualizar Localização do Equipamento",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"newLocation\": \"Sala de Ensaio 03 - Armário B\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/location",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "location"]
+                }
+              }
+            },
+            {
+              "name": "Registrar Manutenção no Equipamento",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Troca da vedação (O-ring) e pistão interno.\",\n  \"maintenanceType\": \"Corretiva\",\n  \"maintenanceDate\": \"2026-10-27T00:00:00Z\",\n  \"performedBy\": \"Técnico de Manutenção\",\n  \"notes\": \"Peças originais Eppendorf utilizadas.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/maintenances",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "maintenances"]
+                }
+              }
+            },
+            {
+              "name": "Relatar Ocorrência no Equipamento",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Instrumento recebido com pequenas marcas de desgaste superficial no corpo.\",\n  \"occurrenceType\": \"Recebimento\",\n  \"reportedDate\": \"2026-10-27T00:00:00Z\",\n  \"reportedBy\": \"Supervisor Teste\",\n  \"correctiveAction\": \"Registrado no termo de recebimento sem prejuízo funcional.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/occurrences",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "occurrences"]
+                }
+              }
+            },
+            {
+              "name": "Obter Histórico Completo de Auditoria",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/history",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "history"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 Calibrações Metrológicas",
+          "item": [
+            {
+              "name": "Simulação de Cálculo Volumétrico (Sem persistir)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"atmosphericPressureHpa\": 1013.25,\n  \"ambientTemperatureCelsius\": 20.0,\n  \"relativeHumidityPercent\": 50.0,\n  \"balanceResolutionGrams\": 0.0001,\n  \"balanceCertificateUncertaintyGrams\": 0.0002,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 100.982, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n    { \"runNumber\": 2, \"fullMassGrams\": 100.981, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n    { \"runNumber\": 3, \"fullMassGrams\": 100.983, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "volume", "calculate"]
+                }
+              }
+            },
+            {
+              "name": "Executar e Persistir Calibração Volumétrica",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Calibração salva com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('calibrationId', json.id);",
+                      "    console.log('calibrationId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"standardEquipmentId\": \"{{standardId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.5,\n  \"humidityPercent\": 52.0,\n  \"observations\": \"Calibração de alta precisão ISO 4787 / ISO 8655.\",\n  \"calculationRequest\": {\n    \"nominalVolumeMl\": 100.0,\n    \"material\": 0,\n    \"atmosphericPressureHpa\": 1013.25,\n    \"ambientTemperatureCelsius\": 20.0,\n    \"relativeHumidityPercent\": 50.0,\n    \"balanceResolutionGrams\": 0.0001,\n    \"balanceCertificateUncertaintyGrams\": 0.0002,\n    \"measurements\": [\n      { \"runNumber\": 1, \"fullMassGrams\": 100.982, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n      { \"runNumber\": 2, \"fullMassGrams\": 100.981, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n      { \"runNumber\": 3, \"fullMassGrams\": 100.983, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 }\n    ]\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "volume"]
+                }
+              }
+            },
+            {
+              "name": "Obter Calibração por ID",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/{{calibrationId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "{{calibrationId}}"]
+                }
+              }
+            },
+            {
+              "name": "Listar Calibrações por Equipamento",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/equipment/{{equipmentId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "equipment", "{{equipmentId}}"]
+                }
+              }
+            },
+            {
+              "name": "Listar Calibrações por Intervalo de Datas",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/date-range?start=2026-01-01&end=2027-12-31",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "date-range"],
+                  "query": [
+                    {
+                      "key": "start",
+                      "value": "2026-01-01"
+                    },
+                    {
+                      "key": "end",
+                      "value": "2027-12-31"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Técnico (Operações Laboratoriais & Validação de Bloqueios 403)",
+      "item": [
+        {
+          "name": "2.1 Autenticação",
+          "item": [
+            {
+              "name": "Login como Técnico",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Login com sucesso', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.token).to.not.be.empty;",
+                      "    pm.collectionVariables.set('tecnicoToken', json.token);",
+                      "    pm.collectionVariables.set('token', json.token);",
+                      "    console.log('Token do Técnico configurado!');",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"tecnico@traclabs.com\",\n  \"password\": \"Password123!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "auth", "login"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Testes de Permissão Negada (403 Forbidden)",
+          "item": [
+            {
+              "name": "Tentar Criar Cliente (Esperado: 403 Forbidden)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Acesso negado para Técnico (403 Forbidden)', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Cliente Não Autorizado Ltda\",\n  \"taxId\": \"33444555000188\",\n  \"taxIdType\": 0,\n  \"email\": \"bloqueado@teste.com\",\n  \"phone\": \"11988887777\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients"]
+                }
+              }
+            },
+            {
+              "name": "Tentar Atualizar Cliente (Esperado: 403 Forbidden)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Acesso negado para Técnico (403 Forbidden)', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Tentativa Alteração Não Autorizada\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                }
+              }
+            },
+            {
+              "name": "Tentar Excluir Cliente (Esperado: 403 Forbidden)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Acesso negado para Técnico (403 Forbidden)', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Operações Autorizadas para Técnicos",
+          "item": [
+            {
+              "name": "Consultar Clientes (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code é 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/clients",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "clients"]
+                }
+              }
+            },
+            {
+              "name": "Consultar Padrões Aptos para Uso (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code é 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/usable",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "standardequipment", "usable"]
+                }
+              }
+            },
+            {
+              "name": "Cadastrar Equipamento do Cliente (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Equipamento criado com sucesso pelo Técnico', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PIP-TEC-001\",\n  \"name\": \"Micropipeta Monocanal de Rotina\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-991122\",\n  \"instrumentType\": \"Micropipeta\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"unit\": \"µL\",\n  \"resolution\": 1,\n  \"clientId\": \"{{clientId}}\",\n  \"currentLocation\": \"Bancada de Recepção\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment"]
+                }
+              }
+            },
+            {
+              "name": "Atualizar Localização de Ensaio (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code é 204 No Content', function () {",
+                      "    pm.response.to.have.status(204);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"newLocation\": \"Sala Climatizada 02 - Bancada de Calibração\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/location",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "location"]
+                }
+              }
+            },
+            {
+              "name": "Relatar Ocorrência de Dano (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code é 200 OK', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Ponta do ejetor de ponteiras com leve folga mecânica.\",\n  \"occurrenceType\": \"Desgaste Operacional\",\n  \"reportedDate\": \"2026-10-27T00:00:00Z\",\n  \"reportedBy\": \"Tecnico Teste\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/occurrences",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "occurrences"]
+                }
+              }
+            },
+            {
+              "name": "Simulação de Cálculo Volumétrico (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Cálculo simulado com sucesso', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"atmosphericPressureHpa\": 1013.25,\n  \"ambientTemperatureCelsius\": 20.0,\n  \"relativeHumidityPercent\": 50.0,\n  \"balanceResolutionGrams\": 0.0001,\n  \"balanceCertificateUncertaintyGrams\": 0.0002,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 100.982, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n    { \"runNumber\": 2, \"fullMassGrams\": 100.981, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n    { \"runNumber\": 3, \"fullMassGrams\": 100.983, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "volume", "calculate"]
+                }
+              }
+            },
+            {
+              "name": "Executar e Salvar Calibração Volumétrica Efetiva (Permitido)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Calibração executada e salva pelo Técnico', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"standardEquipmentId\": \"{{standardId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.5,\n  \"humidityPercent\": 52.0,\n  \"observations\": \"Calibração de rotina executada pelo técnico.\",\n  \"calculationRequest\": {\n    \"nominalVolumeMl\": 100.0,\n    \"material\": 0,\n    \"atmosphericPressureHpa\": 1013.25,\n    \"ambientTemperatureCelsius\": 20.0,\n    \"relativeHumidityPercent\": 50.0,\n    \"balanceResolutionGrams\": 0.0001,\n    \"balanceCertificateUncertaintyGrams\": 0.0002,\n    \"measurements\": [\n      { \"runNumber\": 1, \"fullMassGrams\": 100.982, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n      { \"runNumber\": 2, \"fullMassGrams\": 100.981, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 },\n      { \"runNumber\": 3, \"fullMassGrams\": 100.983, \"emptyMassGrams\": 1.0, \"waterTemperatureCelsius\": 20.0 }\n    ]\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "calibrations", "volume"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

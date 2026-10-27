@@ -16,7 +16,7 @@ using TracLabs.Domain.Enums;
 namespace TracLabs.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class EquipmentController : ControllerBase
 {
@@ -103,3 +103,4 @@ public class EquipmentController : ControllerBase
 }
 
 public record UpdateLocationRequest(string NewLocation);
+

@@ -13,7 +13,7 @@ using TracLabs.Application.Features.Clients.Queries.GetClientWithEquipment;
 namespace TracLabs.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 public class ClientsController : ControllerBase
 {
@@ -63,10 +63,15 @@ public class ClientsController : ControllerBase
     /// <summary>Atualiza dados cadastrais de um cliente (restrito a Supervisores).</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Roles = Roles.Supervisor)]
-    public async Task<ActionResult<ClientDto>> Update(Guid id, [FromBody] UpdateClientCommand command)
+    public async Task<ActionResult<ClientDto>> Update(
+        Guid id,
+        [FromBody] UpdateClientCommand command
+    )
     {
         if (id != command.Id)
-            return BadRequest(new { message = "O ID da rota não corresponde ao ID do corpo da requisição." });
+            return BadRequest(
+                new { message = "O ID da rota não corresponde ao ID do corpo da requisição." }
+            );
 
         var result = await _mediator.Send(command);
         return Ok(result);
@@ -81,3 +86,4 @@ public class ClientsController : ControllerBase
         return NoContent();
     }
 }
+
