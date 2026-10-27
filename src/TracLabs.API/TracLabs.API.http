@@ -1,6 +1,162 @@
 @TracLabs.API_HostAddress = http://localhost:5259
 
-GET {{TracLabs.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### 0. Status e Saúde do Banco de Dados (Público - Padrão TabNews)
+GET {{TracLabs.API_HostAddress}}/api/v1/status
 
-###
+### 1. Autenticar como Supervisor
+# @name loginSupervisor
+POST {{TracLabs.API_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "supervisor@traclabs.com",
+  "password": "Password123!"
+}
+
+### Extrair o Token do Supervisor
+@supervisorToken = {{loginSupervisor.response.body.token}}
+
+### 2. Autenticar como Técnico
+# @name loginTecnico
+POST {{TracLabs.API_HostAddress}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "tecnico@traclabs.com",
+  "password": "Password123!"
+}
+
+### Extrair o Token do Técnico
+@tecnicoToken = {{loginTecnico.response.body.token}}
+
+### 3. Listar Clientes (Requer Técnico ou Supervisor)
+GET {{TracLabs.API_HostAddress}}/api/v1/clients
+Authorization: Bearer {{supervisorToken}}
+
+### 4. Criar Cliente (Requer Supervisor - TaxId apenas números)
+# @name createClient
+POST {{TracLabs.API_HostAddress}}/api/v1/clients
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "name": "Laboratório de Análises Biológicas Ltda",
+  "taxId": "12345678000199",
+  "taxIdType": 0,
+  "email": "contato@labbiologicas.com.br",
+  "phone": "11999998888",
+  "contactPerson": "Dra. Helena Souza",
+  "street": "Av. Paulista, 1000",
+  "city": "São Paulo",
+  "state": "SP",
+  "postalCode": "01310100"
+}
+
+### ID do Cliente Criado
+@clientId = {{createClient.response.body.id}}
+
+### 5. Cadastrar Padrão Metrológico (Balança Analítica Padrão)
+# @name createStandard
+POST {{TracLabs.API_HostAddress}}/api/v1/standardequipment
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "labTag": "PAD-BAL-001",
+  "name": "Balança Analítica Padrão de Referência",
+  "model": "XPE205",
+  "manufacturer": "Mettler Toledo",
+  "serialNumber": "MT-987654",
+  "instrumentType": "Balança Analítica",
+  "resolution": 0.00001,
+  "error": 0.00002,
+  "expandedUncertainty": 0.00004,
+  "coverageFactor": 2.0,
+  "lastCalibrationDate": "2026-01-15T00:00:00Z",
+  "calibrationDueDate": "2027-01-15T00:00:00Z",
+  "calibrationCertificateNumber": "CAL-RBC-2026-089",
+  "calibratingLaboratory": "Lab Metrologia RBC",
+  "acceptanceCriteria": "Erro <= 0.00005 g",
+  "currentLocation": "Sala Limpa A",
+  "calibrationIntervalMonths": 12
+}
+
+### ID do Padrão Criado
+@standardId = {{createStandard.response.body.id}}
+
+### 6. Listar Padrões Aptos para Uso
+GET {{TracLabs.API_HostAddress}}/api/v1/standardequipment/usable
+Authorization: Bearer {{supervisorToken}}
+
+### 7. Cadastrar Equipamento do Cliente (Micropipeta 100-1000 µL)
+# @name createEquipment
+POST {{TracLabs.API_HostAddress}}/api/v1/equipment
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "labTag": "PIP-CLI-001",
+  "name": "Micropipeta Monocanal Variável",
+  "model": "Research Plus",
+  "manufacturer": "Eppendorf",
+  "serialNumber": "EP-123456",
+  "instrumentType": "Micropipeta",
+  "rangeMin": 100,
+  "rangeMax": 1000,
+  "unit": "µL",
+  "resolution": 1,
+  "clientId": "{{clientId}}",
+  "currentLocation": "Bancada 02",
+  "acceptanceCriteria": "Erro sistemático <= 1.0%"
+}
+
+### ID do Equipamento Criado
+@equipmentId = {{createEquipment.response.body.id}}
+
+### 8. Simular Cálculo de Calibração Volumétrica (Sem salvar no banco)
+POST {{TracLabs.API_HostAddress}}/api/v1/calibrations/volume/calculate
+Content-Type: application/json
+Authorization: Bearer {{tecnicoToken}}
+
+{
+  "nominalVolumeMl": 100.0,
+  "material": 0,
+  "atmosphericPressureHpa": 1013.25,
+  "ambientTemperatureCelsius": 20.0,
+  "relativeHumidityPercent": 50.0,
+  "balanceResolutionGrams": 0.0001,
+  "balanceCertificateUncertaintyGrams": 0.0002,
+  "measurements": [
+    { "runNumber": 1, "fullMassGrams": 100.982, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
+    { "runNumber": 2, "fullMassGrams": 100.981, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
+    { "runNumber": 3, "fullMassGrams": 100.983, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 }
+  ]
+}
+
+### 9. Registrar e Executar Calibração Volumétrica Efetiva (Salva no banco e muda status)
+POST {{TracLabs.API_HostAddress}}/api/v1/calibrations/volume
+Content-Type: application/json
+Authorization: Bearer {{tecnicoToken}}
+
+{
+  "equipmentId": "{{equipmentId}}",
+  "standardEquipmentId": "{{standardId}}",
+  "nextCalibrationDue": "2027-10-27T00:00:00Z",
+  "temperatureCelsius": 20.5,
+  "humidityPercent": 52.0,
+  "observations": "Calibração realizada de acordo com a ISO 4787 / ISO 8655.",
+  "calculationRequest": {
+    "nominalVolumeMl": 100.0,
+    "material": 0,
+    "atmosphericPressureHpa": 1013.25,
+    "ambientTemperatureCelsius": 20.0,
+    "relativeHumidityPercent": 50.0,
+    "balanceResolutionGrams": 0.0001,
+    "balanceCertificateUncertaintyGrams": 0.0002,
+    "measurements": [
+      { "runNumber": 1, "fullMassGrams": 100.982, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
+      { "runNumber": 2, "fullMassGrams": 100.981, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
+      { "runNumber": 3, "fullMassGrams": 100.983, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 }
+    ]
+  }
+}

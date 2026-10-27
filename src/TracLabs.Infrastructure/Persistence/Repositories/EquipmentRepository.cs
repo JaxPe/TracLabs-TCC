@@ -32,6 +32,8 @@ public class EquipmentRepository : BaseRepository<Equipment>, IEquipmentReposito
             .Include(e => e.CalibrationHistory)
                 .ThenInclude(c => c.Certificate)
             .Include(e => e.Client)
+            .Include(e => e.MaintenanceHistory)
+            .Include(e => e.OccurrenceHistory)
             .FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public async Task<IReadOnlyList<Equipment>> SearchAsync(

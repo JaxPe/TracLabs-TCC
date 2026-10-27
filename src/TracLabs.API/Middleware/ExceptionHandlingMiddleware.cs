@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using TracLabs.Application.Common.Exceptions;
 
 namespace TracLabs.API.Middleware;
 
@@ -22,6 +23,11 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning("Falha de validação da requisição: {Errors}", ex.Errors);
+            await HandleValidationExceptionAsync(context, ex);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exceção não tratada: {Message}", ex.Message);
@@ -29,16 +35,33 @@ public class ExceptionHandlingMiddleware
         }
     }
 
+    private static async Task HandleValidationExceptionAsync(HttpContext context, ValidationException exception)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+        var response = new
+        {
+            status = (int)HttpStatusCode.BadRequest,
+            message = "Erro de validação nos dados enviados.",
+            errors = exception.Errors
+        };
+
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(response,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    }
+
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         // Mapeia tipos de exceção para status HTTP adequados
         var (statusCode, message) = exception switch
         {
-            ArgumentException       => (HttpStatusCode.BadRequest, exception.Message),
-            InvalidOperationException => (HttpStatusCode.Conflict, exception.Message),
+            ArgumentException           => (HttpStatusCode.BadRequest, exception.Message),
+            InvalidOperationException   => (HttpStatusCode.Conflict, exception.Message),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Não autorizado."),
-            KeyNotFoundException    => (HttpStatusCode.NotFound, exception.Message),
-            _                       => (HttpStatusCode.InternalServerError, "Erro interno do servidor.")
+            KeyNotFoundException        => (HttpStatusCode.NotFound, exception.Message),
+            _                           => (HttpStatusCode.InternalServerError, "Erro interno do servidor.")
         };
 
         context.Response.ContentType = "application/json";
