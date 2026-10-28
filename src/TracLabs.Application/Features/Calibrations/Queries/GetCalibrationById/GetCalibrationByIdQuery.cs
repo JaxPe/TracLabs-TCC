@@ -43,6 +43,7 @@ public class GetCalibrationByIdQueryHandler : IRequestHandler<GetCalibrationById
             record.Observations,
             record.MeasurementPoints,
             null,
-            record.Certificate?.CertificateNumber);
+            record.Certificate?.CertificateNumber,
+            record.StandardsUsed.Select(s => new CalibrationStandardUsedDto(s.StandardEquipmentId, s.Role, s.LabTag, s.SerialNumber, s.CertificateNumber, s.Resolution, s.Correction, s.ExpandedUncertainty, s.CoverageFactor)).ToList());
     }
 }

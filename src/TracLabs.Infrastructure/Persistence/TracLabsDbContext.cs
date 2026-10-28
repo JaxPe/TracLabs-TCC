@@ -22,6 +22,7 @@ public class TracLabsDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CertificateSequence> CertificateSequences => Set<CertificateSequence>();
     public DbSet<EquipmentMaintenanceRecord> EquipmentMaintenanceRecords => Set<EquipmentMaintenanceRecord>();
     public DbSet<EquipmentOccurrenceRecord> EquipmentOccurrenceRecords => Set<EquipmentOccurrenceRecord>();
+    public DbSet<CalibrationStandardUsed> CalibrationStandardsUsed => Set<CalibrationStandardUsed>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +44,7 @@ public class TracLabsDbContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Client>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<EquipmentMaintenanceRecord>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<EquipmentOccurrenceRecord>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<CalibrationStandardUsed>().HasQueryFilter(e => !e.IsDeleted);
     }
 
     // ── Auditoria automática ──────────────────────────────────────────────────

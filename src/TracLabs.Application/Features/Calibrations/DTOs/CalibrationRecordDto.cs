@@ -4,6 +4,17 @@ using TracLabs.Domain.ValueObjects;
 
 namespace TracLabs.Application.Features.Calibrations.DTOs;
 
+public record CalibrationStandardUsedDto(
+    Guid StandardEquipmentId,
+    StandardRole Role,
+    string LabTag,
+    string SerialNumber,
+    string CertificateNumber,
+    decimal Resolution,
+    decimal Correction,
+    decimal ExpandedUncertainty,
+    decimal CoverageFactor);
+
 public record CalibrationRecordDto(
     Guid Id,
     Guid EquipmentId,
@@ -26,4 +37,5 @@ public record CalibrationRecordDto(
     string? Observations,
     IReadOnlyList<MeasurementPoint> MeasurementPoints,
     VolumeCalibrationResultDto? VolumeCalculationDetails,
-    string? CertificateNumber);
+    string? CertificateNumber,
+    IReadOnlyList<CalibrationStandardUsedDto>? StandardsUsed = null);

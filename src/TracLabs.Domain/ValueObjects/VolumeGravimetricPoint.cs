@@ -2,7 +2,7 @@ namespace TracLabs.Domain.ValueObjects;
 
 /// <summary>
 /// Representa uma pesagem individual de calibração volumétrica pelo método gravimétrico
-/// segundo a norma ABNT NBR ISO 4787:2013 e DOC-CGCRE-027.
+/// segundo a norma ABNT NBR ISO 4787:2013, ISO 8655 e DOC-CGCRE-027.
 /// </summary>
 public sealed record VolumeGravimetricPoint
 {
@@ -21,6 +21,18 @@ public sealed record VolumeGravimetricPoint
     /// <summary>Temperatura da água/líquido no momento do ensaio (T em °C).</summary>
     public decimal WaterTemperatureCelsius { get; init; }
 
+    /// <summary>Temperatura ambiente média na bancada durante a corrida em °C.</summary>
+    public decimal AmbientTemperatureCelsius { get; init; }
+
+    /// <summary>Pressão atmosférica durante a corrida em hPa.</summary>
+    public decimal AtmosphericPressureHpa { get; init; }
+
+    /// <summary>Umidade relativa do ar durante a corrida em %.</summary>
+    public decimal RelativeHumidityPercent { get; init; }
+
+    /// <summary>Massa específica do ar calculada para esta corrida (ra em kg/m³).</summary>
+    public decimal CalculatedAirDensityKgPerM3 { get; init; }
+
     /// <summary>Volume a 20°C calculado para esta repetição (V20 em mL ou cm³).</summary>
     public decimal CalculatedVolumeMl { get; init; }
 
@@ -29,7 +41,11 @@ public sealed record VolumeGravimetricPoint
         decimal fullMassGrams,
         decimal emptyMassGrams,
         decimal waterTemperatureCelsius,
-        decimal calculatedVolumeMl = 0m)
+        decimal calculatedVolumeMl = 0m,
+        decimal ambientTemperatureCelsius = 20.0m,
+        decimal atmosphericPressureHpa = 1013.25m,
+        decimal relativeHumidityPercent = 50.0m,
+        decimal calculatedAirDensityKgPerM3 = 0m)
     {
         if (runNumber <= 0)
             throw new ArgumentOutOfRangeException(nameof(runNumber), "Número da medição deve ser maior que zero.");
@@ -41,5 +57,9 @@ public sealed record VolumeGravimetricPoint
         EmptyMassGrams = emptyMassGrams;
         WaterTemperatureCelsius = waterTemperatureCelsius;
         CalculatedVolumeMl = calculatedVolumeMl;
+        AmbientTemperatureCelsius = ambientTemperatureCelsius;
+        AtmosphericPressureHpa = atmosphericPressureHpa;
+        RelativeHumidityPercent = relativeHumidityPercent;
+        CalculatedAirDensityKgPerM3 = calculatedAirDensityKgPerM3;
     }
 }

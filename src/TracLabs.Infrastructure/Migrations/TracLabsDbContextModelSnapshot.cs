@@ -241,6 +241,92 @@ namespace TracLabs.Infrastructure.Migrations
                     b.ToTable("calibration_records", (string)null);
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.CalibrationStandardUsed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CalibratingLaboratory")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid>("CalibrationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CertificateNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Correction")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal>("CoverageFactor")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ExpandedUncertainty")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("InstrumentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LabTag")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Manufacturer")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("Resolution")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("StandardEquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CalibrationId");
+
+                    b.HasIndex("StandardEquipmentId");
+
+                    b.ToTable("calibration_standards_used", (string)null);
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.Certificate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -865,6 +951,25 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Navigation("StandardEquipment");
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.CalibrationStandardUsed", b =>
+                {
+                    b.HasOne("TracLabs.Domain.Entities.CalibrationRecord", "CalibrationRecord")
+                        .WithMany("StandardsUsed")
+                        .HasForeignKey("CalibrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TracLabs.Domain.Entities.StandardEquipment", "StandardEquipment")
+                        .WithMany()
+                        .HasForeignKey("StandardEquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CalibrationRecord");
+
+                    b.Navigation("StandardEquipment");
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.Certificate", b =>
                 {
                     b.HasOne("TracLabs.Domain.Entities.CalibrationRecord", "CalibrationRecord")
@@ -924,6 +1029,8 @@ namespace TracLabs.Infrastructure.Migrations
             modelBuilder.Entity("TracLabs.Domain.Entities.CalibrationRecord", b =>
                 {
                     b.Navigation("Certificate");
+
+                    b.Navigation("StandardsUsed");
                 });
 
             modelBuilder.Entity("TracLabs.Domain.Entities.Client", b =>

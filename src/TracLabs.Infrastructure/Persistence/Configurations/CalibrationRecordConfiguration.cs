@@ -54,6 +54,12 @@ public class CalibrationRecordConfiguration : IEntityTypeConfiguration<Calibrati
             .HasForeignKey(c => c.StandardEquipmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relacionamento com CalibrationStandardUsed (Rastreabilidade ISO 17025)
+        builder.HasMany(c => c.StandardsUsed)
+            .WithOne(s => s.CalibrationRecord)
+            .HasForeignKey(s => s.CalibrationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Relacionamento 1:1 com Certificate
         builder.HasOne(c => c.Certificate)
             .WithOne(cert => cert.CalibrationRecord)
