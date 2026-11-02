@@ -54,9 +54,20 @@ public class VolumeCalibrationService : IVolumeCalibrationService
             : ResolveThermalExpansionCoefficient(request.Material);
 
         // ── 2. Médias e Desvios das Condições Ambientais ────────────────────────
-        var pList = request.Measurements.Select(m => m.AtmosphericPressureHpa).ToList();
-        var tAmbList = request.Measurements.Select(m => m.AmbientTemperatureCelsius).ToList();
-        var hList = request.Measurements.Select(m => m.RelativeHumidityPercent).ToList();
+        // Normalização das leituras ambientais por ponto com fallback seguro para os valores de cabeçalho
+        var defaultP = request.AtmosphericPressureHpa > 0 ? request.AtmosphericPressureHpa : 1013.25m;
+        var defaultT = request.AmbientTemperatureCelsius > 0 ? request.AmbientTemperatureCelsius : 20.0m;
+        var defaultH = request.RelativeHumidityPercent > 0 ? request.RelativeHumidityPercent : 50.0m;
+
+        var pList = request.Measurements
+            .Select(m => m.AtmosphericPressureHpa > 0 ? m.AtmosphericPressureHpa : defaultP)
+            .ToList();
+        var tAmbList = request.Measurements
+            .Select(m => m.AmbientTemperatureCelsius > 0 ? m.AmbientTemperatureCelsius : defaultT)
+            .ToList();
+        var hList = request.Measurements
+            .Select(m => m.RelativeHumidityPercent > 0 ? m.RelativeHumidityPercent : defaultH)
+            .ToList();
 
         var meanP = pList.Average();
         var meanTAmb = tAmbList.Average();
@@ -72,6 +83,11 @@ public class VolumeCalibrationService : IVolumeCalibrationService
         var correctedHumidityPercent = meanH + request.HygrometerCorrectionPercent;
 
         // ── 3. Balanço de Incerteza da Massa Específica do Ar (ra) ──────────────
+        // A densidade do ar atua em duas frentes fundamentais na calibração:
+        // 1. Ponto a ponto (Seção 5): calcula-se rho_a,i em cada corrida para registrar a evolução temporal
+        //    da sala climática e aplicar a correção de empuxo específica de cada repetição.
+        // 2. Média operacional (aqui): a densidade média serve como ponto de operação para os coeficientes
+        //    de sensibilidade analíticos (cP, cT, cH e ciAirDensity) do orçamento de incerteza do GUM.
         var airBudget = new List<UncertaintyBudgetComponentDto>();
 
         var denomAir = K4 + correctedAmbientTempC;
@@ -285,10 +301,14 @@ public class VolumeCalibrationService : IVolumeCalibrationService
             if (apparentMass <= 0)
                 throw new InvalidOperationException($"Medição #{m.RunNumber}: A massa cheia ({m.FullMassGrams}g) deve ser superior à massa vazia média ({meanEmptyMass}g).");
 
-            // Densidade do ar pontual lida na corrida
-            var pPoint = m.AtmosphericPressureHpa + request.BarometerCorrectionHpa;
-            var tPoint = m.AmbientTemperatureCelsius + request.AmbientThermometerCorrectionCelsius;
-            var hPoint = m.RelativeHumidityPercent + request.HygrometerCorrectionPercent;
+            // 5.1 Rastreamento pontual da densidade do ar (evolução temporal e empuxo específico)
+            var pRaw = m.AtmosphericPressureHpa > 0 ? m.AtmosphericPressureHpa : defaultP;
+            var tRaw = m.AmbientTemperatureCelsius > 0 ? m.AmbientTemperatureCelsius : defaultT;
+            var hRaw = m.RelativeHumidityPercent > 0 ? m.RelativeHumidityPercent : defaultH;
+
+            var pPoint = pRaw + request.BarometerCorrectionHpa;
+            var tPoint = tRaw + request.AmbientThermometerCorrectionCelsius;
+            var hPoint = hRaw + request.HygrometerCorrectionPercent;
             var pointAirDensityKg = CalculateAirDensity(pPoint, tPoint, hPoint);
             var pointAirDensityGrams = pointAirDensityKg / 1000m;
 
@@ -304,9 +324,9 @@ public class VolumeCalibrationService : IVolumeCalibrationService
                 m.EmptyMassGrams,
                 m.WaterTemperatureCelsius,
                 Math.Round(v20, 6),
-                m.AmbientTemperatureCelsius,
-                m.AtmosphericPressureHpa,
-                m.RelativeHumidityPercent,
+                tRaw,
+                pRaw,
+                hRaw,
                 Math.Round(pointAirDensityKg, 6)));
         }
 
