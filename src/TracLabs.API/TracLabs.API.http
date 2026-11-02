@@ -127,9 +127,16 @@ Authorization: Bearer {{tecnicoToken}}
   "balanceResolutionGrams": 0.0001,
   "balanceCertificateUncertaintyGrams": 0.0002,
   "measurements": [
-    { "runNumber": 1, "fullMassGrams": 100.982, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
-    { "runNumber": 2, "fullMassGrams": 100.981, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
-    { "runNumber": 3, "fullMassGrams": 100.983, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 }
+    { "runNumber": 1, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 2, "fullMassGrams": 199.981, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 3, "fullMassGrams": 199.983, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.3, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 4, "fullMassGrams": 199.980, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.03, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.0 },
+    { "runNumber": 5, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.1, "relativeHumidityPercent": 50.3 },
+    { "runNumber": 6, "fullMassGrams": 199.984, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 7, "fullMassGrams": 199.981, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.3, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 8, "fullMassGrams": 199.983, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.03, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.0 },
+    { "runNumber": 9, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 10, "fullMassGrams": 199.980, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 }
   ]
 }
 
@@ -140,23 +147,23 @@ Authorization: Bearer {{tecnicoToken}}
 
 {
   "equipmentId": "{{equipmentId}}",
-  "standardEquipmentId": "{{standardId}}",
+  "balanceStandardId": "{{standardId}}",
   "nextCalibrationDue": "2027-10-27T00:00:00Z",
   "temperatureCelsius": 20.5,
   "humidityPercent": 52.0,
   "observations": "Calibração realizada de acordo com a ISO 4787 / ISO 8655.",
-  "calculationRequest": {
-    "nominalVolumeMl": 100.0,
-    "material": 0,
-    "atmosphericPressureHpa": 1013.25,
-    "ambientTemperatureCelsius": 20.0,
-    "relativeHumidityPercent": 50.0,
-    "balanceResolutionGrams": 0.0001,
-    "balanceCertificateUncertaintyGrams": 0.0002,
-    "measurements": [
-      { "runNumber": 1, "fullMassGrams": 100.982, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
-      { "runNumber": 2, "fullMassGrams": 100.981, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 },
-      { "runNumber": 3, "fullMassGrams": 100.983, "emptyMassGrams": 1.0, "waterTemperatureCelsius": 20.0 }
-    ]
-  }
+  "nominalVolumeMl": 100.0,
+  "material": 0,
+  "measurements": [
+    { "runNumber": 1, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 2, "fullMassGrams": 199.981, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 3, "fullMassGrams": 199.983, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.3, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 4, "fullMassGrams": 199.980, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.03, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.0 },
+    { "runNumber": 5, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.1, "relativeHumidityPercent": 50.3 },
+    { "runNumber": 6, "fullMassGrams": 199.984, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 7, "fullMassGrams": 199.981, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.3, "relativeHumidityPercent": 50.1 },
+    { "runNumber": 8, "fullMassGrams": 199.983, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.03, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.0 },
+    { "runNumber": 9, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.3, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.2 },
+    { "runNumber": 10, "fullMassGrams": 199.980, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 }
+  ]
 }

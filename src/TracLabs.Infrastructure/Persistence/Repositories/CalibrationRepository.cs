@@ -16,6 +16,7 @@ public class CalibrationRepository
         => await _dbSet
             .Where(c => c.EquipmentId == equipmentId)
             .Include(c => c.Certificate)
+            .Include(c => c.StandardsUsed)
             .Include(c => c.StandardEquipment)
             .OrderByDescending(c => c.CalibrationDate)
             .ToListAsync(ct);
@@ -33,6 +34,7 @@ public class CalibrationRepository
             .Where(c => c.CalibrationDate >= from && c.CalibrationDate <= to)
             .Include(c => c.Equipment)
             .Include(c => c.Certificate)
+            .Include(c => c.StandardsUsed)
             .OrderByDescending(c => c.CalibrationDate)
             .ToListAsync(ct);
 
@@ -43,5 +45,6 @@ public class CalibrationRepository
                 .ThenInclude(e => e!.Client)
             .Include(c => c.StandardEquipment)
             .Include(c => c.Certificate)
+            .Include(c => c.StandardsUsed)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 }

@@ -4,7 +4,7 @@ namespace TracLabs.Application.DTOs.Calibration;
 
 /// <summary>
 /// Resultados completos do cálculo metrológico de calibração volumétrica gravimétrica
-/// conforme os requisitos da ISO 4787 e DOC-CGCRE-027.
+/// conforme os requisitos da ISO 4787, ISO 8655 e DOC-CGCRE-027.
 /// </summary>
 public class VolumeCalibrationResultDto
 {
@@ -33,13 +33,22 @@ public class VolumeCalibrationResultDto
     /// <summary>Massa específica média do ar em g/cm³.</summary>
     public decimal AirDensityGramsPerCm3 { get; set; }
 
-    /// <summary>Incerteza padrão da massa específica do ar em kg/m³.</summary>
+    /// <summary>Incerteza padrão combinada da massa específica do ar uc(ra) em kg/m³.</summary>
     public decimal AirDensityStandardUncertaintyKgPerM3 { get; set; }
+
+    /// <summary>Incerteza expandida da massa específica do ar U(ra) em kg/m³.</summary>
+    public decimal AirDensityExpandedUncertaintyKgPerM3 { get; set; }
+
+    /// <summary>Fator de abrangência k para a massa específica do ar.</summary>
+    public decimal AirDensityCoverageFactor { get; set; }
+
+    /// <summary>Graus de liberdade efetivos da massa específica do ar (Welch-Satterthwaite).</summary>
+    public decimal AirDensityEffectiveDegreesOfFreedom { get; set; }
 
     /// <summary>Massa específica da água adotada/corrigida em g/cm³.</summary>
     public decimal WaterDensityGramsPerCm3 { get; set; }
 
-    // ── Estatísticas e Incerteza GUM ────────────────────────────────────────
+    // ── Estatísticas e Incerteza GUM do Volume (V20) ─────────────────────────
 
     /// <summary>Desvio padrão amostral das repetições s(V20) em mL.</summary>
     public decimal RepeatabilityStandardDeviationMl { get; set; }
@@ -64,9 +73,12 @@ public class VolumeCalibrationResultDto
 
     // ── Detalhamento da Metrologia ──────────────────────────────────────────
 
-    /// <summary>Lista de pontos de medição individuais com seus volumes calculados V20.</summary>
+    /// <summary>Lista de pontos de medição individuais com seus volumes calculados V20 e densidade do ar.</summary>
     public List<VolumeGravimetricPoint> CalculatedPoints { get; set; } = new();
 
-    /// <summary>Tabela completa do orçamento de incerteza metrológica (todas as fontes de incerteza).</summary>
+    /// <summary>Tabela completa do orçamento de incerteza da massa específica do ar (9 fontes).</summary>
+    public List<UncertaintyBudgetComponentDto> AirDensityUncertaintyBudget { get; set; } = new();
+
+    /// <summary>Tabela completa do orçamento de incerteza do volume final.</summary>
     public List<UncertaintyBudgetComponentDto> UncertaintyBudget { get; set; } = new();
 }

@@ -22,6 +22,12 @@ public class CalibrationRecord : BaseEntity
     public StandardEquipment? StandardEquipment { get; private set; }
 
     /// <summary>
+    /// Relação dos múltiplos equipamentos padrão utilizados na calibração com seus snapshots metrológicos.
+    /// Atende ao item 6.4.13 da ABNT NBR ISO/IEC 17025.
+    /// </summary>
+    public List<CalibrationStandardUsed> StandardsUsed { get; private set; } = new();
+
+    /// <summary>
     /// The technician (application user) who performed the calibration.
     /// Stored as a string (User ID from ASP.NET Identity) to avoid a
     /// hard project reference from Domain to Identity infrastructure.
@@ -187,6 +193,20 @@ public class CalibrationRecord : BaseEntity
     /// <summary>
     /// Associa o equipamento padrão validando sua prontidão metrológica e de status.
     /// </summary>
+    public void AddStandardUsed(CalibrationStandardUsed standardUsed)
+    {
+        ArgumentNullException.ThrowIfNull(standardUsed);
+        StandardsUsed.Add(standardUsed);
+        MarkAsUpdated();
+    }
+
+    public void AddStandardsUsed(IEnumerable<CalibrationStandardUsed> standardsUsed)
+    {
+        ArgumentNullException.ThrowIfNull(standardsUsed);
+        StandardsUsed.AddRange(standardsUsed);
+        MarkAsUpdated();
+    }
+
     public void AssignStandardEquipment(StandardEquipment standard)
     {
         ValidateStandardEquipment(standard);
