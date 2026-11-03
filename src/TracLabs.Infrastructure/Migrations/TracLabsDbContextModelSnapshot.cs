@@ -283,6 +283,9 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsExtrapolated")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LabTag")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -298,6 +301,10 @@ namespace TracLabs.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<decimal>("OperatingValue")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
                     b.Property<decimal>("Resolution")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
@@ -312,15 +319,24 @@ namespace TracLabs.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("StandardCertificateId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("StandardEquipmentId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("WarningMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CalibrationId");
+
+                    b.HasIndex("StandardCertificateId");
 
                     b.HasIndex("StandardEquipmentId");
 
@@ -478,6 +494,14 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<string>("AcceptanceCriteria")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal?>("CalibrationRangeMax")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("CalibrationRangeMin")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
@@ -682,6 +706,84 @@ namespace TracLabs.Infrastructure.Migrations
                     b.ToTable("equipment_occurrence_records", (string)null);
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.StandardCertificate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CalibratingLaboratory")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CalibrationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CalibrationDueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("CalibrationRangeMax")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal>("CalibrationRangeMin")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("CertificateNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FitType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal?>("Intercept")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Points")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<decimal?>("R2")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("Slope")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<Guid>("StandardEquipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UncertaintyPolicy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StandardEquipmentId");
+
+                    b.ToTable("standard_certificates", (string)null);
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.StandardEquipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -707,6 +809,14 @@ namespace TracLabs.Infrastructure.Migrations
 
                     b.Property<int>("CalibrationIntervalMonths")
                         .HasColumnType("integer");
+
+                    b.Property<decimal?>("CalibrationRangeMax")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("CalibrationRangeMin")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
                     b.Property<decimal>("Correction")
                         .HasPrecision(18, 6)
@@ -770,6 +880,14 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
+
+                    b.Property<decimal>("RangeMax")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal>("RangeMin")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
 
                     b.Property<string>("ReferenceMaterialDocumentation")
                         .HasMaxLength(2000)
@@ -959,6 +1077,11 @@ namespace TracLabs.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TracLabs.Domain.Entities.StandardCertificate", "StandardCertificate")
+                        .WithMany()
+                        .HasForeignKey("StandardCertificateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TracLabs.Domain.Entities.StandardEquipment", "StandardEquipment")
                         .WithMany()
                         .HasForeignKey("StandardEquipmentId")
@@ -966,6 +1089,8 @@ namespace TracLabs.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("CalibrationRecord");
+
+                    b.Navigation("StandardCertificate");
 
                     b.Navigation("StandardEquipment");
                 });
@@ -1026,6 +1151,17 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Navigation("StandardEquipment");
                 });
 
+            modelBuilder.Entity("TracLabs.Domain.Entities.StandardCertificate", b =>
+                {
+                    b.HasOne("TracLabs.Domain.Entities.StandardEquipment", "StandardEquipment")
+                        .WithMany("Certificates")
+                        .HasForeignKey("StandardEquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StandardEquipment");
+                });
+
             modelBuilder.Entity("TracLabs.Domain.Entities.CalibrationRecord", b =>
                 {
                     b.Navigation("Certificate");
@@ -1049,6 +1185,8 @@ namespace TracLabs.Infrastructure.Migrations
 
             modelBuilder.Entity("TracLabs.Domain.Entities.StandardEquipment", b =>
                 {
+                    b.Navigation("Certificates");
+
                     b.Navigation("MaintenanceHistory");
 
                     b.Navigation("OccurrenceHistory");

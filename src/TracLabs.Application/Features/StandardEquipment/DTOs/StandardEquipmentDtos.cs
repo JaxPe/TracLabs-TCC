@@ -2,6 +2,31 @@ using TracLabs.Domain.Enums;
 
 namespace TracLabs.Application.Features.StandardEquipment.DTOs;
 
+public record StandardCalibrationPointDto(
+    int Order,
+    decimal IndicatedValue,
+    decimal StandardError,
+    decimal Correction,
+    decimal ExpandedUncertainty,
+    decimal CoverageFactor = 2.0m);
+
+public record StandardCertificateDto(
+    Guid Id,
+    Guid StandardEquipmentId,
+    string CertificateNumber,
+    string CalibratingLaboratory,
+    DateTime CalibrationDate,
+    DateTime CalibrationDueDate,
+    decimal CalibrationRangeMin,
+    decimal CalibrationRangeMax,
+    bool IsActive,
+    CurveFitType FitType,
+    UncertaintyPolicy UncertaintyPolicy,
+    decimal? Slope,
+    decimal? Intercept,
+    decimal? R2,
+    IReadOnlyList<StandardCalibrationPointDto> Points);
+
 public record StandardEquipmentDto(
     Guid Id,
     string LabTag,
@@ -30,7 +55,12 @@ public record StandardEquipmentDto(
     bool IsCalibrationValid,
     int DaysUntilExpiry,
     bool IsUsableForCalibration,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    decimal RangeMin = 0m,
+    decimal RangeMax = 0m,
+    decimal? CalibrationRangeMin = null,
+    decimal? CalibrationRangeMax = null,
+    IReadOnlyList<StandardCertificateDto>? Certificates = null);
 
 public record MaintenanceRecordDto(
     Guid Id,

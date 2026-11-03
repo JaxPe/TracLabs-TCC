@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using TracLabs.Application.Interfaces;
 using TracLabs.Application.Interfaces.Repositories;
+using TracLabs.Application.Interfaces.Services;
 using TracLabs.Infrastructure.Identity;
 using TracLabs.Infrastructure.Persistence;
 using TracLabs.Infrastructure.Persistence.Repositories;
@@ -74,6 +75,7 @@ public static class DependencyInjection
         // ── Serviços ──────────────────────────────────────────────────────────
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IVolumeCalibrationService, VolumeCalibrationService>();
+        services.AddScoped<IMetrologicalRegressionService, MetrologicalRegressionService>();
 
         // ── Repositórios ──────────────────────────────────────────────────────
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();

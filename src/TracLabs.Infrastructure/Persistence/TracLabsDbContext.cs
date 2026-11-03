@@ -16,6 +16,7 @@ public class TracLabsDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<StandardEquipment> StandardEquipment => Set<StandardEquipment>();
+    public DbSet<StandardCertificate> StandardCertificates => Set<StandardCertificate>();
     public DbSet<CalibrationRecord> CalibrationRecords => Set<CalibrationRecord>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<Client> Clients => Set<Client>();
@@ -39,6 +40,7 @@ public class TracLabsDbContext : IdentityDbContext<ApplicationUser>
         // Isso vale para TODAS as entidades que herdam de BaseEntity.
         modelBuilder.Entity<Equipment>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<StandardEquipment>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<StandardCertificate>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<CalibrationRecord>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Certificate>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Client>().HasQueryFilter(e => !e.IsDeleted);

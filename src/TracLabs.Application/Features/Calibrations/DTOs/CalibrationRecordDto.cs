@@ -13,7 +13,10 @@ public record CalibrationStandardUsedDto(
     decimal Resolution,
     decimal Correction,
     decimal ExpandedUncertainty,
-    decimal CoverageFactor);
+    decimal CoverageFactor,
+    decimal OperatingValue = 0m,
+    bool IsExtrapolated = false,
+    string? WarningMessage = null);
 
 public record CalibrationRecordDto(
     Guid Id,
@@ -38,4 +41,5 @@ public record CalibrationRecordDto(
     IReadOnlyList<MeasurementPoint> MeasurementPoints,
     VolumeCalibrationResultDto? VolumeCalculationDetails,
     string? CertificateNumber,
-    IReadOnlyList<CalibrationStandardUsedDto>? StandardsUsed = null);
+    IReadOnlyList<CalibrationStandardUsedDto>? StandardsUsed = null,
+    IReadOnlyList<string>? Warnings = null);

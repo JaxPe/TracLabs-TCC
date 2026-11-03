@@ -1,3 +1,5 @@
+using TracLabs.Domain.Entities;
+
 namespace TracLabs.Application.Interfaces.Repositories;
 
 /// <summary>
@@ -35,5 +37,12 @@ public interface IStandardEquipmentRepository : IRepository<StandardEquipment>
     /// </summary>
     Task<StandardEquipment?> GetByLabTagAsync(
         string labTag,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retorna o equipamento padrão com seus certificados históricos e tabela de pontos carregados.
+    /// </summary>
+    Task<StandardEquipment?> GetWithCertificatesAsync(
+        Guid id,
         CancellationToken cancellationToken = default);
 }

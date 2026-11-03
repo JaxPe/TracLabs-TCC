@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TracLabs.Application.Constants;
 using TracLabs.Application.Features.StandardEquipment.Commands.AddMaintenance;
+using TracLabs.Application.Features.StandardEquipment.Commands.AddStandardCertificate;
 using TracLabs.Application.Features.StandardEquipment.Commands.CreateStandardEquipment;
 using TracLabs.Application.Features.StandardEquipment.Commands.PutOutOfService;
 using TracLabs.Application.Features.StandardEquipment.Commands.ReactivateStandard;
@@ -66,13 +67,25 @@ public class StandardEquipmentController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Cadastra um novo equipamento padrão do laboratório (restrito a Supervisores).</summary>
+    /// <summary>Cadastra um novo equipamento padrão do laboratório - Etapa 1: Ativo Físico (restrito a Supervisores).</summary>
     [HttpPost]
     [Authorize(Roles = Roles.Supervisor)]
     public async Task<ActionResult<StandardEquipmentDto>> Create([FromBody] CreateStandardEquipmentCommand command)
     {
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    /// <summary>Cadastra um novo certificado de calibração metrológica com tabela de pontos e regressão linear - Etapa 2 (restrito a Supervisores).</summary>
+    [HttpPost("{id:guid}/certificates")]
+    [Authorize(Roles = Roles.Supervisor)]
+    public async Task<ActionResult<StandardCertificateDto>> AddCertificate(Guid id, [FromBody] AddStandardCertificateCommand command)
+    {
+        if (id != command.StandardEquipmentId)
+            return BadRequest(new { message = "O ID da rota não corresponde ao StandardEquipmentId do corpo da requisição." });
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>Envia o padrão para calibração externa em laboratório acreditado RBC (status InCalibration).</summary>
@@ -147,4 +160,3 @@ public class StandardEquipmentController : ControllerBase
         return Ok(result);
     }
 }
-

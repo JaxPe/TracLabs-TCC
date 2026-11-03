@@ -278,7 +278,7 @@ public class VolumeCalibrationMetrologyTests
         balanceUsed.LabTag.Should().Be("PAD-BAL-01");
         balanceUsed.CertificateNumber.Should().Be("CERT-PAD-BAL-01");
         balanceUsed.Resolution.Should().Be(0.0001m);
-        balanceUsed.Correction.Should().Be(0.001m);
+        balanceUsed.Correction.Should().Be(-0.001m);
 
         var liquidThermUsed = result.StandardsUsed.First(s => s.Role == StandardRole.LiquidThermometer);
         liquidThermUsed.LabTag.Should().Be("PAD-TER-LIQ");

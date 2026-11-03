@@ -44,6 +44,10 @@ public class CalibrationStandardUsedConfiguration : IEntityTypeConfiguration<Cal
         builder.Property(s => s.ExpandedUncertainty).HasPrecision(18, 6);
         builder.Property(s => s.CoverageFactor).HasPrecision(5, 2);
 
+        builder.Property(s => s.OperatingValue).HasPrecision(18, 6);
+        builder.Property(s => s.IsExtrapolated).IsRequired();
+        builder.Property(s => s.WarningMessage).HasMaxLength(500);
+
         builder.HasOne(s => s.CalibrationRecord)
             .WithMany(c => c.StandardsUsed)
             .HasForeignKey(s => s.CalibrationId)
@@ -53,5 +57,10 @@ public class CalibrationStandardUsedConfiguration : IEntityTypeConfiguration<Cal
             .WithMany()
             .HasForeignKey(s => s.StandardEquipmentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.StandardCertificate)
+            .WithMany()
+            .HasForeignKey(s => s.StandardCertificateId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
