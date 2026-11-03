@@ -55,6 +55,11 @@
       "key": "calibrationId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "certificateId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -89,8 +94,14 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/v1/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "status"
+              ]
             }
           }
         }
@@ -139,8 +150,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
                 }
               }
             }
@@ -182,8 +200,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               }
             },
@@ -193,8 +217,14 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               }
             },
@@ -204,8 +234,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}"
+                  ]
                 }
               }
             },
@@ -225,8 +262,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}"
+                  ]
                 }
               }
             },
@@ -236,8 +280,16 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}/equipment",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}", "equipment"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}",
+                    "equipment"
+                  ]
                 }
               }
             },
@@ -247,8 +299,15 @@
                 "method": "DELETE",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}"
+                  ]
                 }
               }
             }
@@ -286,12 +345,69 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"labTag\": \"PAD-BAL-010\",\n  \"name\": \"Balança Analítica Padrão Especial\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balança Analítica\",\n  \"resolution\": 0.00001,\n  \"error\": 0.00002,\n  \"expandedUncertainty\": 0.00004,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-RBC-2026-999\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC\",\n  \"acceptanceCriteria\": \"Erro <= 0.00005 g\",\n  \"currentLocation\": \"Sala Limpa A\",\n  \"calibrationIntervalMonths\": 12\n}"
+                  "raw": "{\n  \"labTag\": \"PAD-BAL-010\",\n  \"name\": \"Balan\\u00e7a Anal\\u00edtica Padr\\u00e3o Especial\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balan\\u00e7a Anal\\u00edtica\",\n  \"resolution\": 1e-05,\n  \"error\": 2e-05,\n  \"expandedUncertainty\": 4e-05,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-RBC-2026-999\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC\",\n  \"acceptanceCriteria\": \"Erro <= 0.00005 g\",\n  \"currentLocation\": \"Sala Limpa A\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 220.0,\n  \"calibrationRangeMin\": 0.0,\n  \"calibrationRangeMax\": 200.0\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cadastrar Certificado de Calibração com Regressão Linear - Etapa 2 (Salva certificateId)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Certificado cadastrado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.expect(json.certificateNumber).to.eql(\"CAL-RBC-2026-101\");",
+                      "    pm.expect(json.slope).to.not.be.null;",
+                      "    pm.expect(json.intercept).to.not.be.null;",
+                      "    pm.expect(json.r2).to.not.be.null;",
+                      "    pm.expect(json.isActive).to.be.true;",
+                      "    pm.collectionVariables.set(\"certificateId\", json.id);",
+                      "    console.log(\"certificateId salvo:\", json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardEquipmentId\": \"{{standardId}}\",\n  \"certificateNumber\": \"CAL-RBC-2026-101\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC Acreditado\",\n  \"calibrationDate\": \"2026-02-01T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-02-01T00:00:00Z\",\n  \"calibrationRangeMin\": 10.0,\n  \"calibrationRangeMax\": 200.0,\n  \"fitType\": 0,\n  \"uncertaintyPolicy\": 0,\n  \"points\": [\n    {\n      \"order\": 1,\n      \"indicatedValue\": 10.0,\n      \"standardError\": -0.0001,\n      \"correction\": 0.0001,\n      \"expandedUncertainty\": 0.0002,\n      \"coverageFactor\": 2.0\n    },\n    {\n      \"order\": 2,\n      \"indicatedValue\": 100.0,\n      \"standardError\": -0.0002,\n      \"correction\": 0.0002,\n      \"expandedUncertainty\": 0.0002,\n      \"coverageFactor\": 2.0\n    },\n    {\n      \"order\": 3,\n      \"indicatedValue\": 200.0,\n      \"standardError\": -0.0003,\n      \"correction\": 0.0003,\n      \"expandedUncertainty\": 0.0002,\n      \"coverageFactor\": 2.0\n    }\n  ],\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/certificates",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "certificates"
+                  ]
                 }
               }
             },
@@ -301,8 +417,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/usable",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "usable"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "usable"
+                  ]
                 }
               }
             },
@@ -311,9 +434,16 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/standardequipment/expiring?withinDays=60",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "expiring"],
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/expiring-soon?withinDays=60",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "expiring-soon"
+                  ],
                   "query": [
                     {
                       "key": "withinDays",
@@ -329,8 +459,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}"
+                  ]
                 }
               }
             },
@@ -340,8 +477,16 @@
                 "method": "POST",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/send-to-calibration",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "send-to-calibration"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "send-to-calibration"
+                  ]
                 }
               }
             },
@@ -361,8 +506,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/register-calibration",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "register-calibration"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "register-calibration"
+                  ]
                 }
               }
             },
@@ -382,8 +535,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/put-out-of-service",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "put-out-of-service"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "put-out-of-service"
+                  ]
                 }
               }
             },
@@ -403,8 +564,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/reactivate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "reactivate"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "reactivate"
+                  ]
                 }
               }
             },
@@ -424,8 +593,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/maintenances",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "maintenances"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "maintenances"
+                  ]
                 }
               }
             },
@@ -445,8 +622,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/occurrences",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "{{standardId}}", "occurrences"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "occurrences"
+                  ]
                 }
               }
             }
@@ -484,12 +669,18 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"labTag\": \"PIP-CLI-010\",\n  \"name\": \"Micropipeta Monocanal Variável\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-776655\",\n  \"instrumentType\": \"Micropipeta\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"unit\": \"µL\",\n  \"resolution\": 1,\n  \"clientId\": \"{{clientId}}\",\n  \"currentLocation\": \"Bancada Metrológica 01\",\n  \"acceptanceCriteria\": \"Erro sistemático <= 1.0%\"\n}"
+                  "raw": "{\n  \"labTag\": \"PIP-CLI-010\",\n  \"name\": \"Micropipeta Monocanal Vari\\u00e1vel\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-776655\",\n  \"instrumentType\": \"Micropipeta\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"unit\": \"\\u00b5L\",\n  \"resolution\": 1,\n  \"clientId\": \"{{clientId}}\",\n  \"currentLocation\": \"Bancada Metrol\\u00f3gica 01\",\n  \"acceptanceCriteria\": \"Erro sistem\\u00e1tico <= 1.0%\",\n  \"calibrationRangeMin\": 100.0,\n  \"calibrationRangeMax\": 1000.0\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment"
+                  ]
                 }
               }
             },
@@ -499,8 +690,14 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment"
+                  ]
                 }
               }
             },
@@ -510,8 +707,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}"
+                  ]
                 }
               }
             },
@@ -531,8 +735,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/location",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "location"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "location"
+                  ]
                 }
               }
             },
@@ -552,8 +764,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/maintenances",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "maintenances"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "maintenances"
+                  ]
                 }
               }
             },
@@ -573,8 +793,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/occurrences",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "occurrences"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "occurrences"
+                  ]
                 }
               }
             },
@@ -584,8 +812,16 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/history",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "history"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "history"
+                  ]
                 }
               }
             }
@@ -610,8 +846,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "volume", "calculate"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume",
+                    "calculate"
+                  ]
                 }
               }
             },
@@ -648,8 +892,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "volume"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume"
+                  ]
                 }
               }
             },
@@ -659,8 +910,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/{{calibrationId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "{{calibrationId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "{{calibrationId}}"
+                  ]
                 }
               }
             },
@@ -670,8 +928,16 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/equipment/{{equipmentId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "equipment", "{{equipmentId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "equipment",
+                    "{{equipmentId}}"
+                  ]
                 }
               }
             },
@@ -681,8 +947,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/date-range?start=2026-01-01&end=2027-12-31",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "date-range"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "date-range"
+                  ],
                   "query": [
                     {
                       "key": "start",
@@ -743,8 +1016,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
                 }
               }
             }
@@ -782,8 +1062,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               }
             },
@@ -816,8 +1102,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}"
+                  ]
                 }
               }
             },
@@ -840,8 +1133,57 @@
                 "method": "DELETE",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients/{{clientId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients", "{{clientId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "{{clientId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Tentar Cadastrar Certificado como Técnico (Esperado: 403 Forbidden)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Acesso negado para Técnico (403 Forbidden)\", function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardEquipmentId\": \"{{standardId}}\",\n  \"certificateNumber\": \"CAL-RBC-NAO-AUTORIZADO\",\n  \"calibratingLaboratory\": \"Lab Externo\",\n  \"calibrationDate\": \"2026-02-01T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-02-01T00:00:00Z\",\n  \"calibrationRangeMin\": 10.0,\n  \"calibrationRangeMax\": 200.0,\n  \"fitType\": 0,\n  \"uncertaintyPolicy\": 0,\n  \"points\": [],\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}/certificates",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}",
+                    "certificates"
+                  ]
                 }
               }
             }
@@ -869,8 +1211,14 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/clients",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "clients"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               }
             },
@@ -893,8 +1241,15 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment/usable",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "standardequipment", "usable"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "usable"
+                  ]
                 }
               }
             },
@@ -927,8 +1282,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment"
+                  ]
                 }
               }
             },
@@ -961,8 +1322,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/location",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "location"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "location"
+                  ]
                 }
               }
             },
@@ -995,8 +1364,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}/occurrences",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "equipment", "{{equipmentId}}", "occurrences"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}",
+                    "occurrences"
+                  ]
                 }
               }
             },
@@ -1029,8 +1406,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "volume", "calculate"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume",
+                    "calculate"
+                  ]
                 }
               }
             },
@@ -1063,8 +1448,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "v1", "calibrations", "volume"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume"
+                  ]
                 }
               }
             }
