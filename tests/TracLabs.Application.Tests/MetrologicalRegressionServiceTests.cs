@@ -102,4 +102,45 @@ public class MetrologicalRegressionServiceTests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*no mínimo 2 pontos*");
     }
+
+    [Fact]
+    public void CalculateLinearRegression_WithAllEqualX_ShouldThrowInvalidOperationException()
+    {
+        // Arrange - Reta vertical com todos os pontos no mesmo X (denominador == 0)
+        var verticalPoints = new List<(decimal X, decimal Y)>
+        {
+            (20.0m, 0.10m),
+            (20.0m, 0.20m),
+            (20.0m, 0.30m)
+        };
+
+        // Act
+        var act = () => _service.CalculateLinearRegression(verticalPoints);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*reta vertical com inclinação indefinida*");
+    }
+
+    [Fact]
+    public void InterpolatePiecewise_WithHysteresisData_ShouldComputeCorrectAverages()
+    {
+        // Arrange - Leituras repetidas em subida e descida no mesmo valor de X
+        var points = new List<(decimal X, decimal Y)>
+        {
+            (10.0m, 0.08m),
+            (10.0m, 0.12m), // Média = 0.10
+            (20.0m, 0.28m),
+            (20.0m, 0.32m), // Média = 0.30
+            (30.0m, 0.70m)
+        };
+
+        // Act - Ponto 10 (exato consolidado) e ponto 15 (meio do caminho: 0.10 + 0.5*(0.30 - 0.10) = 0.20)
+        decimal at10 = _service.InterpolatePiecewise(points, 10.0m);
+        decimal at15 = _service.InterpolatePiecewise(points, 15.0m);
+
+        // Assert
+        at10.Should().Be(0.10m);
+        at15.Should().Be(0.20m);
+    }
 }

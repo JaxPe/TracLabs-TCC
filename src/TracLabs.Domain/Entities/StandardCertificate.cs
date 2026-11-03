@@ -1,3 +1,4 @@
+using TracLabs.Domain.Common;
 using TracLabs.Domain.Enums;
 using TracLabs.Domain.ValueObjects;
 
@@ -126,11 +127,12 @@ public class StandardCertificate : BaseEntity
 
     /// <summary>
     /// Adiciona os pontos da tabela de calibração e recalcula automaticamente a curva ajustada.
+    /// Mantém os pontos ordenados por valor indicado para otimização de resolução.
     /// </summary>
     public void SetPoints(IEnumerable<StandardCalibrationPoint> points)
     {
         ArgumentNullException.ThrowIfNull(points);
-        Points = points.OrderBy(p => p.Order).ThenBy(p => p.IndicatedValue).ToList();
+        Points = points.OrderBy(p => p.IndicatedValue).ToList();
 
         if (Points.Count > 0)
         {
@@ -149,7 +151,7 @@ public class StandardCertificate : BaseEntity
 
     /// <summary>
     /// Recalcula os coeficientes da reta y = ax + b e R² usando Mínimos Quadrados Ordinários (OLS),
-    /// espelhando as funções SLOPE e INTERCEPT do Excel.
+    /// delegando o algoritmo em passagem única (1N) para a classe de domínio MetrologicalMath.
     /// </summary>
     public void RecalculateRegressionCurve()
     {
@@ -161,79 +163,101 @@ public class StandardCertificate : BaseEntity
             return;
         }
 
-        int n = Points.Count;
-        decimal sumX = Points.Sum(p => p.IndicatedValue);
-        decimal sumY = Points.Sum(p => p.Correction);
-        decimal sumXY = Points.Sum(p => p.IndicatedValue * p.Correction);
-        decimal sumX2 = Points.Sum(p => p.IndicatedValue * p.IndicatedValue);
-        decimal sumY2 = Points.Sum(p => p.Correction * p.Correction);
+        var (slope, intercept, r2) = MetrologicalMath.CalculateLinearRegression(
+            Points.Select(p => (p.IndicatedValue, p.Correction)).ToList());
 
-        decimal denominator = (n * sumX2) - (sumX * sumX);
-        if (denominator == 0)
-        {
-            Slope = 0;
-            Intercept = sumY / n;
-            R2 = 1m;
-            return;
-        }
-
-        decimal slope = ((n * sumXY) - (sumX * sumY)) / denominator;
-        decimal intercept = (sumY - (slope * sumX)) / n;
-
-        decimal numeratorR2 = (n * sumXY) - (sumX * sumY);
-        decimal denomR2 = denominator * ((n * sumY2) - (sumY * sumY));
-        decimal r2 = denomR2 > 0 ? (numeratorR2 * numeratorR2) / denomR2 : 1m;
-
-        Slope = Math.Round(slope, 6);
-        Intercept = Math.Round(intercept, 6);
-        R2 = Math.Round(r2, 6);
+        Slope = slope;
+        Intercept = intercept;
+        R2 = r2;
     }
 
     /// <summary>
     /// Resolve a correção e a incerteza do padrão metrológico no ponto operacional de ensaio,
-    /// emitindo Warning caso o ponto esteja fora da margem de calibração do certificado.
+    /// emitindo Warning de auditoria caso o ponto extrapole a faixa calibrada ou os pontos discretos reais.
     /// </summary>
     public ResolvedStandardCorrection ResolveCorrectionAt(decimal operatingValue)
     {
-        bool isExtrapolated = operatingValue < CalibrationRangeMin || operatingValue > CalibrationRangeMax;
-        string? warningMessage = isExtrapolated
-            ? $"O valor operacional de ensaio ({operatingValue}) está fora da margem de calibração do certificado '{CertificateNumber}' ({CalibrationRangeMin} a {CalibrationRangeMax})."
-            : null;
-
-        decimal calculatedCorrection = 0m;
-        string methodUsed = FitType.ToString();
-
         if (Points.Count == 0)
         {
+            bool isExtrapolatedEmpty = operatingValue < CalibrationRangeMin || operatingValue > CalibrationRangeMax;
+            string? warnEmpty = isExtrapolatedEmpty
+                ? $"O valor operacional de ensaio ({operatingValue}) está fora da faixa acreditada RBC ({CalibrationRangeMin} a {CalibrationRangeMax}) do certificado '{CertificateNumber}'."
+                : null;
+
             return new ResolvedStandardCorrection(
                 operatingValue,
                 0m,
                 0m,
                 2.0m,
-                isExtrapolated,
-                warningMessage,
+                isExtrapolatedEmpty,
+                warnEmpty,
                 "NoPointsFallback");
         }
 
-        if (FitType == CurveFitType.LinearRegression && Slope.HasValue && Intercept.HasValue)
+        decimal pointsMin = Points.Min(p => p.IndicatedValue);
+        decimal pointsMax = Points.Max(p => p.IndicatedValue);
+        bool outsideDeclaredRange = operatingValue < CalibrationRangeMin || operatingValue > CalibrationRangeMax;
+        bool outsidePointsRange = operatingValue < pointsMin || operatingValue > pointsMax;
+
+        bool isExtrapolated;
+        string? warningMessage = null;
+        decimal calculatedCorrection;
+        string methodUsed = FitType.ToString();
+
+        if (FitType == CurveFitType.LinearRegression)
         {
-            calculatedCorrection = Math.Round((Slope.Value * operatingValue) + Intercept.Value, 6);
-            methodUsed = $"LinearRegression(y = {Slope.Value}x + {Intercept.Value})";
+            // Na regressão linear OLS, a reta é um modelo global válido em todo o escopo calibrado formal
+            isExtrapolated = outsideDeclaredRange;
+            if (isExtrapolated)
+            {
+                warningMessage = $"O valor operacional de ensaio ({operatingValue}) está fora da faixa acreditada RBC ({CalibrationRangeMin} a {CalibrationRangeMax}) do certificado '{CertificateNumber}'.";
+            }
+
+            if (Slope.HasValue && Intercept.HasValue)
+            {
+                calculatedCorrection = Math.Round((Slope.Value * operatingValue) + Intercept.Value, 6);
+                methodUsed = $"LinearRegression(y = {Slope.Value}x + {Intercept.Value})";
+            }
+            else
+            {
+                // Fallback para interpolação se a reta for vertical/indefinida
+                calculatedCorrection = MetrologicalMath.InterpolatePiecewise(
+                    Points.Select(p => (p.IndicatedValue, p.Correction)).ToList(), operatingValue);
+                methodUsed = "PiecewiseLinearFallback";
+            }
         }
         else if (FitType == CurveFitType.PiecewiseLinear && Points.Count >= 2)
         {
-            calculatedCorrection = InterpolatePiecewise(operatingValue);
+            // Na interpolação por partes, ultrapassar os pontos medidos reais é extrapolação cega
+            isExtrapolated = outsidePointsRange || outsideDeclaredRange;
+            if (outsidePointsRange)
+            {
+                warningMessage = $"O valor operacional de ensaio ({operatingValue}) extrapola a faixa dos pontos medidos ({pointsMin} a {pointsMax}) na interpolação por partes do certificado '{CertificateNumber}', gerando perda de rastreabilidade metrológica.";
+            }
+            else if (outsideDeclaredRange)
+            {
+                warningMessage = $"O valor operacional de ensaio ({operatingValue}) está fora da faixa acreditada RBC ({CalibrationRangeMin} a {CalibrationRangeMax}) do certificado '{CertificateNumber}'.";
+            }
+
+            calculatedCorrection = MetrologicalMath.InterpolatePiecewise(
+                Points.Select(p => (p.IndicatedValue, p.Correction)).ToList(), operatingValue);
             methodUsed = "PiecewiseLinear";
         }
         else
         {
             // Média fixa das correções dos pontos
+            isExtrapolated = outsideDeclaredRange;
+            if (isExtrapolated)
+            {
+                warningMessage = $"O valor operacional de ensaio ({operatingValue}) está fora da faixa acreditada RBC ({CalibrationRangeMin} a {CalibrationRangeMax}) do certificado '{CertificateNumber}'.";
+            }
+
             calculatedCorrection = Math.Round(Points.Average(p => p.Correction), 6);
             methodUsed = "FixedAverage";
         }
 
         // Resolução da Incerteza Expandida
-        decimal calculatedUncertainty = 0m;
+        decimal calculatedUncertainty;
         decimal coverageFactor = Points.FirstOrDefault()?.CoverageFactor ?? 2.0m;
 
         if (UncertaintyPolicy == UncertaintyPolicy.WorstCase || Points.Count < 2)
@@ -242,7 +266,8 @@ public class StandardCertificate : BaseEntity
         }
         else
         {
-            calculatedUncertainty = InterpolateUncertainty(operatingValue);
+            calculatedUncertainty = MetrologicalMath.InterpolateUncertainty(
+                Points.Select(p => (p.IndicatedValue, p.ExpandedUncertainty)).ToList(), operatingValue);
         }
 
         return new ResolvedStandardCorrection(
@@ -253,71 +278,6 @@ public class StandardCertificate : BaseEntity
             isExtrapolated,
             warningMessage,
             methodUsed);
-    }
-
-    private decimal InterpolatePiecewise(decimal targetX)
-    {
-        var sorted = Points.OrderBy(p => p.IndicatedValue).ToList();
-
-        // Se estiver abaixo do primeiro ponto
-        if (targetX <= sorted[0].IndicatedValue)
-        {
-            var p0 = sorted[0];
-            var p1 = sorted[1];
-            decimal slope = (p1.Correction - p0.Correction) / (p1.IndicatedValue - p0.IndicatedValue);
-            return Math.Round(p0.Correction + slope * (targetX - p0.IndicatedValue), 6);
-        }
-
-        // Se estiver acima do último ponto
-        if (targetX >= sorted[^1].IndicatedValue)
-        {
-            var pPrev = sorted[^2];
-            var pLast = sorted[^1];
-            decimal slope = (pLast.Correction - pPrev.Correction) / (pLast.IndicatedValue - pPrev.IndicatedValue);
-            return Math.Round(pLast.Correction + slope * (targetX - pLast.IndicatedValue), 6);
-        }
-
-        // Interpolação no segmento correspondente
-        for (int i = 0; i < sorted.Count - 1; i++)
-        {
-            var pA = sorted[i];
-            var pB = sorted[i + 1];
-
-            if (targetX >= pA.IndicatedValue && targetX <= pB.IndicatedValue)
-            {
-                decimal span = pB.IndicatedValue - pA.IndicatedValue;
-                if (span == 0) return pA.Correction;
-
-                decimal fraction = (targetX - pA.IndicatedValue) / span;
-                return Math.Round(pA.Correction + fraction * (pB.Correction - pA.Correction), 6);
-            }
-        }
-
-        return sorted[^1].Correction;
-    }
-
-    private decimal InterpolateUncertainty(decimal targetX)
-    {
-        var sorted = Points.OrderBy(p => p.IndicatedValue).ToList();
-        if (targetX <= sorted[0].IndicatedValue) return sorted[0].ExpandedUncertainty;
-        if (targetX >= sorted[^1].IndicatedValue) return sorted[^1].ExpandedUncertainty;
-
-        for (int i = 0; i < sorted.Count - 1; i++)
-        {
-            var pA = sorted[i];
-            var pB = sorted[i + 1];
-
-            if (targetX >= pA.IndicatedValue && targetX <= pB.IndicatedValue)
-            {
-                decimal span = pB.IndicatedValue - pA.IndicatedValue;
-                if (span == 0) return pA.ExpandedUncertainty;
-
-                decimal fraction = (targetX - pA.IndicatedValue) / span;
-                return Math.Round(pA.ExpandedUncertainty + fraction * (pB.ExpandedUncertainty - pA.ExpandedUncertainty), 6);
-            }
-        }
-
-        return sorted.Max(p => p.ExpandedUncertainty);
     }
 
     public void Activate()

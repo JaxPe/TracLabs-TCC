@@ -71,7 +71,7 @@ public class CalibrationStandardUsed : BaseEntity
         CertificateNumber = activeCert?.CertificateNumber ?? standard.CalibrationCertificateNumber;
         CalibratingLaboratory = activeCert?.CalibratingLaboratory ?? standard.CalibratingLaboratory;
         Resolution = standard.Resolution;
-        Correction = standard.Error;
+        Correction = standard.Correction;
         ExpandedUncertainty = standard.ExpandedUncertainty;
         CoverageFactor = standard.CoverageFactor;
         OperatingValue = 0m;

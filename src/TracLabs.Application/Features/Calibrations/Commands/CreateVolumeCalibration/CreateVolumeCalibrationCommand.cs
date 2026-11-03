@@ -230,22 +230,22 @@ public class CreateVolumeCalibrationCommandHandler
             WaterThermometerResolutionCelsius = liquidThermometer?.Resolution ?? 0.01m,
             WaterThermometerUncertaintyCelsius = liquidThermometerResolved?.CalculatedUncertainty ?? liquidThermometer?.ExpandedUncertainty ?? 0.02m,
             WaterThermometerCoverageFactor = liquidThermometerResolved?.CoverageFactor ?? liquidThermometer?.CoverageFactor ?? 2.0m,
-            WaterThermometerCorrectionCelsius = liquidThermometerResolved?.CalculatedCorrection ?? liquidThermometer?.Error ?? 0m,
+            WaterThermometerCorrectionCelsius = liquidThermometerResolved?.CalculatedCorrection ?? liquidThermometer?.Correction ?? 0m,
             // Termômetro Ambiente
             AmbientThermometerResolutionCelsius = ambientThermometer?.Resolution ?? liquidThermometer?.Resolution ?? 0.1m,
             AmbientThermometerUncertaintyCelsius = ambientThermometerResolved?.CalculatedUncertainty ?? ambientThermometer?.ExpandedUncertainty ?? liquidThermometerResolved?.CalculatedUncertainty ?? 0.05m,
             AmbientThermometerCoverageFactor = ambientThermometerResolved?.CoverageFactor ?? ambientThermometer?.CoverageFactor ?? 2.0m,
-            AmbientThermometerCorrectionCelsius = ambientThermometerResolved?.CalculatedCorrection ?? ambientThermometer?.Error ?? 0m,
+            AmbientThermometerCorrectionCelsius = ambientThermometerResolved?.CalculatedCorrection ?? ambientThermometer?.Correction ?? 0m,
             // Barômetro
             BarometerResolutionHpa = barometer?.Resolution ?? 0.1m,
             BarometerUncertaintyHpa = barometerResolved?.CalculatedUncertainty ?? barometer?.ExpandedUncertainty ?? 0.5m,
             BarometerCoverageFactor = barometerResolved?.CoverageFactor ?? barometer?.CoverageFactor ?? 2.0m,
-            BarometerCorrectionHpa = barometerResolved?.CalculatedCorrection ?? barometer?.Error ?? 0m,
+            BarometerCorrectionHpa = barometerResolved?.CalculatedCorrection ?? barometer?.Correction ?? 0m,
             // Higrômetro
             HygrometerResolutionPercent = hygrometer?.Resolution ?? 1.0m,
             HygrometerUncertaintyPercent = hygrometerResolved?.CalculatedUncertainty ?? hygrometer?.ExpandedUncertainty ?? 2.0m,
             HygrometerCoverageFactor = hygrometerResolved?.CoverageFactor ?? hygrometer?.CoverageFactor ?? 2.0m,
-            HygrometerCorrectionPercent = hygrometerResolved?.CalculatedCorrection ?? hygrometer?.Error ?? 0m
+            HygrometerCorrectionPercent = hygrometerResolved?.CalculatedCorrection ?? hygrometer?.Correction ?? 0m
         };
 
         // 6. Execução do motor de cálculo volumétrico gravimétrico
@@ -414,7 +414,7 @@ public class CreateVolumeCalibrationCommandHandler
 
             resolved = new ResolvedStandardCorrection(
                 operatingValue,
-                standard.Error,
+                standard.Correction,
                 standard.ExpandedUncertainty,
                 standard.CoverageFactor > 0 ? standard.CoverageFactor : 2.0m,
                 isExtrapolated,

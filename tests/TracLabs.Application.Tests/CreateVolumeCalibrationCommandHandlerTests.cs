@@ -328,4 +328,56 @@ public class CreateVolumeCalibrationCommandHandlerTests
         result.Warnings!.Should().Contain(w => w.Contains("fora da margem de calibração") && w.Contains("100"));
         result.Observations.Should().Contain("[Avisos Metrológicos]");
     }
+
+    [Fact]
+    public async Task Handle_WhenUsingLegacyStandard_ShouldUseCorrectionRatherThanError()
+    {
+        // Arrange
+        var equipment = CreateClientEquipment(EquipmentStatus.Received);
+        // Standard com Error = 0.0001m, portanto Correction = -0.0001m
+        var standard = CreateStandard(StandardEquipmentStatus.Calibrated);
+
+        _equipmentRepo.GetByIdAsync(equipment.Id, Arg.Any<CancellationToken>()).Returns(equipment);
+        _standardRepo.GetWithCertificatesAsync(standard.Id, Arg.Any<CancellationToken>()).Returns(standard);
+
+        VolumeCalibrationRequest? capturedReq = null;
+        _volumeCalibrationService.Calculate(Arg.Do<VolumeCalibrationRequest>(r => capturedReq = r))
+            .Returns(new VolumeCalibrationResultDto
+            {
+                NominalVolumeMl = 100m,
+                PointsCount = 7,
+                MeanVolumeV20Ml = 100.0m,
+                CoverageFactor = 2.0m,
+                CalculatedPoints = Enumerable.Range(1, 7).Select(i => new VolumeGravimetricPoint(i, 200m, 100m, 20m, 100.0m)).ToList()
+            });
+
+        var measurements = Enumerable.Range(1, 7).Select(i => new VolumeMeasurementInputDto
+        {
+            RunNumber = i,
+            EmptyMassGrams = 100.0m,
+            FullMassGrams = 200.0m,
+            WaterTemperatureCelsius = 20.0m,
+            AmbientTemperatureCelsius = 20.0m,
+            AtmosphericPressureHpa = 1013.25m,
+            RelativeHumidityPercent = 50.0m
+        }).ToList();
+
+        var command = new CreateVolumeCalibrationCommand(
+            EquipmentId: equipment.Id,
+            BalanceStandardId: standard.Id,
+            NextCalibrationDue: DateTime.UtcNow.AddYears(1),
+            NominalVolumeMl: 100m,
+            Measurements: measurements);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        capturedReq.Should().NotBeNull();
+        // A correção enviada ao motor de cálculo deve ser Correction (-0.0001), não Error (+0.0001)
+        capturedReq!.BalanceFullCorrectionGrams.Should().Be(-0.0001m);
+        result.StandardsUsed.Should().NotBeNullOrEmpty();
+        result.StandardsUsed![0].Correction.Should().Be(-0.0001m);
+    }
 }

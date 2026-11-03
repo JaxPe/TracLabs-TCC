@@ -45,7 +45,8 @@ public class CalibrationStandardsUsedDomainTests
         snapshot.SerialNumber.Should().Be(standard.SerialNumber);
         snapshot.CertificateNumber.Should().Be(standard.CalibrationCertificateNumber);
         snapshot.Resolution.Should().Be(standard.Resolution);
-        snapshot.Correction.Should().Be(standard.Error);
+        snapshot.Correction.Should().Be(standard.Correction);
+        snapshot.Correction.Should().Be(-standard.Error);
         snapshot.ExpandedUncertainty.Should().Be(standard.ExpandedUncertainty);
         snapshot.CoverageFactor.Should().Be(standard.CoverageFactor);
     }
