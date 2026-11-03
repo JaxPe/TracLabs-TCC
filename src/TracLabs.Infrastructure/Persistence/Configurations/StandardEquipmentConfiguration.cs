@@ -47,6 +47,11 @@ public class StandardEquipmentConfiguration : IEntityTypeConfiguration<StandardE
         builder.Property(s => s.MaintenancePlan)
             .HasMaxLength(2000);
 
+        builder.Property(s => s.RangeMin).HasPrecision(18, 6);
+        builder.Property(s => s.RangeMax).HasPrecision(18, 6);
+        builder.Property(s => s.CalibrationRangeMin).HasPrecision(18, 6);
+        builder.Property(s => s.CalibrationRangeMax).HasPrecision(18, 6);
+
         builder.Property(s => s.Status)
             .HasConversion<string>()
             .HasMaxLength(50);
@@ -64,6 +69,12 @@ public class StandardEquipmentConfiguration : IEntityTypeConfiguration<StandardE
         builder.Property(s => s.CalibratingLaboratory)
             .IsRequired()
             .HasMaxLength(200);
+
+        // Relacionamento com StandardCertificate (1:N)
+        builder.HasMany(s => s.Certificates)
+            .WithOne(c => c.StandardEquipment)
+            .HasForeignKey(c => c.StandardEquipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Relacionamento com MaintenanceHistory
         builder.HasMany(s => s.MaintenanceHistory)

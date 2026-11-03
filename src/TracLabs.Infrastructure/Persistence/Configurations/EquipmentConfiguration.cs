@@ -70,6 +70,12 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
         builder.Property(e => e.RangeMax)
             .HasPrecision(18, 6);
 
+        builder.Property(e => e.CalibrationRangeMin)
+            .HasPrecision(18, 6);
+
+        builder.Property(e => e.CalibrationRangeMax)
+            .HasPrecision(18, 6);
+
         builder.Property(e => e.Resolution)
             .HasPrecision(18, 6);
 

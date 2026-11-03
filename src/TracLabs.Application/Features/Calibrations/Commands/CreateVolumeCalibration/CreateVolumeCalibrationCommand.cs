@@ -92,6 +92,8 @@ public class CreateVolumeCalibrationCommandHandler
     public async Task<CalibrationRecordDto> Handle(
         CreateVolumeCalibrationCommand request, CancellationToken cancellationToken)
     {
+        var warnings = new List<string>();
+
         // 1. Checagem do Equipamento do Cliente
         var equipment = await _equipmentRepository.GetByIdAsync(request.EquipmentId, cancellationToken);
         if (equipment == null)
@@ -114,12 +116,19 @@ public class CreateVolumeCalibrationCommandHandler
                 $"Para calibração de instrumentos de pistão / microvolume ('{equipment.InstrumentType}'), a norma ABNT NBR ISO 8655-6 e o DOC-CGCRE-027 exigem no mínimo 10 repetições.");
         }
 
-        // 2. Resolução dos Padrões Metrológicos
+        var nominalVol = request.NominalVolumeMl > 0 ? request.NominalVolumeMl : equipment.RangeMax;
+        if (!equipment.IsWithinCalibrationRange(nominalVol))
+        {
+            warnings.Add($"O volume nominal de ensaio ({nominalVol} mL) do equipamento '{equipment.LabTag}' está fora da margem de calibração ({equipment.CalibrationRangeMin} a {equipment.CalibrationRangeMax} mL).");
+        }
+
+        // 2. Resolução dos Padrões Metrológicos com Certificados
         var balanceId = request.BalanceStandardId != Guid.Empty
             ? request.BalanceStandardId
             : (request.StandardEquipmentId ?? Guid.Empty);
 
-        var balance = await _standardEquipmentRepository.GetByIdAsync(balanceId, cancellationToken);
+        var balance = await _standardEquipmentRepository.GetWithCertificatesAsync(balanceId, cancellationToken)
+                      ?? await _standardEquipmentRepository.GetByIdAsync(balanceId, cancellationToken);
         if (balance == null)
             throw new KeyNotFoundException($"Padrão de balança analítica com ID '{balanceId}' não encontrado.");
 
@@ -129,7 +138,8 @@ public class CreateVolumeCalibrationCommandHandler
         TracLabs.Domain.Entities.StandardEquipment? liquidThermometer = null;
         if (request.LiquidThermometerStandardId != Guid.Empty)
         {
-            liquidThermometer = await _standardEquipmentRepository.GetByIdAsync(request.LiquidThermometerStandardId, cancellationToken);
+            liquidThermometer = await _standardEquipmentRepository.GetWithCertificatesAsync(request.LiquidThermometerStandardId, cancellationToken)
+                                ?? await _standardEquipmentRepository.GetByIdAsync(request.LiquidThermometerStandardId, cancellationToken);
             if (liquidThermometer == null)
                 throw new KeyNotFoundException($"Padrão de termômetro de líquido com ID '{request.LiquidThermometerStandardId}' não encontrado.");
             EnsureStandardIsUsable(liquidThermometer, "Termômetro do Líquido");
@@ -138,7 +148,8 @@ public class CreateVolumeCalibrationCommandHandler
         TracLabs.Domain.Entities.StandardEquipment? ambientThermometer = null;
         if (request.AmbientThermometerStandardId.HasValue && request.AmbientThermometerStandardId.Value != Guid.Empty)
         {
-            ambientThermometer = await _standardEquipmentRepository.GetByIdAsync(request.AmbientThermometerStandardId.Value, cancellationToken);
+            ambientThermometer = await _standardEquipmentRepository.GetWithCertificatesAsync(request.AmbientThermometerStandardId.Value, cancellationToken)
+                                 ?? await _standardEquipmentRepository.GetByIdAsync(request.AmbientThermometerStandardId.Value, cancellationToken);
             if (ambientThermometer != null)
                 EnsureStandardIsUsable(ambientThermometer, "Termômetro Ambiente");
         }
@@ -146,7 +157,8 @@ public class CreateVolumeCalibrationCommandHandler
         TracLabs.Domain.Entities.StandardEquipment? barometer = null;
         if (request.BarometerStandardId != Guid.Empty)
         {
-            barometer = await _standardEquipmentRepository.GetByIdAsync(request.BarometerStandardId, cancellationToken);
+            barometer = await _standardEquipmentRepository.GetWithCertificatesAsync(request.BarometerStandardId, cancellationToken)
+                         ?? await _standardEquipmentRepository.GetByIdAsync(request.BarometerStandardId, cancellationToken);
             if (barometer == null)
                 throw new KeyNotFoundException($"Padrão de barômetro com ID '{request.BarometerStandardId}' não encontrado.");
             EnsureStandardIsUsable(barometer, "Barômetro");
@@ -155,50 +167,91 @@ public class CreateVolumeCalibrationCommandHandler
         TracLabs.Domain.Entities.StandardEquipment? hygrometer = null;
         if (request.HygrometerStandardId != Guid.Empty)
         {
-            hygrometer = await _standardEquipmentRepository.GetByIdAsync(request.HygrometerStandardId, cancellationToken);
+            hygrometer = await _standardEquipmentRepository.GetWithCertificatesAsync(request.HygrometerStandardId, cancellationToken)
+                          ?? await _standardEquipmentRepository.GetByIdAsync(request.HygrometerStandardId, cancellationToken);
             if (hygrometer == null)
                 throw new KeyNotFoundException($"Padrão de higrômetro com ID '{request.HygrometerStandardId}' não encontrado.");
             EnsureStandardIsUsable(hygrometer, "Higrômetro");
         }
 
-        // 3. Montagem da Requisição de Cálculo (com dados extraídos automaticamente dos padrões)
+        // 3. Determinação dos Pontos Operacionais de Ensaio
+        decimal balanceOperatingValue = measurementsList.Count > 0
+            ? measurementsList.Average(m => m.FullMassGrams - m.EmptyMassGrams)
+            : nominalVol;
+
+        decimal liquidTempOperatingValue = measurementsList.Count > 0
+            ? measurementsList.Average(m => m.WaterTemperatureCelsius)
+            : request.TemperatureCelsius;
+
+        decimal ambientTempOperatingValue = measurementsList.Count > 0
+            ? measurementsList.Average(m => m.AmbientTemperatureCelsius)
+            : request.TemperatureCelsius;
+
+        decimal baroOperatingValue = measurementsList.Count > 0
+            ? measurementsList.Average(m => m.AtmosphericPressureHpa)
+            : 1013.25m;
+
+        decimal hygroOperatingValue = measurementsList.Count > 0
+            ? measurementsList.Average(m => m.RelativeHumidityPercent)
+            : request.HumidityPercent;
+
+        // 4. Resolução de Correção e Incerteza Dinâmica via Curva de Regressão / Certificado
+        var balanceResolved = ResolveStandard(balance, balanceOperatingValue, "Balança Analítica", warnings);
+
+        ResolvedStandardCorrection? liquidThermometerResolved = liquidThermometer != null
+            ? ResolveStandard(liquidThermometer, liquidTempOperatingValue, "Termômetro do Líquido", warnings)
+            : null;
+
+        ResolvedStandardCorrection? ambientThermometerResolved = ambientThermometer != null
+            ? ResolveStandard(ambientThermometer, ambientTempOperatingValue, "Termômetro Ambiente", warnings)
+            : null;
+
+        ResolvedStandardCorrection? barometerResolved = barometer != null
+            ? ResolveStandard(barometer, baroOperatingValue, "Barômetro", warnings)
+            : null;
+
+        ResolvedStandardCorrection? hygrometerResolved = hygrometer != null
+            ? ResolveStandard(hygrometer, hygroOperatingValue, "Higrômetro", warnings)
+            : null;
+
+        // 5. Montagem da Requisição de Cálculo (com dados extraídos das curvas/certificados dos padrões)
         var calcReq = request.CalculationRequest ?? new VolumeCalibrationRequest
         {
-            NominalVolumeMl = request.NominalVolumeMl > 0 ? request.NominalVolumeMl : equipment.RangeMax,
+            NominalVolumeMl = nominalVol,
             Material = request.Material,
             ThermalExpansionCoefficient = request.ThermalExpansionCoefficient,
             Measurements = measurementsList,
             // Balança
             BalanceResolutionGrams = balance.Resolution,
-            BalanceCertificateUncertaintyGrams = balance.ExpandedUncertainty,
-            BalanceCoverageFactor = balance.CoverageFactor > 0 ? balance.CoverageFactor : 2.0m,
-            BalanceFullCorrectionGrams = balance.Error,
+            BalanceCertificateUncertaintyGrams = balanceResolved.CalculatedUncertainty,
+            BalanceCoverageFactor = balanceResolved.CoverageFactor,
+            BalanceFullCorrectionGrams = balanceResolved.CalculatedCorrection,
             // Termômetro Líquido
             WaterThermometerResolutionCelsius = liquidThermometer?.Resolution ?? 0.01m,
-            WaterThermometerUncertaintyCelsius = liquidThermometer?.ExpandedUncertainty ?? 0.02m,
-            WaterThermometerCoverageFactor = liquidThermometer?.CoverageFactor ?? 2.0m,
-            WaterThermometerCorrectionCelsius = liquidThermometer?.Error ?? 0m,
+            WaterThermometerUncertaintyCelsius = liquidThermometerResolved?.CalculatedUncertainty ?? liquidThermometer?.ExpandedUncertainty ?? 0.02m,
+            WaterThermometerCoverageFactor = liquidThermometerResolved?.CoverageFactor ?? liquidThermometer?.CoverageFactor ?? 2.0m,
+            WaterThermometerCorrectionCelsius = liquidThermometerResolved?.CalculatedCorrection ?? liquidThermometer?.Error ?? 0m,
             // Termômetro Ambiente
             AmbientThermometerResolutionCelsius = ambientThermometer?.Resolution ?? liquidThermometer?.Resolution ?? 0.1m,
-            AmbientThermometerUncertaintyCelsius = ambientThermometer?.ExpandedUncertainty ?? liquidThermometer?.ExpandedUncertainty ?? 0.05m,
-            AmbientThermometerCoverageFactor = ambientThermometer?.CoverageFactor ?? 2.0m,
-            AmbientThermometerCorrectionCelsius = ambientThermometer?.Error ?? 0m,
+            AmbientThermometerUncertaintyCelsius = ambientThermometerResolved?.CalculatedUncertainty ?? ambientThermometer?.ExpandedUncertainty ?? liquidThermometerResolved?.CalculatedUncertainty ?? 0.05m,
+            AmbientThermometerCoverageFactor = ambientThermometerResolved?.CoverageFactor ?? ambientThermometer?.CoverageFactor ?? 2.0m,
+            AmbientThermometerCorrectionCelsius = ambientThermometerResolved?.CalculatedCorrection ?? ambientThermometer?.Error ?? 0m,
             // Barômetro
             BarometerResolutionHpa = barometer?.Resolution ?? 0.1m,
-            BarometerUncertaintyHpa = barometer?.ExpandedUncertainty ?? 0.5m,
-            BarometerCoverageFactor = barometer?.CoverageFactor ?? 2.0m,
-            BarometerCorrectionHpa = barometer?.Error ?? 0m,
+            BarometerUncertaintyHpa = barometerResolved?.CalculatedUncertainty ?? barometer?.ExpandedUncertainty ?? 0.5m,
+            BarometerCoverageFactor = barometerResolved?.CoverageFactor ?? barometer?.CoverageFactor ?? 2.0m,
+            BarometerCorrectionHpa = barometerResolved?.CalculatedCorrection ?? barometer?.Error ?? 0m,
             // Higrômetro
             HygrometerResolutionPercent = hygrometer?.Resolution ?? 1.0m,
-            HygrometerUncertaintyPercent = hygrometer?.ExpandedUncertainty ?? 2.0m,
-            HygrometerCoverageFactor = hygrometer?.CoverageFactor ?? 2.0m,
-            HygrometerCorrectionPercent = hygrometer?.Error ?? 0m
+            HygrometerUncertaintyPercent = hygrometerResolved?.CalculatedUncertainty ?? hygrometer?.ExpandedUncertainty ?? 2.0m,
+            HygrometerCoverageFactor = hygrometerResolved?.CoverageFactor ?? hygrometer?.CoverageFactor ?? 2.0m,
+            HygrometerCorrectionPercent = hygrometerResolved?.CalculatedCorrection ?? hygrometer?.Error ?? 0m
         };
 
-        // 4. Execução do motor de cálculo volumétrico gravimétrico
+        // 6. Execução do motor de cálculo volumétrico gravimétrico
         var calcResult = _volumeCalibrationService.Calculate(calcReq);
 
-        // 5. Identificação do Técnico autenticado
+        // 7. Identificação do Técnico autenticado
         var technicianId = _currentUserService.UserId ?? "tech-system";
         var technicianName = _currentUserService.FullName ?? _currentUserService.Email ?? "Técnico Metrologista";
 
@@ -209,7 +262,7 @@ public class CreateVolumeCalibrationCommandHandler
         var tempAmb = measurementsList.Count > 0 ? measurementsList.Average(m => m.AmbientTemperatureCelsius) : request.TemperatureCelsius;
         var humAmb = measurementsList.Count > 0 ? measurementsList.Average(m => m.RelativeHumidityPercent) : request.HumidityPercent;
 
-        // 6. Instanciação do Registro de Calibração
+        // 8. Instanciação do Registro de Calibração
         var record = new CalibrationRecord(
             equipment.Id,
             balance.Id,
@@ -220,27 +273,40 @@ public class CreateVolumeCalibrationCommandHandler
             tempAmb,
             humAmb);
 
-        // 7. Congelamento dos Snapshots dos Padrões (Rastreabilidade ISO 17025)
+        // 9. Congelamento dos Snapshots dos Padrões (Rastreabilidade ISO 17025 com dados de resolução)
+        var activeBalanceCert = balance.GetActiveCertificate();
         var standardsUsed = new List<CalibrationStandardUsed>
         {
-            new(record.Id, balance, StandardRole.Balance)
+            new(record.Id, balance, StandardRole.Balance, balanceResolved, activeBalanceCert?.Id, activeBalanceCert?.CertificateNumber, activeBalanceCert?.CalibratingLaboratory)
         };
 
-        if (liquidThermometer != null)
-            standardsUsed.Add(new(record.Id, liquidThermometer, StandardRole.LiquidThermometer));
+        if (liquidThermometer != null && liquidThermometerResolved != null)
+        {
+            var cert = liquidThermometer.GetActiveCertificate();
+            standardsUsed.Add(new(record.Id, liquidThermometer, StandardRole.LiquidThermometer, liquidThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+        }
 
-        if (ambientThermometer != null && ambientThermometer.Id != liquidThermometer?.Id)
-            standardsUsed.Add(new(record.Id, ambientThermometer, StandardRole.AmbientThermometer));
+        if (ambientThermometer != null && ambientThermometerResolved != null && ambientThermometer.Id != liquidThermometer?.Id)
+        {
+            var cert = ambientThermometer.GetActiveCertificate();
+            standardsUsed.Add(new(record.Id, ambientThermometer, StandardRole.AmbientThermometer, ambientThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+        }
 
-        if (barometer != null)
-            standardsUsed.Add(new(record.Id, barometer, StandardRole.Barometer));
+        if (barometer != null && barometerResolved != null)
+        {
+            var cert = barometer.GetActiveCertificate();
+            standardsUsed.Add(new(record.Id, barometer, StandardRole.Barometer, barometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+        }
 
-        if (hygrometer != null)
-            standardsUsed.Add(new(record.Id, hygrometer, StandardRole.Hygrometer));
+        if (hygrometer != null && hygrometerResolved != null)
+        {
+            var cert = hygrometer.GetActiveCertificate();
+            standardsUsed.Add(new(record.Id, hygrometer, StandardRole.Hygrometer, hygrometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+        }
 
         record.AddStandardsUsed(standardsUsed);
 
-        // 8. Gravação dos Resultados Metrológicos
+        // 10. Gravação dos Resultados Metrológicos
         var measurementPoints = calcResult.CalculatedPoints
             .Select(p => new MeasurementPoint(calcResult.NominalVolumeMl, p.CalculatedVolumeMl, "mL"))
             .ToList();
@@ -256,6 +322,15 @@ public class CreateVolumeCalibrationCommandHandler
 
         var result = isConforming ? CalibrationResult.Conforming : CalibrationResult.NonConforming;
 
+        var effectiveObservations = request.Observations;
+        if (warnings.Count > 0)
+        {
+            var warningsText = "[Avisos Metrológicos]: " + string.Join("; ", warnings);
+            effectiveObservations = string.IsNullOrWhiteSpace(effectiveObservations)
+                ? warningsText
+                : $"{effectiveObservations}\n{warningsText}";
+        }
+
         record.RecordResults(
             measurementPoints,
             calcResult.SystematicErrorMl,
@@ -264,13 +339,13 @@ public class CreateVolumeCalibrationCommandHandler
             calcResult.ExpandedUncertaintyMl,
             calcResult.CoverageFactor,
             result,
-            request.Observations);
+            effectiveObservations);
 
-        // 9. Atualização do ciclo de status do equipamento do cliente
+        // 11. Atualização do ciclo de status do equipamento do cliente
         equipment.StartCalibration();
         equipment.CompleteCalibration(record);
 
-        // 10. Persistência atômica no banco de dados
+        // 12. Persistência atômica no banco de dados
         await _calibrationRepository.AddAsync(record, cancellationToken);
         _equipmentRepository.Update(equipment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -284,7 +359,10 @@ public class CreateVolumeCalibrationCommandHandler
             s.Resolution,
             s.Correction,
             s.ExpandedUncertainty,
-            s.CoverageFactor)).ToList();
+            s.CoverageFactor,
+            s.OperatingValue,
+            s.IsExtrapolated,
+            s.WarningMessage)).ToList();
 
         return new CalibrationRecordDto(
             record.Id,
@@ -309,7 +387,47 @@ public class CreateVolumeCalibrationCommandHandler
             record.MeasurementPoints,
             calcResult,
             record.Certificate?.CertificateNumber,
-            standardsUsedDtos);
+            standardsUsedDtos,
+            warnings.Count > 0 ? warnings : null);
+    }
+
+    private static ResolvedStandardCorrection ResolveStandard(
+        TracLabs.Domain.Entities.StandardEquipment standard,
+        decimal operatingValue,
+        string roleName,
+        List<string> warnings)
+    {
+        var activeCert = standard.GetActiveCertificate();
+        ResolvedStandardCorrection resolved;
+
+        if (activeCert != null)
+        {
+            resolved = activeCert.ResolveCorrectionAt(operatingValue);
+        }
+        else
+        {
+            bool isExtrapolated = (standard.CalibrationRangeMin.HasValue && operatingValue < standard.CalibrationRangeMin.Value) ||
+                                 (standard.CalibrationRangeMax.HasValue && operatingValue > standard.CalibrationRangeMax.Value);
+            string? warn = isExtrapolated
+                ? $"O valor operacional ({operatingValue:F4}) do padrão '{standard.LabTag}' ({roleName}) está fora da faixa calibrada ({standard.CalibrationRangeMin} a {standard.CalibrationRangeMax})."
+                : null;
+
+            resolved = new ResolvedStandardCorrection(
+                operatingValue,
+                standard.Error,
+                standard.ExpandedUncertainty,
+                standard.CoverageFactor > 0 ? standard.CoverageFactor : 2.0m,
+                isExtrapolated,
+                warn,
+                "StandardEquipmentDirect");
+        }
+
+        if (resolved.IsExtrapolated && !string.IsNullOrWhiteSpace(resolved.WarningMessage))
+        {
+            warnings.Add(resolved.WarningMessage);
+        }
+
+        return resolved;
     }
 
     private static void EnsureStandardIsUsable(TracLabs.Domain.Entities.StandardEquipment standard, string roleName)

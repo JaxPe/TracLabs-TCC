@@ -30,7 +30,11 @@ public record CreateStandardEquipmentCommand(
     string? AcceptanceCriteria = null,
     int CalibrationIntervalMonths = 12,
     string? ReferenceMaterialDocumentation = null,
-    string? MaintenancePlan = null) : IRequest<StandardEquipmentDto>;
+    string? MaintenancePlan = null,
+    decimal RangeMin = 0m,
+    decimal RangeMax = 0m,
+    decimal? CalibrationRangeMin = null,
+    decimal? CalibrationRangeMax = null) : IRequest<StandardEquipmentDto>;
 
 public class CreateStandardEquipmentCommandValidator : AbstractValidator<CreateStandardEquipmentCommand>
 {
@@ -102,27 +106,32 @@ public class CreateStandardEquipmentCommandHandler : IRequestHandler<CreateStand
         }
 
         var standard = new TracLabs.Domain.Entities.StandardEquipment(
-            request.LabTag,
-            request.Model,
-            request.Manufacturer,
-            request.SerialNumber,
-            request.InstrumentType,
-            request.Error,
-            request.ExpandedUncertainty,
-            request.CoverageFactor,
-            request.LastCalibrationDate,
-            request.CalibrationDueDate,
-            request.CalibrationCertificateNumber,
-            request.CalibratingLaboratory,
-            request.Resolution,
-            request.Name,
-            request.SoftwareVersion,
-            request.FirmwareVersion,
-            request.CurrentLocation,
-            request.AcceptanceCriteria,
-            request.CalibrationIntervalMonths,
-            request.ReferenceMaterialDocumentation,
-            request.MaintenancePlan);
+            labTag: request.LabTag,
+            model: request.Model,
+            manufacturer: request.Manufacturer,
+            serialNumber: request.SerialNumber,
+            instrumentType: request.InstrumentType,
+            error: request.Error,
+            expandedUncertainty: request.ExpandedUncertainty,
+            coverageFactor: request.CoverageFactor,
+            lastCalibrationDate: request.LastCalibrationDate,
+            calibrationDueDate: request.CalibrationDueDate,
+            certificateNumber: request.CalibrationCertificateNumber,
+            calibratingLaboratory: request.CalibratingLaboratory,
+            resolution: request.Resolution,
+            name: request.Name,
+            softwareVersion: request.SoftwareVersion,
+            firmwareVersion: request.FirmwareVersion,
+            currentLocation: request.CurrentLocation,
+            acceptanceCriteria: request.AcceptanceCriteria,
+            calibrationIntervalMonths: request.CalibrationIntervalMonths,
+            referenceMaterialDocumentation: request.ReferenceMaterialDocumentation,
+            maintenancePlan: request.MaintenancePlan,
+            status: StandardEquipmentStatus.Calibrated,
+            rangeMin: request.RangeMin,
+            rangeMax: request.RangeMax,
+            calibrationRangeMin: request.CalibrationRangeMin,
+            calibrationRangeMax: request.CalibrationRangeMax);
 
         await _standardRepository.AddAsync(standard, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -132,6 +141,29 @@ public class CreateStandardEquipmentCommandHandler : IRequestHandler<CreateStand
 
     public static StandardEquipmentDto MapToDto(TracLabs.Domain.Entities.StandardEquipment s)
     {
+        var certsDto = s.Certificates?.Select(c => new StandardCertificateDto(
+            c.Id,
+            c.StandardEquipmentId,
+            c.CertificateNumber,
+            c.CalibratingLaboratory,
+            c.CalibrationDate,
+            c.CalibrationDueDate,
+            c.CalibrationRangeMin,
+            c.CalibrationRangeMax,
+            c.IsActive,
+            c.FitType,
+            c.UncertaintyPolicy,
+            c.Slope,
+            c.Intercept,
+            c.R2,
+            c.Points.Select(p => new StandardCalibrationPointDto(
+                p.Order,
+                p.IndicatedValue,
+                p.StandardError,
+                p.Correction,
+                p.ExpandedUncertainty,
+                p.CoverageFactor)).ToList())).ToList();
+
         return new StandardEquipmentDto(
             s.Id,
             s.LabTag,
@@ -160,6 +192,11 @@ public class CreateStandardEquipmentCommandHandler : IRequestHandler<CreateStand
             s.IsCalibrationValid,
             s.DaysUntilExpiry,
             s.IsUsableForCalibration,
-            s.CreatedAt);
+            s.CreatedAt,
+            s.RangeMin,
+            s.RangeMax,
+            s.CalibrationRangeMin,
+            s.CalibrationRangeMax,
+            certsDto);
     }
 }

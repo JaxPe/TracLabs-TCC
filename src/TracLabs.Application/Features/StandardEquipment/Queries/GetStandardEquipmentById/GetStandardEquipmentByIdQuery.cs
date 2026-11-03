@@ -18,7 +18,7 @@ public class GetStandardEquipmentByIdQueryHandler : IRequestHandler<GetStandardE
 
     public async Task<StandardEquipmentDetailDto> Handle(GetStandardEquipmentByIdQuery request, CancellationToken cancellationToken)
     {
-        var standard = await _standardRepository.GetByIdAsync(request.Id, cancellationToken);
+        var standard = await _standardRepository.GetWithCertificatesAsync(request.Id, cancellationToken);
         if (standard == null)
             throw new KeyNotFoundException($"Equipamento padrão com ID '{request.Id}' não encontrado.");
 

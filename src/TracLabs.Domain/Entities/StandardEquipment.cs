@@ -3,28 +3,37 @@ using TracLabs.Domain.Enums;
 namespace TracLabs.Domain.Entities;
 
 /// <summary>
-/// Represents a laboratory standard instrument (equipamento padrão).
-/// These are the reference instruments used TO calibrate client equipment.
-/// They must themselves be calibrated and traceable to national/international standards (INMETRO/BIPM).
-/// 
-/// Incorporates full lifecycle management and mandatory records required by
-/// ABNT NBR ISO/IEC 17025:2017 clause 6.4.13.
+/// Represents a measurement standard owned and maintained by the laboratory.
+/// Used as reference equipment to calibrate client instruments.
+/// Incorporates mandatory equipment records per ABNT NBR ISO/IEC 17025:2017 clause 6.4.13.
+/// Suporta o fluxo em 2 etapas:
+/// 1. Cadastro perpétuo do ativo físico do equipamento padrão (Tag, Modelo, Serial, Resolução, Margem Física);
+/// 2. Histórico de certificados de calibração acreditados (1:N), tabela de pontos RBC e curvas de calibração.
 /// </summary>
 public class StandardEquipment : BaseEntity
 {
     // ── Identification (ISO 17025 6.4.13 a & b) ──────────────────────────────────
-
-    /// <summary>Nome do equipamento padrão (ex: "Balança Analítica", "Termômetro Padrão").</summary>
+    
+    /// <summary>Nome do padrão (ex: "Balança Analítica XPE205", "Termômetro Digital de Precisão").</summary>
     public string Name { get; private set; } = string.Empty;
 
+    /// <summary>Internal laboratory code for this standard (e.g. "PAD-001", "BAL-01").</summary>
     public string LabTag { get; private set; } = string.Empty;
+    
+    /// <summary>Manufacturer's model number.</summary>
     public string Model { get; private set; } = string.Empty;
+    
+    /// <summary>Manufacturer/brand name.</summary>
     public string Manufacturer { get; private set; } = string.Empty;
+    
+    /// <summary>Serial number as stamped on the instrument.</summary>
     public string SerialNumber { get; private set; } = string.Empty;
+    
+    /// <summary>Instrument type/category (e.g. "Balança Analítica", "Termômetro", "Barômetro").</summary>
     public string InstrumentType { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Versão do software (opcional — preenchido apenas quando o padrão for computadorizado).
+    /// Versão do software embarcado ou de integração (opcional).
     /// </summary>
     public string? SoftwareVersion { get; private set; }
 
@@ -55,12 +64,26 @@ public class StandardEquipment : BaseEntity
     /// <summary>Plano de manutenção preventiva do equipamento padrão (ISO 17025 6.4.13 g).</summary>
     public string? MaintenancePlan { get; private set; }
 
+    // ── Measurement Range & Margens de Calibração ───────────────────────────────
+
+    /// <summary>Capacidade nominal mínima física do padrão (RangeMin).</summary>
+    public decimal RangeMin { get; private set; }
+
+    /// <summary>Capacidade nominal máxima física do padrão (RangeMax).</summary>
+    public decimal RangeMax { get; private set; }
+
+    /// <summary>Margem mínima calibrada pelo certificado RBC (CalibrationRangeMin).</summary>
+    public decimal? CalibrationRangeMin { get; private set; }
+
+    /// <summary>Margem máxima calibrada pelo certificado RBC (CalibrationRangeMax).</summary>
+    public decimal? CalibrationRangeMax { get; private set; }
+
     // ── Ciclo de Status do Padrão ───────────────────────────────────────────────
 
     /// <summary>Status atual do padrão no ciclo de vida do laboratório.</summary>
     public StandardEquipmentStatus Status { get; private set; }
 
-    // ── Metrological Data (from this standard's own calibration certificate) ───
+    // ── Metrological Data (Snapshot do certificado ativo para compatibilidade) ───
     
     /// <summary>
     /// The systematic measurement error of this standard (erro sistemático).
@@ -76,7 +99,6 @@ public class StandardEquipment : BaseEntity
     
     /// <summary>
     /// Expanded measurement uncertainty at k=2 (approximately 95% confidence level).
-    /// Required for uncertainty budget calculations per GUM.
     /// </summary>
     public decimal ExpandedUncertainty { get; private set; }
     
@@ -102,40 +124,63 @@ public class StandardEquipment : BaseEntity
     
     /// <summary>Name of the accredited lab that performed this standard's calibration.</summary>
     public string CalibratingLaboratory { get; private set; } = string.Empty;
-    
+
+    // ── Histórico de Certificados de Calibração (1:N) ───────────────────────────
+
+    /// <summary>Coleção histórica de todos os certificados de calibração emitidos para este padrão.</summary>
+    public IReadOnlyCollection<StandardCertificate> Certificates => _certificates.AsReadOnly();
+    private readonly List<StandardCertificate> _certificates = new();
+
     // ── Computed Properties ──────────────────────────────────────────────────────
     
     /// <summary>
-    /// Indicates whether this standard's calibration date is currently valid.
+    /// Indica se o padrão possui certificado de calibração vigente.
     /// </summary>
-    public bool IsCalibrationValid => DateTime.UtcNow.Date <= CalibrationDueDate.Date;
+    public bool IsCalibrationValid
+    {
+        get
+        {
+            var activeCert = GetActiveCertificate();
+            if (activeCert != null)
+                return activeCert.IsValid;
+
+            return DateTime.UtcNow.Date <= CalibrationDueDate.Date;
+        }
+    }
     
-    /// <summary>Days remaining until calibration expiry. Negative means already expired.</summary>
-    public int DaysUntilExpiry => (CalibrationDueDate.Date - DateTime.UtcNow.Date).Days;
+    /// <summary>Dias restantes até a expiração da calibração vigente.</summary>
+    public int DaysUntilExpiry
+    {
+        get
+        {
+            var activeCert = GetActiveCertificate();
+            var dueDate = activeCert?.CalibrationDueDate ?? CalibrationDueDate;
+            return (dueDate.Date - DateTime.UtcNow.Date).Days;
+        }
+    }
 
     /// <summary>
     /// Indica se o padrão está liberado para ser utilizado em novas calibrações.
-    /// Requer status Calibrated E certificado dentro do prazo de validade.
+    /// Requer status Calibrated E calibração vigente.
     /// </summary>
     public bool IsUsableForCalibration => Status == StandardEquipmentStatus.Calibrated && IsCalibrationValid;
 
     // ── Histórico de Manutenções e Ocorrências (ISO 17025 6.4.13 g & h) ─────────
 
-    /// <summary>Histórico de manutenções realizadas no equipamento padrão.</summary>
     public IReadOnlyCollection<EquipmentMaintenanceRecord> MaintenanceHistory =>
         _maintenanceHistory.AsReadOnly();
-
     private readonly List<EquipmentMaintenanceRecord> _maintenanceHistory = new();
 
-    /// <summary>Histórico de danos, anomalias, mau funcionamento ou reparos.</summary>
     public IReadOnlyCollection<EquipmentOccurrenceRecord> OccurrenceHistory =>
         _occurrenceHistory.AsReadOnly();
-
     private readonly List<EquipmentOccurrenceRecord> _occurrenceHistory = new();
     
     // EF Core constructor
     private StandardEquipment() { }
     
+    /// <summary>
+    /// Construtor completo com dados de certificado inicial (retrocompatibilidade).
+    /// </summary>
     public StandardEquipment(
         string labTag, string model, string manufacturer, string serialNumber,
         string instrumentType, decimal error, decimal expandedUncertainty,
@@ -150,7 +195,11 @@ public class StandardEquipment : BaseEntity
         int calibrationIntervalMonths = 12,
         string? referenceMaterialDocumentation = null,
         string? maintenancePlan = null,
-        StandardEquipmentStatus status = StandardEquipmentStatus.Calibrated)
+        StandardEquipmentStatus status = StandardEquipmentStatus.Calibrated,
+        decimal rangeMin = 0m,
+        decimal rangeMax = 0m,
+        decimal? calibrationRangeMin = null,
+        decimal? calibrationRangeMax = null)
     {
         if (coverageFactor <= 0)
             throw new ArgumentException("Coverage factor must be positive.", nameof(coverageFactor));
@@ -167,7 +216,7 @@ public class StandardEquipment : BaseEntity
         SerialNumber = serialNumber;
         InstrumentType = instrumentType;
         Error = error;
-        Correction = -error; // Correction is always the negative of error
+        Correction = -error;
         ExpandedUncertainty = expandedUncertainty;
         CoverageFactor = coverageFactor;
         LastCalibrationDate = lastCalibrationDate;
@@ -185,9 +234,135 @@ public class StandardEquipment : BaseEntity
         ReferenceMaterialDocumentation = referenceMaterialDocumentation;
         MaintenancePlan = maintenancePlan;
         Status = status;
+
+        RangeMin = rangeMin;
+        RangeMax = rangeMax;
+        CalibrationRangeMin = calibrationRangeMin;
+        CalibrationRangeMax = calibrationRangeMax;
+    }
+
+    /// <summary>
+    /// Construtor para o fluxo Etapa 1: Cadastro de Ativo Físico do Equipamento Padrão.
+    /// </summary>
+    public StandardEquipment(
+        string labTag,
+        string model,
+        string manufacturer,
+        string serialNumber,
+        string instrumentType,
+        decimal resolution,
+        decimal rangeMin,
+        decimal rangeMax,
+        decimal? calibrationRangeMin = null,
+        decimal? calibrationRangeMax = null,
+        string? name = null,
+        string? currentLocation = null,
+        string? acceptanceCriteria = null,
+        int calibrationIntervalMonths = 12,
+        string? maintenancePlan = null)
+    {
+        if (string.IsNullOrWhiteSpace(labTag))
+            throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
+        if (resolution < 0)
+            throw new ArgumentException("Resolution cannot be negative.", nameof(resolution));
+        if (calibrationIntervalMonths <= 0)
+            throw new ArgumentException("Calibration interval months must be positive.", nameof(calibrationIntervalMonths));
+
+        LabTag = labTag;
+        Name = string.IsNullOrWhiteSpace(name) ? instrumentType : name;
+        Model = model;
+        Manufacturer = manufacturer;
+        SerialNumber = serialNumber;
+        InstrumentType = instrumentType;
+        Resolution = resolution;
+        RangeMin = rangeMin;
+        RangeMax = rangeMax;
+        CalibrationRangeMin = calibrationRangeMin;
+        CalibrationRangeMax = calibrationRangeMax;
+        CurrentLocation = string.IsNullOrWhiteSpace(currentLocation) ? "Laboratório de Calibração" : currentLocation;
+        AcceptanceCriteria = acceptanceCriteria;
+        CalibrationIntervalMonths = calibrationIntervalMonths;
+        MaintenancePlan = maintenancePlan;
+        Status = StandardEquipmentStatus.PendingCalibration;
     }
     
-    // ── Domain Methods: Ciclo de Status & Metrologia ──────────────────────────────
+    // ── Domain Methods: Gestão de Certificados e Curvas ──────────────────────────
+
+    /// <summary>
+    /// Adiciona um novo certificado de calibração ao histórico do padrão (Etapa 2).
+    /// Se o novo certificado for ativo, desativa os anteriores e sincroniza os parâmetros metrológicos.
+    /// </summary>
+    public void AddCertificate(StandardCertificate certificate)
+    {
+        ArgumentNullException.ThrowIfNull(certificate);
+
+        if (certificate.IsActive)
+        {
+            foreach (var existing in _certificates.Where(c => c.IsActive))
+            {
+                existing.Deactivate();
+            }
+
+            SyncWithActiveCertificate(certificate);
+        }
+
+        _certificates.Add(certificate);
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Retorna o certificado de calibração atualmente ativo e vigente para o padrão.
+    /// </summary>
+    public StandardCertificate? GetActiveCertificate()
+    {
+        return _certificates.FirstOrDefault(c => c.IsActive && c.IsValid) 
+            ?? _certificates.FirstOrDefault(c => c.IsActive);
+    }
+
+    private void SyncWithActiveCertificate(StandardCertificate cert)
+    {
+        CalibrationCertificateNumber = cert.CertificateNumber;
+        CalibratingLaboratory = cert.CalibratingLaboratory;
+        LastCalibrationDate = cert.CalibrationDate;
+        CalibrationDueDate = cert.CalibrationDueDate;
+        CalibrationRangeMin = cert.CalibrationRangeMin;
+        CalibrationRangeMax = cert.CalibrationRangeMax;
+
+        if (cert.Points.Count > 0)
+        {
+            Error = -cert.Points.Average(p => p.Correction);
+            Correction = cert.Points.Average(p => p.Correction);
+            ExpandedUncertainty = cert.Points.Max(p => p.ExpandedUncertainty);
+            CoverageFactor = cert.Points.FirstOrDefault()?.CoverageFactor ?? 2.0m;
+        }
+
+        if (cert.IsValid)
+        {
+            Status = StandardEquipmentStatus.Calibrated;
+        }
+        else
+        {
+            Status = StandardEquipmentStatus.PendingCalibration;
+        }
+    }
+
+    /// <summary>Define ou atualiza as margens nominais e calibradas do padrão.</summary>
+    public void SetRanges(decimal rangeMin, decimal rangeMax, decimal? calRangeMin = null, decimal? calRangeMax = null)
+    {
+        RangeMin = rangeMin;
+        RangeMax = rangeMax;
+        CalibrationRangeMin = calRangeMin;
+        CalibrationRangeMax = calRangeMax;
+        MarkAsUpdated();
+    }
+
+    /// <summary>Verifica se um valor medido está dentro da margem de calibração do padrão.</summary>
+    public bool IsWithinCalibrationRange(decimal value)
+    {
+        var min = CalibrationRangeMin ?? RangeMin;
+        var max = CalibrationRangeMax ?? RangeMax;
+        return value >= min && value <= max;
+    }
 
     /// <summary>Atualiza a localização física atual do padrão.</summary>
     public void UpdateLocation(string newLocation)
@@ -216,7 +391,6 @@ public class StandardEquipment : BaseEntity
 
     /// <summary>
     /// Envia o padrão para calibração em laboratório acreditado externo (RBC/INMETRO).
-    /// Altera o status para InCalibration, bloqueando seu uso imediato.
     /// </summary>
     public void SendToCalibration(string calibratingLaboratory, string? notes = null)
     {
@@ -243,7 +417,6 @@ public class StandardEquipment : BaseEntity
 
     /// <summary>
     /// Registra o retorno da calibração externa com o novo certificado metrológico.
-    /// Se aprovado nos critérios de aceitação, transita para Calibrated; caso contrário, OutOfService.
     /// </summary>
     public void RegisterCalibrationResult(
         decimal newError,
@@ -362,7 +535,8 @@ public class StandardEquipment : BaseEntity
     public void CheckCalibrationValidity(DateTime? referenceDate = null)
     {
         var checkDate = (referenceDate ?? DateTime.UtcNow).Date;
-        if (checkDate > CalibrationDueDate.Date && Status == StandardEquipmentStatus.Calibrated)
+        var dueDate = GetActiveCertificate()?.CalibrationDueDate ?? CalibrationDueDate;
+        if (checkDate > dueDate.Date && Status == StandardEquipmentStatus.Calibrated)
         {
             Status = StandardEquipmentStatus.PendingCalibration;
             MarkAsUpdated();

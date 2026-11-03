@@ -188,4 +188,144 @@ public class CreateVolumeCalibrationCommandHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Não é possível calibrar o equipamento*");
     }
+
+    [Fact]
+    public async Task Handle_WithStandardRegressionCertificate_ShouldResolveDynamicCorrectionAndRecordInSnapshot()
+    {
+        // Arrange
+        var equipment = CreateClientEquipment(EquipmentStatus.Received);
+        var balance = CreateStandard(StandardEquipmentStatus.Calibrated);
+
+        // Adiciona certificado com regressão linear ao padrão
+        var points = new List<StandardCalibrationPoint>
+        {
+            new(1, 0.0m, 0m, 0.05m, 0.02m, 2.0m),
+            new(2, 50.0m, 0m, 0.15m, 0.02m, 2.0m),
+            new(3, 100.0m, 0m, 0.25m, 0.02m, 2.0m)
+        };
+        var cert = new StandardCertificate(
+            standardEquipmentId: balance.Id,
+            certificateNumber: "CERT-BAL-2026",
+            calibratingLaboratory: "RBC Lab",
+            calibrationDate: DateTime.UtcNow.AddMonths(-1),
+            calibrationDueDate: DateTime.UtcNow.AddMonths(11),
+            points: points,
+            fitType: CurveFitType.LinearRegression);
+
+        balance.AddCertificate(cert);
+
+        _equipmentRepo.GetByIdAsync(equipment.Id, Arg.Any<CancellationToken>()).Returns(equipment);
+        _standardRepo.GetWithCertificatesAsync(balance.Id, Arg.Any<CancellationToken>()).Returns(balance);
+
+        var measurements = Enumerable.Range(1, 7).Select(i => new VolumeMeasurementInputDto
+        {
+            RunNumber = i,
+            EmptyMassGrams = 100.0m,
+            FullMassGrams = 200.0m, // Operating mass = 100g
+            WaterTemperatureCelsius = 20.0m,
+            AmbientTemperatureCelsius = 20.0m,
+            AtmosphericPressureHpa = 1013.25m,
+            RelativeHumidityPercent = 50.0m
+        }).ToList();
+
+        var calcResult = new VolumeCalibrationResultDto
+        {
+            NominalVolumeMl = 100m,
+            PointsCount = 7,
+            MeanVolumeV20Ml = 100.02m,
+            SystematicErrorMl = 0.02m,
+            CombinedStandardUncertaintyMl = 0.005m,
+            ExpandedUncertaintyMl = 0.010m,
+            CoverageFactor = 2.0m,
+            CalculatedPoints = Enumerable.Range(1, 7).Select(i => new VolumeGravimetricPoint(i, 200m, 100m, 20m, 100.02m)).ToList()
+        };
+
+        _volumeCalibrationService.Calculate(Arg.Any<VolumeCalibrationRequest>()).Returns(calcResult);
+
+        var command = new CreateVolumeCalibrationCommand(
+            EquipmentId: equipment.Id,
+            BalanceStandardId: balance.Id,
+            NextCalibrationDue: DateTime.UtcNow.AddYears(1),
+            NominalVolumeMl: 100m,
+            Measurements: measurements);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.StandardsUsed.Should().NotBeNull();
+        result.StandardsUsed!.Should().HaveCount(1);
+        var balanceUsed = result.StandardsUsed.First();
+        balanceUsed.CertificateNumber.Should().Be("CERT-BAL-2026");
+        balanceUsed.OperatingValue.Should().Be(100.0m);
+        balanceUsed.Correction.Should().Be(0.25m);
+        balanceUsed.IsExtrapolated.Should().BeFalse();
+        balanceUsed.WarningMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenNominalVolumeExceedsCalibrationRange_ShouldIncludeWarningInDtoAndObservations()
+    {
+        // Arrange
+        var equipment = new Equipment(
+            labTag: "VOL-CLI-100",
+            model: "Classe A",
+            manufacturer: "Brand",
+            serialNumber: "SN-100",
+            instrumentType: "Balão Volumétrico",
+            rangeMin: 10m,
+            rangeMax: 100m,
+            unit: "mL",
+            resolution: 0.1m,
+            clientId: Guid.NewGuid(),
+            calibrationRangeMin: 20m,
+            calibrationRangeMax: 80m); // Calibrado apenas de 20 a 80 mL
+
+        var standard = CreateStandard(StandardEquipmentStatus.Calibrated);
+
+        _equipmentRepo.GetByIdAsync(equipment.Id, Arg.Any<CancellationToken>()).Returns(equipment);
+        _standardRepo.GetWithCertificatesAsync(standard.Id, Arg.Any<CancellationToken>()).Returns(standard);
+
+        var measurements = Enumerable.Range(1, 7).Select(i => new VolumeMeasurementInputDto
+        {
+            RunNumber = i,
+            EmptyMassGrams = 100.0m,
+            FullMassGrams = 200.0m,
+            WaterTemperatureCelsius = 20.0m,
+            AmbientTemperatureCelsius = 20.0m,
+            AtmosphericPressureHpa = 1013.25m,
+            RelativeHumidityPercent = 50.0m
+        }).ToList();
+
+        var calcResult = new VolumeCalibrationResultDto
+        {
+            NominalVolumeMl = 100m,
+            PointsCount = 7,
+            MeanVolumeV20Ml = 100.02m,
+            SystematicErrorMl = 0.02m,
+            CombinedStandardUncertaintyMl = 0.005m,
+            ExpandedUncertaintyMl = 0.010m,
+            CoverageFactor = 2.0m,
+            CalculatedPoints = Enumerable.Range(1, 7).Select(i => new VolumeGravimetricPoint(i, 200m, 100m, 20m, 100.02m)).ToList()
+        };
+
+        _volumeCalibrationService.Calculate(Arg.Any<VolumeCalibrationRequest>()).Returns(calcResult);
+
+        var command = new CreateVolumeCalibrationCommand(
+            EquipmentId: equipment.Id,
+            BalanceStandardId: standard.Id,
+            NextCalibrationDue: DateTime.UtcNow.AddYears(1),
+            NominalVolumeMl: 100m, // 100 mL > 80 mL (extrapolação de faixa calibrada!)
+            Measurements: measurements);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Warnings.Should().NotBeNullOrEmpty();
+        result.Warnings!.Should().Contain(w => w.Contains("fora da margem de calibração") && w.Contains("100"));
+        result.Observations.Should().Contain("[Avisos Metrológicos]");
+    }
 }

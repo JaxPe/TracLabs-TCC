@@ -59,13 +59,19 @@ public class Equipment : BaseEntity
     /// </summary>
     public string? InitialConditionNotes { get; private set; }
     
-    // ── Measurement Range ───────────────────────────────────────────────────────
+    // ── Measurement Range & Calibration Margins ─────────────────────────────────
     
-    /// <summary>Minimum value of the instrument's measurement range.</summary>
+    /// <summary>Minimum value of the instrument's measurement range (capacidade nominal mínima).</summary>
     public decimal RangeMin { get; private set; }
     
-    /// <summary>Maximum value of the instrument's measurement range.</summary>
+    /// <summary>Maximum value of the instrument's measurement range (capacidade nominal máxima).</summary>
     public decimal RangeMax { get; private set; }
+
+    /// <summary>Margem mínima da faixa de calibração solicitada/acreditada.</summary>
+    public decimal? CalibrationRangeMin { get; private set; }
+
+    /// <summary>Margem máxima da faixa de calibração solicitada/acreditada.</summary>
+    public decimal? CalibrationRangeMax { get; private set; }
     
     /// <summary>Unit of measurement (e.g. "mm", "N.m", "°C").</summary>
     public string Unit { get; private set; } = string.Empty;
@@ -121,7 +127,8 @@ public class Equipment : BaseEntity
         string? name = null, string? softwareVersion = null, string? firmwareVersion = null,
         string? currentLocation = null, string? acceptanceCriteria = null,
         string? maintenancePlan = null, string? initialConditionNotes = null,
-        EquipmentStatus status = EquipmentStatus.Received)
+        EquipmentStatus status = EquipmentStatus.Received,
+        decimal? calibrationRangeMin = null, decimal? calibrationRangeMax = null)
     {
         // Domain validation — do not allow invalid state to ever exist
         if (string.IsNullOrWhiteSpace(labTag))
@@ -130,6 +137,8 @@ public class Equipment : BaseEntity
             throw new ArgumentException("Range minimum must be less than range maximum.");
         if (resolution <= 0)
             throw new ArgumentException("Resolution must be a positive value.");
+        if (calibrationRangeMin.HasValue && calibrationRangeMax.HasValue && calibrationRangeMin.Value > calibrationRangeMax.Value)
+            throw new ArgumentException("Calibration range minimum cannot be greater than maximum.");
             
         LabTag = labTag;
         Model = model;
@@ -138,6 +147,8 @@ public class Equipment : BaseEntity
         InstrumentType = instrumentType;
         RangeMin = rangeMin;
         RangeMax = rangeMax;
+        CalibrationRangeMin = calibrationRangeMin ?? rangeMin;
+        CalibrationRangeMax = calibrationRangeMax ?? rangeMax;
         Unit = unit;
         Resolution = resolution;
         ClientId = clientId;
@@ -153,6 +164,25 @@ public class Equipment : BaseEntity
     }
     
     // ── Domain Methods ───────────────────────────────────────────────────────────
+
+    /// <summary>Atualiza a faixa de calibração do instrumento.</summary>
+    public void SetCalibrationRange(decimal? min, decimal? max)
+    {
+        if (min.HasValue && max.HasValue && min.Value > max.Value)
+            throw new ArgumentException("Calibration range minimum cannot be greater than maximum.");
+
+        CalibrationRangeMin = min;
+        CalibrationRangeMax = max;
+        MarkAsUpdated();
+    }
+
+    /// <summary>Verifica se um valor medido está dentro da margem de calibração do instrumento.</summary>
+    public bool IsWithinCalibrationRange(decimal value)
+    {
+        if (CalibrationRangeMin.HasValue && value < CalibrationRangeMin.Value) return false;
+        if (CalibrationRangeMax.HasValue && value > CalibrationRangeMax.Value) return false;
+        return true;
+    }
 
     /// <summary>Atualiza a localização física atual do equipamento no laboratório.</summary>
     public void UpdateLocation(string newLocation)
