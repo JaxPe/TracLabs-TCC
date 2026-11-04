@@ -124,4 +124,48 @@ public class QuestPdfCertificateGeneratorTests
         var header = Encoding.ASCII.GetString(pdfBytes.Take(5).ToArray());
         header.Should().Be("%PDF-");
     }
+
+    [Fact]
+    public async Task GenerateVolumeCertificatePdfAsync_ShouldGenerateArtifactPdfAndPageImage()
+    {
+        // Arrange
+        var reportData = CreateSampleReportData();
+        var options = new CertificateCustomizationOptions(
+            LaboratoryName: "TracLabs Metrologia & Ensaios",
+            LaboratoryTaxId: "CNPJ 12.345.678/0001-90",
+            LaboratoryAddress: "Av. Visconde do Rio Branco, 300 - Centro, Niterói - RJ",
+            LaboratoryContact: "contato@traclabs.com.br | (21) 3600-0000",
+            AccreditationNumber: "Laboratório de Calibração Acreditado pela Cgcre/INMETRO sob nº CRL 0999",
+            PrimaryColorHex: "#1E3A8A", // Azul Marinho Metrológico
+            TemplateStyle: CertificateTemplateStyle.ClassicRbc,
+            ShowUncertaintyBudget: true,
+            ShowDetailedPoints: true,
+            ShowSignatures: true,
+            CustomNotes: "Calibração realizada conforme Procedimento Interno POP-MET-012 rev. 04. " +
+                         "O instrumento foi calibrado utilizando água destilada com condutividade inferior a 5 uS/cm."
+        );
+
+        // Act
+        var pdfBytes = await _generator.GenerateVolumeCertificatePdfAsync(reportData, options);
+        var images = await _generator.GenerateVolumeCertificateImagesAsync(reportData, options);
+
+        // Assert
+        pdfBytes.Should().NotBeNull();
+        pdfBytes.Length.Should().BeGreaterThan(1000);
+        images.Should().NotBeEmpty();
+
+        // Salva os arquivos no diretório de artefatos para disponibilização imediata ao usuário
+        var artifactDir = @"C:\Users\jpbar\.gemini\antigravity\brain\8176b307-a48d-4c8a-920d-dd04ab9259c5";
+        if (Directory.Exists(artifactDir))
+        {
+            var pdfPath = Path.Combine(artifactDir, "certificado_calibracao_CERT-2026-00042.pdf");
+            File.WriteAllBytes(pdfPath, pdfBytes);
+
+            for (int i = 0; i < images.Count; i++)
+            {
+                var imgPath = Path.Combine(artifactDir, $"certificado_calibracao_CERT-2026-00042_pagina{i + 1}.png");
+                File.WriteAllBytes(imgPath, images[i]);
+            }
+        }
+    }
 }

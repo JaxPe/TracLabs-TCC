@@ -19,4 +19,13 @@ public interface ICertificatePdfGenerator
         CertificateReportDto reportData,
         CertificateCustomizationOptions options,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Renderiza as páginas do certificado como imagens PNG (uma imagem por página).
+    /// Ideal para pré-visualizações em interfaces web/mobile e miniaturas.
+    /// </summary>
+    Task<IReadOnlyList<byte[]>> GenerateVolumeCertificateImagesAsync(
+        CertificateReportDto reportData,
+        CertificateCustomizationOptions options,
+        CancellationToken cancellationToken = default);
 }

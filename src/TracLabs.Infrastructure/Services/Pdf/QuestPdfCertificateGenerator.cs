@@ -30,6 +30,20 @@ public class QuestPdfCertificateGenerator : ICertificatePdfGenerator
 
         return Task.FromResult(pdfBytes);
     }
+
+    public Task<IReadOnlyList<byte[]>> GenerateVolumeCertificateImagesAsync(
+        CertificateReportDto reportData,
+        CertificateCustomizationOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(reportData);
+        ArgumentNullException.ThrowIfNull(options);
+
+        var document = new VolumeCalibrationDocument(reportData, options);
+        var images = document.GenerateImages().ToList();
+
+        return Task.FromResult<IReadOnlyList<byte[]>>(images);
+    }
 }
 
 internal class VolumeCalibrationDocument : IDocument
