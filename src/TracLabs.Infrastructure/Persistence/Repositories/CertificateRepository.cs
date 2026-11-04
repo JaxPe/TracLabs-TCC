@@ -14,9 +14,23 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
             .Include(c => c.CalibrationRecord)
             .FirstOrDefaultAsync(c => c.CertificateNumber == certificateNumber, ct);
 
+    public async Task<Certificate?> GetWithDetailsAsync(
+        Guid id, CancellationToken ct = default)
+        => await _dbSet
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.Equipment)
+                    .ThenInclude(e => e!.Client)
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.StandardsUsed)
+                    .ThenInclude(s => s.StandardEquipment)
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
+
     public async Task<IReadOnlyList<Certificate>> GetByEquipmentIdAsync(
         Guid equipmentId, CancellationToken ct = default)
         => await _dbSet
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.Equipment)
+                    .ThenInclude(e => e!.Client)
             .Where(c => c.CalibrationRecord!.EquipmentId == equipmentId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(ct);
@@ -24,6 +38,9 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
     public async Task<IReadOnlyList<Certificate>> GetByClientIdAsync(
         Guid clientId, CancellationToken ct = default)
         => await _dbSet
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.Equipment)
+                    .ThenInclude(e => e!.Client)
             .Where(c => c.CalibrationRecord!.Equipment!.ClientId == clientId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(ct);
@@ -31,6 +48,9 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
     public async Task<IReadOnlyList<Certificate>> GetByDateRangeAsync(
         DateTime from, DateTime to, CancellationToken ct = default)
         => await _dbSet
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.Equipment)
+                    .ThenInclude(e => e!.Client)
             .Where(c => c.IssuedAt >= from && c.IssuedAt <= to)
             .OrderByDescending(c => c.IssuedAt)
             .ToListAsync(ct);

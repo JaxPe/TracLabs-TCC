@@ -15,6 +15,14 @@ public interface ICertificateRepository : IRepository<Certificate>
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Busca um certificado pelo ID carregando todas as entidades associadas (calibração, equipamento, cliente e padrões).
+    /// Essencial para a geração fiel do PDF do certificado de acordo com a ISO/IEC 17025.
+    /// </summary>
+    Task<Certificate?> GetWithDetailsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns all certificates issued for a specific equipment.
     /// </summary>
     Task<IReadOnlyList<Certificate>> GetByEquipmentIdAsync(

@@ -18,6 +18,7 @@ public class VolumeCalibrationMetrologyTests
     private readonly IEquipmentRepository _equipmentRepo = Substitute.For<IEquipmentRepository>();
     private readonly IStandardEquipmentRepository _standardRepo = Substitute.For<IStandardEquipmentRepository>();
     private readonly ICalibrationRepository _calibrationRepo = Substitute.For<ICalibrationRepository>();
+    private readonly ICertificateRepository _certificateRepo = Substitute.For<ICertificateRepository>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 
@@ -172,10 +173,12 @@ public class VolumeCalibrationMetrologyTests
         _equipmentRepo.GetByIdAsync(equipment.Id, Arg.Any<CancellationToken>()).Returns(equipment);
         _standardRepo.GetByIdAsync(balance.Id, Arg.Any<CancellationToken>()).Returns(balance);
 
+        _certificateRepo.GenerateNextCertificateNumberAsync(Arg.Any<CancellationToken>()).Returns("CERT-2026-00001");
         var handler = new CreateVolumeCalibrationCommandHandler(
             _equipmentRepo,
             _standardRepo,
             _calibrationRepo,
+            _certificateRepo,
             _service,
             _currentUserService,
             _unitOfWork);
@@ -238,10 +241,12 @@ public class VolumeCalibrationMetrologyTests
         _currentUserService.UserId.Returns("tech-42");
         _currentUserService.FullName.Returns("Carlos Metrologista");
 
+        _certificateRepo.GenerateNextCertificateNumberAsync(Arg.Any<CancellationToken>()).Returns("CERT-2026-00001");
         var handler = new CreateVolumeCalibrationCommandHandler(
             _equipmentRepo,
             _standardRepo,
             _calibrationRepo,
+            _certificateRepo,
             _service,
             _currentUserService,
             _unitOfWork);

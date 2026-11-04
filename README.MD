@@ -166,10 +166,12 @@ dotnet test
 - [ ] **Fase 3 — Núcleo do Sistema (Em andamento)**:
   - [x] Motor de cálculo metrológico gravimétrico de volume (`VolumeCalibrationService` — ISO 4787 / DOC-CGCRE-027 / GUM)
   - [x] Controle de sequência de certificados (`CertificateSequence`)
-  - [ ] Ciclo de status para padrões de referência (`StandardEquipment`: `PendingCalibration`, `InCalibration`, `Calibrated`, `OutOfService`)
-  - [ ] Casos de uso CQRS (Commands/Queries com MediatR) e Endpoints de Calibração/Equipamentos
-  - [ ] Emissão de certificados em PDF (QuestPDF conforme ABNT NBR ISO/IEC 17025)
-  - [ ] Importação de planilhas Excel (EPPlus) e alertas de vencimento de padrões
+  - [x] Ciclo de status para padrões de referência (`StandardEquipment`: `PendingCalibration`, `InCalibration`, `Calibrated`, `OutOfService` — ISO 17025 item 6.4.13)
+  - [x] Casos de uso CQRS (Commands/Queries com MediatR) e Endpoints REST (Equipamentos, Padrões, Clientes, Calibrações e Certificados)
+  - [x] Gestão de Certificados de Padrões em 2 Etapas, Regressão Linear / Interpolação e Margens de Calibração
+  - [x] Emissão de certificados em PDF (QuestPDF conforme ABNT NBR ISO/IEC 17025 item 7.8) com abordagem híbrida (preview customizável + compilação oficial) e ciclo formal (`Draft` → `Issued` → `Superseded`)
+  - [ ] Alertas automáticos de vencimento de padrões (Background Service / HostedService)
+  - [ ] Importação de planilhas Excel (EPPlus)
 - [ ] **Fase 4 — Frontend**: Interface web em Blazor WebAssembly integrada à API.
 - [ ] **Fase 5 — Finalização**: Testes de integração, containerização completa e entrega final.
 

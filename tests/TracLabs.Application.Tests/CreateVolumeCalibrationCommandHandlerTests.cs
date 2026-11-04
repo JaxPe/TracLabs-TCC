@@ -16,6 +16,7 @@ public class CreateVolumeCalibrationCommandHandlerTests
     private readonly IEquipmentRepository _equipmentRepo = Substitute.For<IEquipmentRepository>();
     private readonly IStandardEquipmentRepository _standardRepo = Substitute.For<IStandardEquipmentRepository>();
     private readonly ICalibrationRepository _calibrationRepo = Substitute.For<ICalibrationRepository>();
+    private readonly ICertificateRepository _certificateRepo = Substitute.For<ICertificateRepository>();
     private readonly IVolumeCalibrationService _volumeCalibrationService = Substitute.For<IVolumeCalibrationService>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
@@ -26,11 +27,13 @@ public class CreateVolumeCalibrationCommandHandlerTests
     {
         _currentUserService.UserId.Returns("tech-001");
         _currentUserService.FullName.Returns("Ana Paula Metrologista");
+        _certificateRepo.GenerateNextCertificateNumberAsync(Arg.Any<CancellationToken>()).Returns("CERT-2026-00001");
 
         _handler = new CreateVolumeCalibrationCommandHandler(
             _equipmentRepo,
             _standardRepo,
             _calibrationRepo,
+            _certificateRepo,
             _volumeCalibrationService,
             _currentUserService,
             _unitOfWork);

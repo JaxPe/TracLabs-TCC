@@ -60,6 +60,11 @@
       "key": "certificateId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "certificateNumber",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -970,6 +975,331 @@
               }
             }
           ]
+        },
+        {
+          "name": "1.6 Emissão e Ciclo de Certificados (QuestPDF & ISO 17025)",
+          "item": [
+            {
+              "name": "1.6.1 Listar Certificados do Equipamento (Salva certificateId)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "if (json && json.length > 0) {",
+                      "    pm.collectionVariables.set(\"certificateId\", json[0].id);",
+                      "    pm.collectionVariables.set(\"certificateNumber\", json[0].certificateNumber);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/equipment/{{equipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "equipment",
+                    "{{equipmentId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.2 Pré-visualizar PDF do Certificado (Preview com Customização)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.test(\"Content-Type é application/pdf\", function () {",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"laboratoryName\": \"TracLabs Metrologia Avan\\u00e7ada\",\n  \"laboratoryTaxId\": \"CNPJ: 12.345.678/0001-90\",\n  \"laboratoryAddress\": \"Rua da Metrologia, 100 - Niter\\u00f3i/RJ\",\n  \"laboratoryContact\": \"contato@traclabs.com.br\",\n  \"accreditationNumber\": \"Laborat\\u00f3rio Acreditado pela Cgcre sob n\\u00ba CRL 0999\",\n  \"primaryColorHex\": \"#1E3A8A\",\n  \"templateStyle\": 0,\n  \"showUncertaintyBudget\": true,\n  \"showDetailedPoints\": true,\n  \"showSignatures\": true,\n  \"customNotes\": \"Calibra\\u00e7\\u00e3o executada em temperatura controlada de 20 \\u00b0C.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/preview-pdf",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "preview-pdf"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.3 Gerar e Anexar PDF Oficial (QuestPDF)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "pm.test(\"PDF anexado com sucesso\", function () {",
+                      "    pm.expect(json.hasPdf).to.be.true;",
+                      "    pm.expect(json.pdfFileName).to.not.be.null;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"laboratoryName\": \"TracLabs Metrologia Avan\\u00e7ada\",\n  \"primaryColorHex\": \"#1E3A8A\",\n  \"showDetailedPoints\": true,\n  \"showSignatures\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/generate-pdf",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "generate-pdf"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.4 Download do Arquivo PDF Oficial",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.test(\"Content-Type é application/pdf\", function () {",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/pdf",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "pdf"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.5 Emitir Certificado Formalmente - Supervisor",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "pm.test(\"Status transicionado para Issued\", function () {",
+                      "    pm.expect(json.status).to.eql(\"Issued\");",
+                      "    pm.expect(json.issuedAt).to.not.be.null;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/issue",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "issue"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.6 Consultar Detalhes do Certificado por ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "pm.test(\"Retorna dados consistentes\", function () {",
+                      "    pm.expect(json.id).to.eql(pm.collectionVariables.get(\"certificateId\"));",
+                      "    pm.expect(json.status).to.eql(\"Issued\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.7 Consultar Certificado por Número",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/by-number/{{certificateNumber}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "by-number",
+                    "{{certificateNumber}}"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "1.6.8 Cancelar / Substituir Certificado - Supervisor",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "var json = pm.response.json();",
+                      "pm.test(\"Status transicionado para Superseded\", function () {",
+                      "    pm.expect(json.status).to.eql(\"Superseded\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Substitui\\u00e7\\u00e3o devido a atualiza\\u00e7\\u00e3o cadastral do solicitante.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/supersede",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "supersede"
+                  ]
+                }
+              }
+            }
+          ]
         }
       ]
     },
@@ -1183,6 +1513,39 @@
                     "standardequipment",
                     "{{standardId}}",
                     "certificates"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Técnico tenta emitir certificado (Esperado 403 Forbidden)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code é 403 Forbidden\", function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/certificates/{{certificateId}}/issue",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "certificates",
+                    "{{certificateId}}",
+                    "issue"
                   ]
                 }
               }

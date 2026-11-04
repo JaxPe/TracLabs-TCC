@@ -69,6 +69,7 @@ public class CreateVolumeCalibrationCommandHandler
     private readonly IEquipmentRepository _equipmentRepository;
     private readonly IStandardEquipmentRepository _standardEquipmentRepository;
     private readonly ICalibrationRepository _calibrationRepository;
+    private readonly ICertificateRepository _certificateRepository;
     private readonly IVolumeCalibrationService _volumeCalibrationService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
@@ -77,6 +78,7 @@ public class CreateVolumeCalibrationCommandHandler
         IEquipmentRepository equipmentRepository,
         IStandardEquipmentRepository standardEquipmentRepository,
         ICalibrationRepository calibrationRepository,
+        ICertificateRepository certificateRepository,
         IVolumeCalibrationService volumeCalibrationService,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
@@ -84,6 +86,7 @@ public class CreateVolumeCalibrationCommandHandler
         _equipmentRepository = equipmentRepository;
         _standardEquipmentRepository = standardEquipmentRepository;
         _calibrationRepository = calibrationRepository;
+        _certificateRepository = certificateRepository;
         _volumeCalibrationService = volumeCalibrationService;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
@@ -345,7 +348,13 @@ public class CreateVolumeCalibrationCommandHandler
         equipment.StartCalibration();
         equipment.CompleteCalibration(record);
 
-        // 12. Persistência atômica no banco de dados
+        // 12. Geração e vinculação do certificado em rascunho com numeração sequencial concorrente
+        var nextCertNumber = await _certificateRepository.GenerateNextCertificateNumberAsync(cancellationToken);
+        var certificate = new Certificate(nextCertNumber, record.Id);
+        await _certificateRepository.AddAsync(certificate, cancellationToken);
+        record.AttachCertificate(certificate);
+
+        // 13. Persistência atômica no banco de dados
         await _calibrationRepository.AddAsync(record, cancellationToken);
         _equipmentRepository.Update(equipment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
