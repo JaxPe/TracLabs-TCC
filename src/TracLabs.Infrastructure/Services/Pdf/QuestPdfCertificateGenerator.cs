@@ -4,7 +4,6 @@ using QuestPDF.Infrastructure;
 using System.Globalization;
 using TracLabs.Application.Features.Certificates.DTOs;
 using TracLabs.Application.Interfaces.Services;
-using TracLabs.Domain.Entities;
 using TracLabs.Domain.Enums;
 
 namespace TracLabs.Infrastructure.Services.Pdf;
@@ -59,7 +58,7 @@ internal class VolumeCalibrationDocument : IDocument
         _options = options;
         _primaryColor = !string.IsNullOrWhiteSpace(options.PrimaryColorHex)
             ? options.PrimaryColorHex
-            : "#1E3A8A"; // Azul marinho técnico
+            : "#1E3A8A"; // Azul marinho metrológico
     }
 
     public DocumentMetadata GetMetadata() => new()
@@ -125,27 +124,21 @@ internal class VolumeCalibrationDocument : IDocument
                     labCol.Item().Text(rbcAccreditation).Italic().FontSize(7.5f).FontColor(Colors.Grey.Darken3);
                 });
 
-                // Coluna Direita: Caixa de Identificação do Certificado
+                // Coluna Direita: Caixa Oficial de Identificação do Certificado
                 row.RelativeItem(2).Border(1).BorderColor(_primaryColor).Padding(6).Column(certCol =>
                 {
                     certCol.Item().AlignCenter().Text("CERTIFICADO DE CALIBRAÇÃO").Bold().FontSize(10).FontColor(_primaryColor);
                     certCol.Item().AlignCenter().Text(_data.CertificateNumber).Bold().FontSize(12).FontColor(Colors.Black);
-                    
-                    var statusDesc = _data.Status switch
-                    {
-                        CertificateStatus.Draft => "RASCUNHO / PREVIEW",
-                        CertificateStatus.Issued => "EMITIDO OFICIAL",
-                        CertificateStatus.Superseded => "SUBSTITUÍDO / CANCELADO",
-                        _ => _data.Status.ToString()
-                    };
+                    certCol.Item().AlignCenter().PaddingTop(3).Text($"Emissão: {(_data.IssuedAt.HasValue ? _data.IssuedAt.Value.ToString("dd/MM/yyyy", _ptBr) : "Pendente")}").FontSize(8.5f);
 
-                    certCol.Item().AlignCenter().PaddingTop(2).Text(txt =>
+                    if (_data.Status == CertificateStatus.Draft)
                     {
-                        txt.Span("Status: ").FontSize(8);
-                        txt.Span(statusDesc).Bold().FontSize(8).FontColor(_data.Status == CertificateStatus.Issued ? Colors.Green.Darken2 : Colors.Red.Darken2);
-                    });
-
-                    certCol.Item().AlignCenter().Text($"Emissão: {(_data.IssuedAt.HasValue ? _data.IssuedAt.Value.ToString("dd/MM/yyyy", _ptBr) : "Pendente")}").FontSize(8);
+                        certCol.Item().AlignCenter().PaddingTop(2).Text("[RASCUNHO / PREVIEW]").Bold().FontSize(7.5f).FontColor(Colors.Orange.Darken2);
+                    }
+                    else if (_data.Status == CertificateStatus.Superseded)
+                    {
+                        certCol.Item().AlignCenter().PaddingTop(2).Text("[SUBSTITUÍDO / CANCELADO]").Bold().FontSize(7.5f).FontColor(Colors.Red.Darken2);
+                    }
                 });
             });
 
@@ -184,22 +177,30 @@ internal class VolumeCalibrationDocument : IDocument
                 });
             });
 
-            // 2. Metadados do Procedimento e Condições Ambientais
+            // 2. Procedimento Metrológico e Condições de Ensaio
             col.Item().PaddingTop(6).Border(0.5f).BorderColor(Colors.Grey.Lighten1).Padding(5).Column(c =>
             {
                 c.Item().Text("3. MÉTODO DE MEDIÇÃO E CONDIÇÕES AMBIENTAIS").Bold().FontSize(8.5f).FontColor(_primaryColor);
-                c.Item().Text("Método Gravimétrico conforme ABNT NBR ISO 4787:2013 e Orientação DOC-CGCRE-027 (INMETRO). " +
-                              "Massa específica da água determinada pela equação de Tanaka e massa específica do ar calculada pela fórmula de Spieweck.").FontSize(7.8f);
+                c.Item().Text("Calibração por gravimetria conforme norma ABNT NBR ISO 4787:2013 e Orientação DOC-CGCRE-027. " +
+                              "Massa específica da água calculada pela equação de Tanaka e massa específica do ar determinada pela equação de Spieweck.").FontSize(7.8f);
 
                 c.Item().PaddingTop(3).Row(r =>
                 {
-                    r.RelativeItem().Text($"Data da Calibração: {_data.CalibrationDate.ToString("dd/MM/yyyy", _ptBr)}").FontSize(8);
-                    r.RelativeItem().Text($"Temp. Ambiente: {_data.AmbientTemperatureCelsius.ToString("N1", _ptBr)} °C").FontSize(8);
-                    r.RelativeItem().Text($"Umidade Relativa: {_data.RelativeHumidityPercent.ToString("N1", _ptBr)} %").FontSize(8);
+                    r.RelativeItem().Text($"Data da Calibração: {_data.CalibrationDate.ToString("dd/MM/yyyy", _ptBr)}").FontSize(7.8f);
+                    r.RelativeItem().Text($"Temp. Ambiente: {_data.AmbientTemperatureCelsius.ToString("N1", _ptBr)} °C").FontSize(7.8f);
+                    r.RelativeItem().Text($"Umidade Relativa: {_data.RelativeHumidityPercent.ToString("N1", _ptBr)} %").FontSize(7.8f);
                     if (_data.AtmosphericPressureHpa.HasValue)
-                        r.RelativeItem().Text($"Pressão: {_data.AtmosphericPressureHpa.Value.ToString("N1", _ptBr)} hPa").FontSize(8);
+                        r.RelativeItem().Text($"Pressão: {_data.AtmosphericPressureHpa.Value.ToString("N1", _ptBr)} hPa").FontSize(7.8f);
+                });
+
+                c.Item().PaddingTop(2).Row(r =>
+                {
                     if (_data.WaterTemperatureCelsius.HasValue)
-                        r.RelativeItem().Text($"Temp. Água: {_data.WaterTemperatureCelsius.Value.ToString("N2", _ptBr)} °C").FontSize(8);
+                        r.RelativeItem().Text($"Temp. da Água: {_data.WaterTemperatureCelsius.Value.ToString("N2", _ptBr)} °C").FontSize(7.8f);
+                    if (_data.WaterDensityGcm3.HasValue)
+                        r.RelativeItem().Text($"Densidade da Água: {_data.WaterDensityGcm3.Value.ToString("N5", _ptBr)} g/cm³").FontSize(7.8f);
+                    if (_data.AirDensityGcm3.HasValue)
+                        r.RelativeItem().Text($"Densidade do Ar: {_data.AirDensityGcm3.Value.ToString("N5", _ptBr)} g/cm³").FontSize(7.8f);
                 });
             });
 
@@ -211,41 +212,39 @@ internal class VolumeCalibrationDocument : IDocument
                 {
                     t.ColumnsDefinition(cd =>
                     {
-                        cd.RelativeColumn(3); // Função
-                        cd.RelativeColumn(2); // Tag
-                        cd.RelativeColumn(3); // Certificado RBC
-                        cd.RelativeColumn(3); // Laboratório Emissor
-                        cd.RelativeColumn(2); // Correção
-                        cd.RelativeColumn(2); // Incerteza (U)
-                        cd.RelativeColumn(1.2f); // k
+                        cd.RelativeColumn(3);    // Descrição / Função
+                        cd.RelativeColumn(2);    // Tag Lab / Código
+                        cd.RelativeColumn(3);    // Certificado RBC
+                        cd.RelativeColumn(2);    // Validade (mmm-yy)
+                        cd.RelativeColumn(3);    // Órgão Emissor / Rastreabilidade
                     });
 
                     t.Header(h =>
                     {
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Padrão / Função").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Tag Lab").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Certificado RBC").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Órgão Emissor").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Correção").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Incerteza (U)").Bold().FontSize(7.5f).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("k").Bold().FontSize(7.5f).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Padrão / Descrição").Bold().FontSize(7.5f).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Identificação").Bold().FontSize(7.5f).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Nº Certificado").Bold().FontSize(7.5f).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Validade").Bold().FontSize(7.5f).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Rastreabilidade").Bold().FontSize(7.5f).FontColor(Colors.White);
                     });
 
                     foreach (var std in _data.StandardsUsed)
                     {
                         var bg = Colors.White;
+                        var validadeStr = std.CertificateDueDate.HasValue
+                            ? std.CertificateDueDate.Value.ToString("MMM-yy", _ptBr).ToLowerInvariant()
+                            : "—";
+
                         t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.Role).FontSize(7.5f);
                         t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.LabTag).FontSize(7.5f);
                         t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.CertificateNumber).FontSize(7.5f);
-                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.CalibratingLaboratory ?? "RBC").FontSize(7.5f);
-                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.Correction.ToString("N4", _ptBr)).FontSize(7.5f);
-                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.ExpandedUncertainty.ToString("N4", _ptBr)).FontSize(7.5f);
-                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.CoverageFactor.ToString("N2", _ptBr)).FontSize(7.5f);
+                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(validadeStr).FontSize(7.5f);
+                        t.Cell().Background(bg).BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2.5f).Text(std.CalibratingLaboratory ?? "SI - RBC").FontSize(7.5f);
                     }
                 });
             });
 
-            // 4. Resultados da Calibração
+            // 4. Resultados da Calibração (Mono ou Multi-Ponto com veff)
             col.Item().PaddingTop(6).Column(c =>
             {
                 c.Item().Text("5. RESULTADOS METROLÓGICOS (ISO/IEC 17025)").Bold().FontSize(8.5f).FontColor(_primaryColor);
@@ -255,36 +254,46 @@ internal class VolumeCalibrationDocument : IDocument
                     {
                         cd.RelativeColumn(2.5f); // Volume Nominal
                         cd.RelativeColumn(3);    // Volume Corrigido V20
-                        cd.RelativeColumn(2.5f); // Erro de Medição
+                        cd.RelativeColumn(2.5f); // Erro de Medição / Tendência
                         cd.RelativeColumn(2.5f); // Incerteza U
-                        cd.RelativeColumn(1.5f); // Fator k
-                        cd.RelativeColumn(2.5f); // Conformidade
+                        cd.RelativeColumn(1.2f); // Fator k
+                        cd.RelativeColumn(1.2f); // veff
                     });
 
                     t.Header(h =>
                     {
                         h.Cell().Background(_primaryColor).Padding(3).Text("Volume Nominal (mL)").Bold().FontSize(8).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Volume Corrigido V₂₀ (mL)").Bold().FontSize(8).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Erro de Medição (mL)").Bold().FontSize(8).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Volume Medido V₂₀ (mL)").Bold().FontSize(8).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("Tendência / Erro (mL)").Bold().FontSize(8).FontColor(Colors.White);
                         h.Cell().Background(_primaryColor).Padding(3).Text("Incerteza U (mL)").Bold().FontSize(8).FontColor(Colors.White);
                         h.Cell().Background(_primaryColor).Padding(3).Text("Fator k").Bold().FontSize(8).FontColor(Colors.White);
-                        h.Cell().Background(_primaryColor).Padding(3).Text("Conclusão").Bold().FontSize(8).FontColor(Colors.White);
+                        h.Cell().Background(_primaryColor).Padding(3).Text("veff").Bold().FontSize(8).FontColor(Colors.White);
                     });
 
-                    var resultText = _data.Result == CalibrationResult.Conforming ? "CONFORME" :
-                                     _data.Result == CalibrationResult.NonConforming ? "NÃO CONFORME" : "PENDENTE";
-                    var resultColor = _data.Result == CalibrationResult.Conforming ? Colors.Green.Darken2 : Colors.Red.Darken2;
+                    var pointsToRender = _data.ResultPoints != null && _data.ResultPoints.Count > 0
+                        ? _data.ResultPoints
+                        : new List<CertificateResultPointDto>
+                        {
+                            new(_data.NominalVolumeMl, _data.CalculatedVolumeV20Ml, _data.SystematicErrorMl, _data.ExpandedUncertaintyMl, _data.CoverageFactor, _data.EffectiveDegreesOfFreedom)
+                        };
 
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(_data.NominalVolumeMl.ToString("N3", _ptBr)).Bold().FontSize(8.5f);
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(_data.CalculatedVolumeV20Ml.ToString("N4", _ptBr)).Bold().FontSize(8.5f);
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(_data.SystematicErrorMl.ToString("+0.0000;-0.0000;0.0000", _ptBr)).Bold().FontSize(8.5f);
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(_data.ExpandedUncertaintyMl.ToString("N4", _ptBr)).Bold().FontSize(8.5f);
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(_data.CoverageFactor.ToString("N2", _ptBr)).FontSize(8.5f);
-                    t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(4).Text(resultText).Bold().FontSize(8.5f).FontColor(resultColor);
+                    foreach (var pt in pointsToRender)
+                    {
+                        var veffText = pt.EffectiveDegreesOfFreedom.HasValue
+                            ? (pt.EffectiveDegreesOfFreedom.Value >= 100 ? "> 100" : pt.EffectiveDegreesOfFreedom.Value.ToString("N0", _ptBr))
+                            : "—";
+
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(pt.NominalVolumeMl.ToString("N2", _ptBr)).Bold().FontSize(8.5f);
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(pt.MeasuredVolumeMl.ToString("N4", _ptBr)).Bold().FontSize(8.5f);
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(pt.ErrorMl.ToString("+0.0000;-0.0000;0.0000", _ptBr)).Bold().FontSize(8.5f);
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(pt.ExpandedUncertaintyMl.ToString("N4", _ptBr)).Bold().FontSize(8.5f);
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(pt.CoverageFactor.ToString("N2", _ptBr)).FontSize(8.5f);
+                        t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(3.5f).Text(veffText).FontSize(8.5f);
+                    }
                 });
             });
 
-            // 5. Tabela de Leituras Repetidas (se habilitado)
+            // 5. Corridas de Medição Individuais (Exibida somente se solicitado expressamente pelo usuário)
             if (_options.ShowDetailedPoints && _data.MeasurementPoints.Count > 0)
             {
                 col.Item().PaddingTop(6).Column(c =>
@@ -294,10 +303,10 @@ internal class VolumeCalibrationDocument : IDocument
                     {
                         t.ColumnsDefinition(cd =>
                         {
-                            cd.RelativeColumn(1); // Corrida
-                            cd.RelativeColumn(3); // Nominal
-                            cd.RelativeColumn(3); // Medido
-                            cd.RelativeColumn(3); // Erro
+                            cd.RelativeColumn(1);
+                            cd.RelativeColumn(3);
+                            cd.RelativeColumn(3);
+                            cd.RelativeColumn(3);
                         });
 
                         t.Header(h =>
@@ -311,7 +320,7 @@ internal class VolumeCalibrationDocument : IDocument
                         foreach (var pt in _data.MeasurementPoints)
                         {
                             t.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2).Text(pt.RunNumber.ToString()).FontSize(7.5f);
-                            t.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2).Text(pt.NominalVolumeMl.ToString("N3", _ptBr)).FontSize(7.5f);
+                            t.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2).Text(pt.NominalVolumeMl.ToString("N2", _ptBr)).FontSize(7.5f);
                             t.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2).Text(pt.IndicatedVolumeMl.ToString("N4", _ptBr)).FontSize(7.5f);
                             t.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(2).Text(pt.ErrorMl.ToString("+0.0000;-0.0000;0.0000", _ptBr)).FontSize(7.5f);
                         }
@@ -319,12 +328,12 @@ internal class VolumeCalibrationDocument : IDocument
                 });
             }
 
-            // 6. Declarações e Observações Técnicas
+            // 6. Declarações e Observações Técnicas (Concisas e Objetivas)
             col.Item().PaddingTop(6).Border(0.5f).BorderColor(Colors.Grey.Lighten1).Padding(5).Column(c =>
             {
-                c.Item().Text("7. NOTAS TÉCNICAS E DECLARAÇÕES NORMATIVAS (ABNT NBR ISO/IEC 17025)").Bold().FontSize(8f).FontColor(_primaryColor);
+                c.Item().Text("NOTAS TÉCNICAS E DECLARAÇÕES NORMATIVAS (ABNT NBR ISO/IEC 17025)").Bold().FontSize(8f).FontColor(_primaryColor);
                 c.Item().Text("• Os resultados apresentados neste certificado referem-se exclusivamente ao instrumento ensaiado nas condições da medição.").FontSize(7.5f);
-                c.Item().Text("• A incerteza expandida relatada é baseada em uma incerteza combinada multiplicada por um fator de abrangência k correspondente a uma probabilidade de abrangência de aproximadamente 95,45% (GUM - JCGM 100:2008).").FontSize(7.5f);
+                c.Item().Text("• A incerteza expandida relatada é baseada em uma incerteza combinada multiplicada pelo fator de abrangência k correspondente a uma probabilidade de abrangência de aproximadamente 95,45%.").FontSize(7.5f);
                 c.Item().Text("• A reprodução deste documento só pode ser feita de forma integral. A reprodução de partes requer aprovação prévia por escrito deste laboratório.").FontSize(7.5f);
 
                 if (!string.IsNullOrWhiteSpace(_data.Observations))
@@ -349,7 +358,7 @@ internal class VolumeCalibrationDocument : IDocument
             // 7. Assinaturas Autorizadas (se habilitado)
             if (_options.ShowSignatures)
             {
-                col.Item().PaddingTop(12).Row(r =>
+                col.Item().PaddingTop(14).Row(r =>
                 {
                     r.RelativeItem().Column(sigCol =>
                     {

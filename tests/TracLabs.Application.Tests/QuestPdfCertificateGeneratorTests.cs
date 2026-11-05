@@ -16,17 +16,20 @@ public class QuestPdfCertificateGeneratorTests
     {
         var standards = new List<CertificateStandardUsedItemDto>
         {
-            new("Balança Analítica", "PAD-BAL-01", "Balança Toledo", "RBC-001/2025", "Laboratório Alfa", 0.0002m, 0.0005m, 2.0m, 0.0001m, 100.0m, false, null),
-            new("Termômetro de Imersão (Água)", "PAD-TERM-01", "Termômetro Incoterm", "RBC-002/2025", "Laboratório Beta", -0.05m, 0.02m, 2.0m, 0.01m, 20.15m, false, null),
-            new("Barômetro", "PAD-BAR-01", "Barômetro Digital", "RBC-003/2025", "Laboratório Gama", 0.1m, 0.2m, 2.0m, 0.1m, 1013.2m, false, null),
-            new("Higrômetro", "PAD-HIG-01", "Termo-Higrômetro Testo", "RBC-004/2025", "Laboratório Delta", -1.0m, 2.0m, 2.0m, 0.1m, 55.0m, false, null)
+            new("Balança Analítica", "PAD-BAL-01", "Balança Toledo", "RBC-001/2025", "Laboratório Alfa", 0.0002m, 0.0005m, 2.0m, 0.0001m, 100.0m, false, null, new DateTime(2026, 9, 30)),
+            new("Termômetro de Imersão (Água)", "PAD-TERM-01", "Termômetro Incoterm", "RBC-002/2025", "Laboratório Beta", -0.05m, 0.02m, 2.0m, 0.01m, 20.15m, false, null, new DateTime(2026, 11, 15)),
+            new("Barômetro", "PAD-BAR-01", "Barômetro Digital", "RBC-003/2025", "Laboratório Gama", 0.1m, 0.2m, 2.0m, 0.1m, 1013.2m, false, null, new DateTime(2027, 7, 20)),
+            new("Higrômetro", "PAD-HIG-01", "Termo-Higrômetro Testo", "RBC-004/2025", "Laboratório Delta", -1.0m, 2.0m, 2.0m, 0.1m, 55.0m, false, null, new DateTime(2026, 8, 10))
         };
 
         var points = new List<CertificateMeasurementPointDto>
         {
-            new(1, 100.0m, 99.985m, -0.015m, "mL"),
-            new(2, 100.0m, 99.988m, -0.012m, "mL"),
-            new(3, 100.0m, 99.986m, -0.014m, "mL")
+            new(1, 2.5m, 2.498m, -0.002m, "mL"),
+            new(2, 2.5m, 2.498m, -0.002m, "mL"),
+            new(3, 12.5m, 12.495m, -0.005m, "mL"),
+            new(4, 12.5m, 12.495m, -0.005m, "mL"),
+            new(5, 25.0m, 24.986m, -0.014m, "mL"),
+            new(6, 25.0m, 24.987m, -0.013m, "mL")
         };
 
         return new CertificateReportDto(
@@ -65,6 +68,8 @@ public class QuestPdfCertificateGeneratorTests
             RelativeHumidityPercent: 55.0m,
             WaterTemperatureCelsius: 20.15m,
             AtmosphericPressureHpa: 1013.2m,
+            WaterDensityGcm3: 0.998203m,
+            AirDensityGcm3: 0.001198m,
             NominalVolumeMl: 100.0m,
             CalculatedVolumeV20Ml: 99.9863m,
             SystematicErrorMl: -0.0137m,
@@ -76,7 +81,13 @@ public class QuestPdfCertificateGeneratorTests
             Result: CalibrationResult.Conforming,
             Observations: "Equipamento em perfeito estado de conservação.",
             StandardsUsed: standards,
-            MeasurementPoints: points
+            MeasurementPoints: points,
+            ResultPoints: new List<CertificateResultPointDto>
+            {
+                new(2.5m, 2.4981m, -0.0019m, 0.0042m, 2.0m, 35m),
+                new(12.5m, 12.4950m, -0.0050m, 0.0065m, 2.0m, 48m),
+                new(25.0m, 24.9863m, -0.0137m, 0.0070m, 2.0m, 120m)
+            }
         );
     }
 

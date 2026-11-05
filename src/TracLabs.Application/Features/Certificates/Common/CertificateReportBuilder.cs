@@ -6,7 +6,7 @@ namespace TracLabs.Application.Features.Certificates.Common;
 
 /// <summary>
 /// Construtor de DTO de relatório para certificados de calibração.
-/// Extrai e formata dados metrológicos, rastreabilidade RBC e dados cadastrais da calibração.
+/// Extrai e formata dados metrológicos, rastreabilidade RBC, validade dos padrões e resultados (mono ou multi-ponto).
 /// </summary>
 public static class CertificateReportBuilder
 {
@@ -39,7 +39,8 @@ public static class CertificateReportBuilder
             Resolution: s.Resolution,
             OperatingValue: s.OperatingValue,
             IsExtrapolated: s.IsExtrapolated,
-            WarningMessage: s.WarningMessage
+            WarningMessage: s.WarningMessage,
+            CertificateDueDate: s.CertificateDueDate
         )).ToList();
 
         var measurementPointsDtos = record.MeasurementPoints.Select((p, idx) => new CertificateMeasurementPointDto(
@@ -50,9 +51,66 @@ public static class CertificateReportBuilder
             Unit: p.Unit
         )).ToList();
 
-        // Nominal volume do equipamento ou do primeiro ponto
-        var nominalVolume = measurementPointsDtos.FirstOrDefault()?.NominalVolumeMl ?? equipment.RangeMax;
-        var calculatedVolumeV20 = nominalVolume + record.MeanError;
+        // Constrói a lista de pontos para a tabela oficial de resultados (atendendo tanto mono-ponto quanto multi-pontos)
+        var resultPoints = new List<CertificateResultPointDto>();
+        var groupedPoints = record.MeasurementPoints
+            .GroupBy(p => p.NominalValue)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        if (groupedPoints.Count > 1)
+        {
+            // Instrumento com escala / múltiplos pontos nominais calibrados (ex: Dispensador, Pipeta Graduada, Bureta)
+            foreach (var group in groupedPoints)
+            {
+                var nomVal = group.Key;
+                var meanIndicated = group.Average(p => p.IndicatedValue);
+                var meanErr = group.Average(p => p.Error);
+                var count = group.Count();
+                decimal? stdDev = null;
+                if (count > 1)
+                {
+                    var sumSq = group.Sum(p => (p.IndicatedValue - meanIndicated) * (p.IndicatedValue - meanIndicated));
+                    stdDev = (decimal)Math.Sqrt((double)(sumSq / (count - 1)));
+                }
+
+                resultPoints.Add(new CertificateResultPointDto(
+                    NominalVolumeMl: nomVal,
+                    MeasuredVolumeMl: meanIndicated,
+                    ErrorMl: meanErr,
+                    ExpandedUncertaintyMl: record.ExpandedUncertainty,
+                    CoverageFactor: record.CoverageFactor,
+                    EffectiveDegreesOfFreedom: record.EffectiveDegreesOfFreedom,
+                    StandardDeviationMl: stdDev
+                ));
+            }
+        }
+        else
+        {
+            // Instrumento de capacidade única / ponto único (ex: Balão Volumétrico, Picnômetro)
+            var nomVal = groupedPoints.FirstOrDefault()?.Key ?? equipment.RangeMax;
+            var calculatedVolume = nomVal + record.MeanError;
+            decimal? stdDev = null;
+            if (record.MeasurementPoints.Count > 1)
+            {
+                var meanIndicated = record.MeasurementPoints.Average(p => p.IndicatedValue);
+                var sumSq = record.MeasurementPoints.Sum(p => (p.IndicatedValue - meanIndicated) * (p.IndicatedValue - meanIndicated));
+                stdDev = (decimal)Math.Sqrt((double)(sumSq / (record.MeasurementPoints.Count - 1)));
+            }
+
+            resultPoints.Add(new CertificateResultPointDto(
+                NominalVolumeMl: nomVal,
+                MeasuredVolumeMl: calculatedVolume,
+                ErrorMl: record.MeanError,
+                ExpandedUncertaintyMl: record.ExpandedUncertainty,
+                CoverageFactor: record.CoverageFactor,
+                EffectiveDegreesOfFreedom: record.EffectiveDegreesOfFreedom,
+                StandardDeviationMl: stdDev
+            ));
+        }
+
+        var nominalVolume = resultPoints.FirstOrDefault()?.NominalVolumeMl ?? equipment.RangeMax;
+        var calculatedVolumeV20 = resultPoints.FirstOrDefault()?.MeasuredVolumeMl ?? (nominalVolume + record.MeanError);
 
         return new CertificateReportDto(
             CertificateId: cert.Id,
@@ -93,6 +151,8 @@ public static class CertificateReportBuilder
             RelativeHumidityPercent: record.HumidityPercent,
             WaterTemperatureCelsius: liquidThermometer?.OperatingValue,
             AtmosphericPressureHpa: barometer?.OperatingValue,
+            WaterDensityGcm3: record.WaterDensityGcm3,
+            AirDensityGcm3: record.AirDensityGcm3,
             // Resultados
             NominalVolumeMl: nominalVolume,
             CalculatedVolumeV20Ml: calculatedVolumeV20,
@@ -101,12 +161,13 @@ public static class CertificateReportBuilder
             CombinedUncertaintyMl: record.CombinedStandardUncertainty,
             ExpandedUncertaintyMl: record.ExpandedUncertainty,
             CoverageFactor: record.CoverageFactor,
-            EffectiveDegreesOfFreedom: null,
+            EffectiveDegreesOfFreedom: record.EffectiveDegreesOfFreedom,
             Result: record.Result,
             Observations: record.Observations,
             // Coleções
             StandardsUsed: standardsUsedDtos,
-            MeasurementPoints: measurementPointsDtos
+            MeasurementPoints: measurementPointsDtos,
+            ResultPoints: resultPoints
         );
     }
 

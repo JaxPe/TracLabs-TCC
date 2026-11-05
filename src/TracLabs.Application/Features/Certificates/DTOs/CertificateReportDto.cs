@@ -45,7 +45,9 @@ public record CertificateReportDto(
     decimal RelativeHumidityPercent,
     decimal? WaterTemperatureCelsius,
     decimal? AtmosphericPressureHpa,
-    // Resultados Metrológicos
+    decimal? WaterDensityGcm3,
+    decimal? AirDensityGcm3,
+    // Resultados Metrológicos Globais (Compatibilidade mono-ponto)
     decimal NominalVolumeMl,
     decimal CalculatedVolumeV20Ml,
     decimal SystematicErrorMl,
@@ -58,7 +60,18 @@ public record CertificateReportDto(
     string? Observations,
     // Coleções
     IReadOnlyList<CertificateStandardUsedItemDto> StandardsUsed,
-    IReadOnlyList<CertificateMeasurementPointDto> MeasurementPoints
+    IReadOnlyList<CertificateMeasurementPointDto> MeasurementPoints,
+    IReadOnlyList<CertificateResultPointDto> ResultPoints
+);
+
+public record CertificateResultPointDto(
+    decimal NominalVolumeMl,
+    decimal MeasuredVolumeMl,
+    decimal ErrorMl,
+    decimal ExpandedUncertaintyMl,
+    decimal CoverageFactor,
+    decimal? EffectiveDegreesOfFreedom,
+    decimal? StandardDeviationMl = null
 );
 
 public record CertificateStandardUsedItemDto(
@@ -73,7 +86,8 @@ public record CertificateStandardUsedItemDto(
     decimal Resolution,
     decimal OperatingValue,
     bool IsExtrapolated,
-    string? WarningMessage
+    string? WarningMessage,
+    DateTime? CertificateDueDate = null
 );
 
 public record CertificateMeasurementPointDto(

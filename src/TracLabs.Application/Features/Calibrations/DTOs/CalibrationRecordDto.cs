@@ -16,7 +16,8 @@ public record CalibrationStandardUsedDto(
     decimal CoverageFactor,
     decimal OperatingValue = 0m,
     bool IsExtrapolated = false,
-    string? WarningMessage = null);
+    string? WarningMessage = null,
+    DateTime? CertificateDueDate = null);
 
 public record CalibrationRecordDto(
     Guid Id,

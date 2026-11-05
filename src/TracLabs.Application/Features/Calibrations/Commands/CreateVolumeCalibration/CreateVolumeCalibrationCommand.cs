@@ -280,31 +280,31 @@ public class CreateVolumeCalibrationCommandHandler
         var activeBalanceCert = balance.GetActiveCertificate();
         var standardsUsed = new List<CalibrationStandardUsed>
         {
-            new(record.Id, balance, StandardRole.Balance, balanceResolved, activeBalanceCert?.Id, activeBalanceCert?.CertificateNumber, activeBalanceCert?.CalibratingLaboratory)
+            new(record.Id, balance, StandardRole.Balance, balanceResolved, activeBalanceCert?.Id, activeBalanceCert?.CertificateNumber, activeBalanceCert?.CalibratingLaboratory, activeBalanceCert?.CalibrationDueDate ?? balance.CalibrationDueDate)
         };
 
         if (liquidThermometer != null && liquidThermometerResolved != null)
         {
             var cert = liquidThermometer.GetActiveCertificate();
-            standardsUsed.Add(new(record.Id, liquidThermometer, StandardRole.LiquidThermometer, liquidThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+            standardsUsed.Add(new(record.Id, liquidThermometer, StandardRole.LiquidThermometer, liquidThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory, cert?.CalibrationDueDate ?? liquidThermometer.CalibrationDueDate));
         }
 
         if (ambientThermometer != null && ambientThermometerResolved != null && ambientThermometer.Id != liquidThermometer?.Id)
         {
             var cert = ambientThermometer.GetActiveCertificate();
-            standardsUsed.Add(new(record.Id, ambientThermometer, StandardRole.AmbientThermometer, ambientThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+            standardsUsed.Add(new(record.Id, ambientThermometer, StandardRole.AmbientThermometer, ambientThermometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory, cert?.CalibrationDueDate ?? ambientThermometer.CalibrationDueDate));
         }
 
         if (barometer != null && barometerResolved != null)
         {
             var cert = barometer.GetActiveCertificate();
-            standardsUsed.Add(new(record.Id, barometer, StandardRole.Barometer, barometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+            standardsUsed.Add(new(record.Id, barometer, StandardRole.Barometer, barometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory, cert?.CalibrationDueDate ?? barometer.CalibrationDueDate));
         }
 
         if (hygrometer != null && hygrometerResolved != null)
         {
             var cert = hygrometer.GetActiveCertificate();
-            standardsUsed.Add(new(record.Id, hygrometer, StandardRole.Hygrometer, hygrometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory));
+            standardsUsed.Add(new(record.Id, hygrometer, StandardRole.Hygrometer, hygrometerResolved, cert?.Id, cert?.CertificateNumber, cert?.CalibratingLaboratory, cert?.CalibrationDueDate ?? hygrometer.CalibrationDueDate));
         }
 
         record.AddStandardsUsed(standardsUsed);
@@ -334,6 +334,9 @@ public class CreateVolumeCalibrationCommandHandler
                 : $"{effectiveObservations}\n{warningsText}";
         }
 
+        var waterDensityGcm3 = calcResult.WaterDensityGramsPerCm3 > 0 ? calcResult.WaterDensityGramsPerCm3 : (decimal?)null;
+        var airDensityGcm3 = calcResult.AirDensityGramsPerCm3 > 0 ? calcResult.AirDensityGramsPerCm3 : (decimal?)null;
+
         record.RecordResults(
             measurementPoints,
             calcResult.SystematicErrorMl,
@@ -342,7 +345,10 @@ public class CreateVolumeCalibrationCommandHandler
             calcResult.ExpandedUncertaintyMl,
             calcResult.CoverageFactor,
             result,
-            effectiveObservations);
+            effectiveObservations,
+            calcResult.EffectiveDegreesOfFreedom,
+            waterDensityGcm3,
+            airDensityGcm3);
 
         // 11. Atualização do ciclo de status do equipamento do cliente
         equipment.StartCalibration();
@@ -371,7 +377,8 @@ public class CreateVolumeCalibrationCommandHandler
             s.CoverageFactor,
             s.OperatingValue,
             s.IsExtrapolated,
-            s.WarningMessage)).ToList();
+            s.WarningMessage,
+            s.CertificateDueDate)).ToList();
 
         return new CalibrationRecordDto(
             record.Id,

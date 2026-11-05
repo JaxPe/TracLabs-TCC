@@ -160,6 +160,10 @@ namespace TracLabs.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("AirDensityGcm3")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
                     b.Property<DateTime>("CalibrationDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -173,6 +177,10 @@ namespace TracLabs.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("EffectiveDegreesOfFreedom")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<Guid>("EquipmentId")
                         .HasColumnType("uuid");
@@ -232,6 +240,10 @@ namespace TracLabs.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("WaterDensityGcm3")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EquipmentId");
@@ -254,6 +266,9 @@ namespace TracLabs.Infrastructure.Migrations
 
                     b.Property<Guid>("CalibrationId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CertificateDueDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CertificateNumber")
                         .IsRequired()

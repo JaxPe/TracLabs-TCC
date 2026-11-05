@@ -46,6 +46,9 @@ public class CalibrationStandardUsed : BaseEntity
     /// <summary>Mensagem de aviso metrológico em caso de extrapolação ou anomalia operacional.</summary>
     public string? WarningMessage { get; private set; }
 
+    /// <summary>Prazo de validade do certificado do padrão no momento do ensaio (ISO 17025 6.4.13).</summary>
+    public DateTime? CertificateDueDate { get; private set; }
+
     private CalibrationStandardUsed() { }
 
     public CalibrationStandardUsed(
@@ -77,6 +80,7 @@ public class CalibrationStandardUsed : BaseEntity
         OperatingValue = 0m;
         IsExtrapolated = false;
         WarningMessage = null;
+        CertificateDueDate = activeCert?.CalibrationDueDate ?? standard.CalibrationDueDate;
     }
 
     public CalibrationStandardUsed(
@@ -86,7 +90,8 @@ public class CalibrationStandardUsed : BaseEntity
         ResolvedStandardCorrection resolved,
         Guid? certificateId = null,
         string? certificateNumber = null,
-        string? calibratingLab = null)
+        string? calibratingLab = null,
+        DateTime? certificateDueDate = null)
     {
         ArgumentNullException.ThrowIfNull(standard);
         ArgumentNullException.ThrowIfNull(resolved);
@@ -96,13 +101,15 @@ public class CalibrationStandardUsed : BaseEntity
         StandardCertificateId = certificateId;
         Role = role;
 
+        var activeCert = standard.GetActiveCertificate();
+
         LabTag = standard.LabTag;
         Model = standard.Model;
         Manufacturer = standard.Manufacturer;
         SerialNumber = standard.SerialNumber;
         InstrumentType = standard.InstrumentType;
-        CertificateNumber = certificateNumber ?? standard.CalibrationCertificateNumber;
-        CalibratingLaboratory = calibratingLab ?? standard.CalibratingLaboratory;
+        CertificateNumber = certificateNumber ?? activeCert?.CertificateNumber ?? standard.CalibrationCertificateNumber;
+        CalibratingLaboratory = calibratingLab ?? activeCert?.CalibratingLaboratory ?? standard.CalibratingLaboratory;
         Resolution = standard.Resolution;
 
         OperatingValue = resolved.OperatingValue;
@@ -111,6 +118,7 @@ public class CalibrationStandardUsed : BaseEntity
         CoverageFactor = resolved.CoverageFactor;
         IsExtrapolated = resolved.IsExtrapolated;
         WarningMessage = resolved.WarningMessage;
+        CertificateDueDate = certificateDueDate ?? activeCert?.CalibrationDueDate ?? standard.CalibrationDueDate;
     }
 
     public CalibrationStandardUsed(
