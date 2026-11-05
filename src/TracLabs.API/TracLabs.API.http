@@ -167,3 +167,47 @@ Authorization: Bearer {{tecnicoToken}}
     { "runNumber": 10, "fullMassGrams": 199.980, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 }
   ]
 }
+
+
+### 10. Consultar Certificado pelo Número Gerado (Retorna ID e status Draft)
+GET {{TracLabs.API_HostAddress}}/api/v1/certificates/by-number/CERT-2026-00001
+Authorization: Bearer {{supervisorToken}}
+
+### 11. Pré-visualizar PDF do Certificado em Tempo Real (Não grava no banco)
+POST {{TracLabs.API_HostAddress}}/api/v1/certificates/00000000-0000-0000-0000-000000000000/preview-pdf
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "primaryColorHex": "#1E3A8A",
+  "templateStyle": 0,
+  "showUncertaintyBudget": true,
+  "showDetailedPoints": false,
+  "showSignatures": true,
+  "customNotes": "Calibração realizada conforme Procedimento Interno POP-MET-012."
+}
+
+### 12. Gerar e Anexar o Documento PDF Oficial ao Certificado
+POST {{TracLabs.API_HostAddress}}/api/v1/certificates/00000000-0000-0000-0000-000000000000/generate-pdf
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "primaryColorHex": "#1E3A8A",
+  "templateStyle": 0,
+  "showUncertaintyBudget": true,
+  "showDetailedPoints": false,
+  "showSignatures": true
+}
+
+### 13. Baixar Arquivo PDF Oficial Compilado
+GET {{TracLabs.API_HostAddress}}/api/v1/certificates/00000000-0000-0000-0000-000000000000/pdf
+Authorization: Bearer {{supervisorToken}}
+
+### 14. Emitir Formalmente o Certificado (Restrito a Supervisor)
+POST {{TracLabs.API_HostAddress}}/api/v1/certificates/00000000-0000-0000-0000-000000000000/issue
+Authorization: Bearer {{supervisorToken}}
+
+### 15. Consultar Histórico de Certificados por Equipamento
+GET {{TracLabs.API_HostAddress}}/api/v1/certificates/equipment/{{equipmentId}}
+Authorization: Bearer {{supervisorToken}}
