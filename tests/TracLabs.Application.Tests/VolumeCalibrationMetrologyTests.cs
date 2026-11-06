@@ -176,7 +176,7 @@ public class VolumeCalibrationMetrologyTests
         _certificateRepo.GenerateNextCertificateNumberAsync(Arg.Any<CancellationToken>()).Returns("CERT-2026-00001");
         var handler = new CreateVolumeCalibrationCommandHandler(
             _equipmentRepo,
-            _standardRepo,
+            new TracLabs.Application.Features.Calibrations.Services.VolumeStandardResolverService(_standardRepo),
             _calibrationRepo,
             _certificateRepo,
             _service,
@@ -244,7 +244,7 @@ public class VolumeCalibrationMetrologyTests
         _certificateRepo.GenerateNextCertificateNumberAsync(Arg.Any<CancellationToken>()).Returns("CERT-2026-00001");
         var handler = new CreateVolumeCalibrationCommandHandler(
             _equipmentRepo,
-            _standardRepo,
+            new TracLabs.Application.Features.Calibrations.Services.VolumeStandardResolverService(_standardRepo),
             _calibrationRepo,
             _certificateRepo,
             _service,

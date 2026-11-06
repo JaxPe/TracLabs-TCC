@@ -55,8 +55,10 @@ Authorization: Bearer {{supervisorToken}}
 ### ID do Cliente Criado
 @clientId = {{createClient.response.body.id}}
 
-### 5. Cadastrar Padrão Metrológico (Balança Analítica Padrão)
-# @name createStandard
+### 5. Cadastrar Padrões Metrológicos Obrigatórios (Balança, Termômetros, Barômetro e Higrômetro)
+
+### 5.1 Cadastrar Balança Analítica Padrão
+# @name createStandardBalance
 POST {{TracLabs.API_HostAddress}}/api/v1/standardequipment
 Content-Type: application/json
 Authorization: Bearer {{supervisorToken}}
@@ -74,15 +76,95 @@ Authorization: Bearer {{supervisorToken}}
   "coverageFactor": 2.0,
   "lastCalibrationDate": "2026-01-15T00:00:00Z",
   "calibrationDueDate": "2027-01-15T00:00:00Z",
-  "calibrationCertificateNumber": "CAL-RBC-2026-089",
+  "calibrationCertificateNumber": "CAL-BAL-2026-089",
   "calibratingLaboratory": "Lab Metrologia RBC",
   "acceptanceCriteria": "Erro <= 0.00005 g",
-  "currentLocation": "Sala Limpa A",
+  "currentLocation": "Sala de Pesagem",
   "calibrationIntervalMonths": 12
 }
 
-### ID do Padrão Criado
-@standardId = {{createStandard.response.body.id}}
+@standardId = {{createStandardBalance.response.body.id}}
+
+### 5.2 Cadastrar Termômetro de Imersão (Líquido/Água)
+# @name createStandardLiquidThermometer
+POST {{TracLabs.API_HostAddress}}/api/v1/standardequipment
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "labTag": "PAD-TER-LIQ-01",
+  "name": "Termômetro Digital de Imersão para Água",
+  "model": "Incoterm Digital Pro",
+  "manufacturer": "Incoterm",
+  "serialNumber": "INC-445566",
+  "instrumentType": "Termômetro",
+  "resolution": 0.01,
+  "error": -0.02,
+  "expandedUncertainty": 0.01,
+  "coverageFactor": 2.0,
+  "lastCalibrationDate": "2026-01-15T00:00:00Z",
+  "calibrationDueDate": "2027-01-15T00:00:00Z",
+  "calibrationCertificateNumber": "CAL-TER-2026-112",
+  "calibratingLaboratory": "Lab Metrologia RBC",
+  "currentLocation": "Bancada de Volume",
+  "calibrationIntervalMonths": 12
+}
+
+@liquidThermId = {{createStandardLiquidThermometer.response.body.id}}
+
+### 5.3 Cadastrar Barômetro Digital
+# @name createStandardBarometer
+POST {{TracLabs.API_HostAddress}}/api/v1/standardequipment
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "labTag": "PAD-BAR-001",
+  "name": "Barômetro Digital de Precisão",
+  "model": "DPI 142",
+  "manufacturer": "Druck",
+  "serialNumber": "DRK-778899",
+  "instrumentType": "Barômetro",
+  "resolution": 0.1,
+  "error": -1.2,
+  "expandedUncertainty": 0.3,
+  "coverageFactor": 2.0,
+  "lastCalibrationDate": "2026-01-15T00:00:00Z",
+  "calibrationDueDate": "2027-01-15T00:00:00Z",
+  "calibrationCertificateNumber": "CAL-BAR-2026-334",
+  "calibratingLaboratory": "Lab Metrologia RBC",
+  "currentLocation": "Sala de Calibração",
+  "calibrationIntervalMonths": 12
+}
+
+@barometerId = {{createStandardBarometer.response.body.id}}
+
+### 5.4 Cadastrar Termo-higrômetro (Ambiente & Umidade)
+# @name createStandardThermoHygrometer
+POST {{TracLabs.API_HostAddress}}/api/v1/standardequipment
+Content-Type: application/json
+Authorization: Bearer {{supervisorToken}}
+
+{
+  "labTag": "PAD-TH-001",
+  "name": "Termo-higrômetro Digital de Referência",
+  "model": "testo 608-H2",
+  "manufacturer": "Testo",
+  "serialNumber": "TST-990011",
+  "instrumentType": "Termo-higrômetro",
+  "resolution": 0.1,
+  "error": 0.05,
+  "expandedUncertainty": 0.08,
+  "coverageFactor": 2.0,
+  "lastCalibrationDate": "2026-01-15T00:00:00Z",
+  "calibrationDueDate": "2027-01-15T00:00:00Z",
+  "calibrationCertificateNumber": "CAL-TH-2026-556",
+  "calibratingLaboratory": "Lab Metrologia RBC",
+  "currentLocation": "Sala de Calibração",
+  "calibrationIntervalMonths": 12
+}
+
+@thermoHygroId = {{createStandardThermoHygrometer.response.body.id}}
 
 ### 6. Listar Padrões Aptos para Uso
 GET {{TracLabs.API_HostAddress}}/api/v1/standardequipment/usable
@@ -113,7 +195,7 @@ Authorization: Bearer {{supervisorToken}}
 ### ID do Equipamento Criado
 @equipmentId = {{createEquipment.response.body.id}}
 
-### 8. Simular Cálculo de Calibração Volumétrica (Sem salvar no banco)
+### 8. Simular Cálculo de Calibração Volumétrica com Resolução Dinâmica dos Padrões (Sem salvar no banco)
 POST {{TracLabs.API_HostAddress}}/api/v1/calibrations/volume/calculate
 Content-Type: application/json
 Authorization: Bearer {{tecnicoToken}}
@@ -121,11 +203,10 @@ Authorization: Bearer {{tecnicoToken}}
 {
   "nominalVolumeMl": 100.0,
   "material": 0,
-  "atmosphericPressureHpa": 1013.25,
-  "ambientTemperatureCelsius": 20.0,
-  "relativeHumidityPercent": 50.0,
-  "balanceResolutionGrams": 0.0001,
-  "balanceCertificateUncertaintyGrams": 0.0002,
+  "balanceStandardId": "{{standardId}}",
+  "liquidThermometerStandardId": "{{liquidThermId}}",
+  "barometerStandardId": "{{barometerId}}",
+  "thermoHygrometerStandardId": "{{thermoHygroId}}",
   "measurements": [
     { "runNumber": 1, "fullMassGrams": 199.982, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.01, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
     { "runNumber": 2, "fullMassGrams": 199.981, "emptyMassGrams": 100.0, "waterTemperatureCelsius": 20.02, "ambientTemperatureCelsius": 20.2, "atmosphericPressureHpa": 1013.2, "relativeHumidityPercent": 50.1 },
@@ -148,6 +229,9 @@ Authorization: Bearer {{tecnicoToken}}
 {
   "equipmentId": "{{equipmentId}}",
   "balanceStandardId": "{{standardId}}",
+  "liquidThermometerStandardId": "{{liquidThermId}}",
+  "barometerStandardId": "{{barometerId}}",
+  "thermoHygrometerStandardId": "{{thermoHygroId}}",
   "nextCalibrationDue": "2027-10-27T00:00:00Z",
   "temperatureCelsius": 20.5,
   "humidityPercent": 52.0,

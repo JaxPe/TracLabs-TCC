@@ -178,6 +178,7 @@ public static class CertificateReportBuilder
         StandardRole.AmbientThermometer => "Termômetro Ambiente",
         StandardRole.Barometer => "Barômetro",
         StandardRole.Hygrometer => "Higrômetro",
+        StandardRole.ThermoHygrometer => "Termo-higrômetro",
         StandardRole.ReferenceWeights => "Pesos-Padrão",
         _ => role.ToString()
     };
