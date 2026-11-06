@@ -1,5 +1,6 @@
 using FluentAssertions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using TracLabs.Application.DTOs.Calibration;
 using TracLabs.Application.Features.Calibrations.Commands.CreateVolumeCalibration;
 using TracLabs.Application.Interfaces;
@@ -175,7 +176,9 @@ public class CreateVolumeCalibrationCommandHandlerTests
         equipment.Status.Should().Be(EquipmentStatus.Calibrated);
 
         await _calibrationRepo.Received(1).AddAsync(Arg.Any<CalibrationRecord>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).BeginTransactionAsync(Arg.Any<CancellationToken>());
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).CommitTransactionAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -438,5 +441,59 @@ public class CreateVolumeCalibrationCommandHandlerTests
         result.StandardsUsed.Should().NotBeNullOrEmpty();
         var balanceUsed = result.StandardsUsed!.First(s => s.Role == StandardRole.Balance);
         balanceUsed.Correction.Should().Be(-0.0001m);
+    }
+
+    [Fact]
+    public async Task Handle_WhenExceptionOccursDuringPersistence_ShouldRollbackTransactionAndRethrow()
+    {
+        // Arrange
+        var equipment = CreateClientEquipment(EquipmentStatus.Received);
+        var standard = CreateStandard(StandardEquipmentStatus.Calibrated);
+
+        _equipmentRepo.GetByIdAsync(equipment.Id, Arg.Any<CancellationToken>()).Returns(equipment);
+        _standardRepo.GetByIdAsync(standard.Id, Arg.Any<CancellationToken>()).Returns(standard);
+
+        var calcResult = new VolumeCalibrationResultDto
+        {
+            NominalVolumeMl = 100m,
+            PointsCount = 1,
+            MeanVolumeV20Ml = 99.98m,
+            SystematicErrorMl = -0.02m,
+            CombinedStandardUncertaintyMl = 0.005m,
+            ExpandedUncertaintyMl = 0.010m,
+            CoverageFactor = 2.0m,
+            CalculatedPoints = new List<VolumeGravimetricPoint>
+            {
+                new(1, 200m, 100m, 20m, 99.98m)
+            }
+        };
+
+        _volumeCalibrationService.Calculate(Arg.Any<VolumeCalibrationRequest>()).Returns(calcResult);
+
+        _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("Simulated database failure"));
+
+        var command = new CreateVolumeCalibrationCommand(
+            EquipmentId: equipment.Id,
+            BalanceStandardId: standard.Id,
+            LiquidThermometerStandardId: _liquidThermometer.Id,
+            BarometerStandardId: _barometer.Id,
+            ThermoHygrometerStandardId: _thermoHygrometer.Id,
+            NextCalibrationDue: DateTime.UtcNow.AddYears(1),
+            TemperatureCelsius: 20.2m,
+            HumidityPercent: 60m,
+            Observations: "Teste rollback",
+            Measurements: Enumerable.Range(1, 7).Select(i => new VolumeMeasurementInputDto { RunNumber = i, FullMassGrams = 200m, EmptyMassGrams = 100m, WaterTemperatureCelsius = 20m }).ToList());
+
+        // Act
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Simulated database failure");
+
+        await _unitOfWork.Received(1).BeginTransactionAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).RollbackTransactionAsync(Arg.Any<CancellationToken>());
+        await _unitOfWork.DidNotReceive().CommitTransactionAsync(Arg.Any<CancellationToken>());
     }
 }

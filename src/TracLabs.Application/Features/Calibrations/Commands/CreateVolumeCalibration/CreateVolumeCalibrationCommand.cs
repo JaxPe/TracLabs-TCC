@@ -245,20 +245,33 @@ public class CreateVolumeCalibrationCommandHandler
             waterDensityGcm3,
             airDensityGcm3);
 
-        // 7. Atualização do ciclo de status do equipamento do cliente
-        equipment.StartCalibration();
-        equipment.CompleteCalibration(record);
+        // 7. Persistência atômica e transacional (ISO 17025 e integridade ACID)
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // 7.1. Geração atômica da numeração sequencial do certificado com lock pessimista
+            var nextCertNumber = await _certificateRepository.GenerateNextCertificateNumberAsync(cancellationToken);
+            var certificate = new Certificate(nextCertNumber, record.Id);
+            record.AttachCertificate(certificate);
 
-        // 8. Geração e vinculação do certificado em rascunho com numeração sequencial concorrente
-        var nextCertNumber = await _certificateRepository.GenerateNextCertificateNumberAsync(cancellationToken);
-        var certificate = new Certificate(nextCertNumber, record.Id);
-        await _certificateRepository.AddAsync(certificate, cancellationToken);
-        record.AttachCertificate(certificate);
+            // 7.2. Registro explícito das novas entidades no ChangeTracker
+            await _calibrationRepository.AddAsync(record, cancellationToken);
+            await _certificateRepository.AddAsync(certificate, cancellationToken);
 
-        // 9. Persistência atômica no banco de dados
-        await _calibrationRepository.AddAsync(record, cancellationToken);
-        _equipmentRepository.Update(equipment);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // 7.3. Atualização do ciclo de status do equipamento do cliente
+            equipment.StartCalibration();
+            equipment.CompleteCalibration(record);
+            _equipmentRepository.Update(equipment);
+
+            // 7.4. Flush atômico e confirmação da transação
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
 
         var standardsUsedDtos = standardsUsed.Select(s => new CalibrationStandardUsedDto(
             s.StandardEquipmentId,

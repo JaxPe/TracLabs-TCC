@@ -88,8 +88,6 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
         }
 
         var nextNumber = sequence.Increment();
-        await _context.SaveChangesAsync(ct);
-
         return $"CERT-{year}-{nextNumber:D5}";
     }
 }
