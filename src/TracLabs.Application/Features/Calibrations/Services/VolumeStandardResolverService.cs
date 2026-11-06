@@ -90,9 +90,20 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
         decimal balanceOperatingValue = meanNetMass > 0 ? meanNetMass : (request.NominalVolumeMl > 0 ? request.NominalVolumeMl : meanFullMass);
 
         // ── 4. Resolução Dinâmica das Curvas/Certificados dos Padrões ────────
-        var balanceResolved = ResolveStandard(balance, balanceOperatingValue, "Balança Analítica", warnings);
-        var balanceFullResolved = balanceResolved;
-        var balanceEmptyResolved = new ResolvedStandardCorrection(0m, 0m, 0m, 2.0m, false, null, "TareZero");
+        var balanceSnapshotResolved = ResolveStandard(balance, balanceOperatingValue, "Balança Analítica", warnings);
+        ResolvedStandardCorrection balanceFullResolved;
+        ResolvedStandardCorrection balanceEmptyResolved;
+
+        if (meanEmptyMass > 0)
+        {
+            balanceFullResolved = ResolveStandard(balance, meanFullMass, "Balança Analítica (Massa Cheia)", warnings);
+            balanceEmptyResolved = ResolveStandard(balance, meanEmptyMass, "Balança Analítica (Massa Vazia)", warnings);
+        }
+        else
+        {
+            balanceFullResolved = ResolveStandard(balance, balanceOperatingValue, "Balança Analítica", warnings);
+            balanceEmptyResolved = new ResolvedStandardCorrection(0m, 0m, 0m, 2.0m, false, null, "TareZero");
+        }
 
         var liquidThermometerResolved = ResolveStandard(liquidThermometer, liquidTempOperatingValue, "Termômetro do Líquido", warnings);
         var barometerResolved = ResolveStandard(barometer, baroOperatingValue, "Barômetro", warnings);
@@ -141,7 +152,7 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
             var standardsUsed = new List<CalibrationStandardUsed>();
 
             var activeBalCert = balance.GetActiveCertificate();
-            standardsUsed.Add(new(calibrationRecordId, balance, StandardRole.Balance, balanceFullResolved, activeBalCert?.Id, activeBalCert?.CertificateNumber, activeBalCert?.CalibratingLaboratory, activeBalCert?.CalibrationDueDate ?? balance.CalibrationDueDate));
+            standardsUsed.Add(new(calibrationRecordId, balance, StandardRole.Balance, balanceSnapshotResolved, activeBalCert?.Id, activeBalCert?.CertificateNumber, activeBalCert?.CalibratingLaboratory, activeBalCert?.CalibrationDueDate ?? balance.CalibrationDueDate));
 
             var activeLiqCert = liquidThermometer.GetActiveCertificate();
             standardsUsed.Add(new(calibrationRecordId, liquidThermometer, StandardRole.LiquidThermometer, liquidThermometerResolved, activeLiqCert?.Id, activeLiqCert?.CertificateNumber, activeLiqCert?.CalibratingLaboratory, activeLiqCert?.CalibrationDueDate ?? liquidThermometer.CalibrationDueDate));
