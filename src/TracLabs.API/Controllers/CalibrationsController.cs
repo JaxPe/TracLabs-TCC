@@ -31,9 +31,9 @@ public class CalibrationsController : ControllerBase
     /// </summary>
     [HttpPost("volume/calculate")]
     [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
-    public async Task<ActionResult<VolumeCalibrationResultDto>> CalculateVolume([FromBody] VolumeCalibrationRequest request)
+    public async Task<ActionResult<VolumeCalibrationResultDto>> CalculateVolume([FromBody] CalculateVolumeCalibrationCommand command)
     {
-        var result = await _mediator.Send(new CalculateVolumeCalibrationCommand(request));
+        var result = await _mediator.Send(command);
         return Ok(result);
     }
 

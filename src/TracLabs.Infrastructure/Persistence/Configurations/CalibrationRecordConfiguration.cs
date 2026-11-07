@@ -30,6 +30,9 @@ public class CalibrationRecordConfiguration : IEntityTypeConfiguration<Calibrati
         builder.Property(c => c.CombinedStandardUncertainty).HasPrecision(18, 6);
         builder.Property(c => c.ExpandedUncertainty).HasPrecision(18, 6);
         builder.Property(c => c.CoverageFactor).HasPrecision(5, 2);
+        builder.Property(c => c.EffectiveDegreesOfFreedom).HasPrecision(10, 2);
+        builder.Property(c => c.WaterDensityGcm3).HasPrecision(18, 6);
+        builder.Property(c => c.AirDensityGcm3).HasPrecision(18, 6);
 
         builder.Property(c => c.Result)
             .HasConversion<string>()

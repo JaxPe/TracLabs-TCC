@@ -47,6 +47,7 @@ public class CalibrationStandardUsedConfiguration : IEntityTypeConfiguration<Cal
         builder.Property(s => s.OperatingValue).HasPrecision(18, 6);
         builder.Property(s => s.IsExtrapolated).IsRequired();
         builder.Property(s => s.WarningMessage).HasMaxLength(500);
+        builder.Property(s => s.CertificateDueDate);
 
         builder.HasOne(s => s.CalibrationRecord)
             .WithMany(c => c.StandardsUsed)

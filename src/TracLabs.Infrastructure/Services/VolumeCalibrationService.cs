@@ -483,12 +483,24 @@ public class VolumeCalibrationService : IVolumeCalibrationService
         });
 
         // 7.8 Temperatura da Água - Calibração do Termômetro
+        // cTw = dV20 / dTw = - [m / (rw - ra)^2] * [1 - ra/rb] * [1 - gamma*(Tw - 20)] * (d_rw/d_Tw)
+        //                   - [m / (rw - ra)] * [1 - ra/rb] * gamma
+        var dWaterDensityDt = CalculatePureWaterDensityDerivative(meanWaterTempCorrected);
+
+        var ciWaterTempDensityTerm = -(meanApparentMass / (diffWaterAir * diffWaterAir))
+                                     * (1m - (meanAirDensityGramsPerCm3 / weightsDensity))
+                                     * (1m - (gamma * (meanWaterTempCorrected - ReferenceTemperatureCelsius)))
+                                     * dWaterDensityDt;
+
+        var ciWaterTempExpansionTerm = -(meanApparentMass / diffWaterAir)
+                                       * (1m - (meanAirDensityGramsPerCm3 / weightsDensity))
+                                       * gamma;
+
+        var ciWaterTemp = ciWaterTempDensityTerm + ciWaterTempExpansionTerm;
+
         var uWaterTempCert = request.WaterThermometerCoverageFactor > 0
             ? request.WaterThermometerUncertaintyCelsius / request.WaterThermometerCoverageFactor
             : 0m;
-        var ciWaterTemp = -(meanApparentMass / diffWaterAir)
-                          * (1m - (meanAirDensityGramsPerCm3 / weightsDensity))
-                          * gamma;
 
         budget.Add(new UncertaintyBudgetComponentDto
         {
@@ -640,6 +652,33 @@ public class VolumeCalibrationService : IVolumeCalibrationService
         var density = a5 * (1.0 - term);
 
         return (decimal)density;
+    }
+
+    /// <summary>
+    /// Derivada analítica exata da equação de Tanaka d(rho_w)/dt em g/(cm³.°C)
+    /// utilizada para cálculo do coeficiente de sensibilidade do termômetro de líquido.
+    /// </summary>
+    private static decimal CalculatePureWaterDensityDerivative(decimal waterTemperatureCelsius)
+    {
+        var t = (double)waterTemperatureCelsius;
+
+        const double a1 = -3.983035;
+        const double a2 = 301.797;
+        const double a3 = 522528.9;
+        const double a4 = 69.34881;
+        const double a5 = 0.999974950;
+
+        var tPlusA1 = t + a1;
+        var tPlusA2 = t + a2;
+        var tPlusA4 = t + a4;
+
+        var u = Math.Pow(tPlusA1, 2) * tPlusA2;
+        var uPrime = tPlusA1 * (3.0 * t + 2.0 * a2 + a1);
+
+        var fPrime = (uPrime * tPlusA4 - u) / (a3 * Math.Pow(tPlusA4, 2));
+        var dRhoDt = -a5 * fPrime;
+
+        return (decimal)dRhoDt;
     }
 
     private static decimal CalculateSampleStandardDeviation(IList<decimal> values)

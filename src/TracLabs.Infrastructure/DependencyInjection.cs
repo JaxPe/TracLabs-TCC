@@ -12,6 +12,7 @@ using TracLabs.Infrastructure.Identity;
 using TracLabs.Infrastructure.Persistence;
 using TracLabs.Infrastructure.Persistence.Repositories;
 using TracLabs.Infrastructure.Services;
+using TracLabs.Infrastructure.Services.Pdf;
 
 namespace TracLabs.Infrastructure;
 
@@ -76,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IVolumeCalibrationService, VolumeCalibrationService>();
         services.AddScoped<IMetrologicalRegressionService, MetrologicalRegressionService>();
+        services.AddScoped<ICertificatePdfGenerator, QuestPdfCertificateGenerator>();
 
         // ── Repositórios ──────────────────────────────────────────────────────
         services.AddScoped<IEquipmentRepository, EquipmentRepository>();

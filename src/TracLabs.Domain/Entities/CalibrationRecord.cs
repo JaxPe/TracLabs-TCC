@@ -92,6 +92,15 @@ public class CalibrationRecord : BaseEntity
     /// <summary>Coverage factor used for expanded uncertainty calculation (typically 2).</summary>
     public decimal CoverageFactor { get; private set; }
 
+    /// <summary>Graus de liberdade efetivos calculados pela fórmula de Welch-Satterthwaite.</summary>
+    public decimal? EffectiveDegreesOfFreedom { get; private set; }
+
+    /// <summary>Massa específica da água destilada/deionizada no ensaio (equação de Tanaka) em g/cm³.</summary>
+    public decimal? WaterDensityGcm3 { get; private set; }
+
+    /// <summary>Massa específica do ar no momento do ensaio (equação de Spieweck) em g/cm³.</summary>
+    public decimal? AirDensityGcm3 { get; private set; }
+
     // ── Conclusion ────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -228,7 +237,10 @@ public class CalibrationRecord : BaseEntity
         decimal expandedUncertainty,
         decimal coverageFactor,
         CalibrationResult result,
-        string? observations)
+        string? observations,
+        decimal? effectiveDegreesOfFreedom = null,
+        decimal? waterDensityGcm3 = null,
+        decimal? airDensityGcm3 = null)
     {
         if (measurementPoints == null || measurementPoints.Count == 0)
             throw new ArgumentException("At least one measurement point is required.");
@@ -243,6 +255,9 @@ public class CalibrationRecord : BaseEntity
         CoverageFactor = coverageFactor;
         Result = result;
         Observations = observations;
+        EffectiveDegreesOfFreedom = effectiveDegreesOfFreedom;
+        WaterDensityGcm3 = waterDensityGcm3;
+        AirDensityGcm3 = airDensityGcm3;
         MarkAsUpdated();
     }
 

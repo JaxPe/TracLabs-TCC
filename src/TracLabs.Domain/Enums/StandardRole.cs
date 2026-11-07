@@ -23,6 +23,9 @@ public enum StandardRole
     /// <summary>Jogo de pesos-padrão de referência (classe E2/F1) para verificação da balança.</summary>
     ReferenceWeights = 5,
 
+    /// <summary>Termo-higrômetro utilizado para medição integrada de temperatura e umidade relativa do ar.</summary>
+    ThermoHygrometer = 6,
+
     /// <summary>Outro instrumento padrão auxiliar.</summary>
     Other = 99
 }

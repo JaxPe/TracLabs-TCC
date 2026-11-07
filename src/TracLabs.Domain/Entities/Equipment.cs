@@ -254,6 +254,20 @@ public class Equipment : BaseEntity
         Status = EquipmentStatus.Calibrated;
         MarkAsUpdated();
     }
+
+    /// <summary>
+    /// Marca o equipamento como tendo seu certificado formalmente emitido.
+    /// Exige que o equipamento esteja com status 'Calibrated'.
+    /// </summary>
+    public void MarkCertificateIssued()
+    {
+        if (Status != EquipmentStatus.Calibrated)
+            throw new InvalidOperationException(
+                $"Cannot issue certificate when equipment is in status '{Status}'. Equipment must be in 'Calibrated' status.");
+
+        Status = EquipmentStatus.CertificateIssued;
+        MarkAsUpdated();
+    }
     
     /// <summary>Returns the most recent calibration record, or null if never calibrated.</summary>
     public CalibrationRecord? GetLatestCalibration() =>
