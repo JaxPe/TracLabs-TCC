@@ -83,6 +83,7 @@ public class EquipmentController : ControllerBase
 
     /// <summary>Atualiza a localização física atual do equipamento no laboratório (ISO 17025 6.4.13 d).</summary>
     [HttpPatch("{id:guid}/location")]
+    [HttpPut("{id:guid}/location")]
     [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
     public async Task<ActionResult<EquipmentDetailDto>> UpdateLocation(Guid id, [FromBody] UpdateLocationRequest request)
     {

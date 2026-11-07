@@ -47,7 +47,42 @@
       "type": "string"
     },
     {
+      "key": "liquidThermId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "barometerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ambientThermometerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "hygrometerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "thermoHygrometerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pycnometerId",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "equipmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "flaskEquipmentId",
       "value": "",
       "type": "string"
     },
@@ -322,24 +357,7 @@
           "name": "1.3 Ciclo de Vida dos Padrões (ISO 17025)",
           "item": [
             {
-              "name": "Cadastrar Padrão Metrológico (Salva standardId)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test('Padrão criado com sucesso', function () {",
-                      "    pm.response.to.have.status(201);",
-                      "    const json = pm.response.json();",
-                      "    pm.expect(json.id).to.not.be.empty;",
-                      "    pm.collectionVariables.set('standardId', json.id);",
-                      "    console.log('standardId salvo:', json.id);",
-                      "});"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ],
+              "name": "1.3.1 Cadastrar Padrão - Balança Analítica (Salva standardId)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -348,10 +366,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"labTag\": \"PAD-BAL-010\",\n  \"name\": \"Balan\\u00e7a Anal\\u00edtica Padr\\u00e3o Especial\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balan\\u00e7a Anal\\u00edtica\",\n  \"resolution\": 1e-05,\n  \"error\": 2e-05,\n  \"expandedUncertainty\": 4e-05,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-RBC-2026-999\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC\",\n  \"acceptanceCriteria\": \"Erro <= 0.00005 g\",\n  \"currentLocation\": \"Sala Limpa A\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 220.0,\n  \"calibrationRangeMin\": 0.0,\n  \"calibrationRangeMax\": 200.0\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/standardequipment",
                   "host": [
@@ -362,11 +376,296 @@
                     "v1",
                     "standardequipment"
                   ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-BAL-010\",\n  \"name\": \"Balança Analítica Padrão Especial\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balança Analítica\",\n  \"resolution\": 1e-05,\n  \"error\": 2e-05,\n  \"expandedUncertainty\": 4e-05,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-RBC-2026-999\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC\",\n  \"acceptanceCriteria\": \"Erro <= 0.00005 g\",\n  \"currentLocation\": \"Sala Limpa A\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 220.0,\n  \"calibrationRangeMin\": 0.0,\n  \"calibrationRangeMax\": 200.0\n}"
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Balança criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('standardId', json.id);",
+                      "    console.log('standardId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             },
             {
-              "name": "Cadastrar Certificado de Calibração com Regressão Linear - Etapa 2 (Salva certificateId)",
+              "name": "1.3.2 Cadastrar Padrão - Termômetro de Imersão Líquido (Salva liquidThermId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-TER-LIQ-01\",\n  \"name\": \"Termômetro Digital de Imersão para Líquido\",\n  \"model\": \"F200\",\n  \"manufacturer\": \"Fluke Calibration\",\n  \"serialNumber\": \"FLK-992211\",\n  \"instrumentType\": \"Termômetro Digital\",\n  \"resolution\": 0.001,\n  \"error\": -0.01,\n  \"expandedUncertainty\": 0.015,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-TEMP-2026-001\",\n  \"calibratingLaboratory\": \"Lab RBC Temperatura\",\n  \"acceptanceCriteria\": \"Erro <= 0.05 C\",\n  \"currentLocation\": \"Sala de Calibração\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 100.0,\n  \"calibrationRangeMin\": 10.0,\n  \"calibrationRangeMax\": 30.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Termômetro Líquido criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('liquidThermId', json.id);",
+                      "    console.log('liquidThermId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.3 Cadastrar Padrão - Barômetro Digital (Salva barometerId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-BAR-01\",\n  \"name\": \"Barômetro Digital de Precisão\",\n  \"model\": \"PTB330\",\n  \"manufacturer\": \"Vaisala\",\n  \"serialNumber\": \"VAI-554433\",\n  \"instrumentType\": \"Barômetro\",\n  \"resolution\": 0.01,\n  \"error\": 0.05,\n  \"expandedUncertainty\": 0.1,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-PRES-2026-002\",\n  \"calibratingLaboratory\": \"Lab RBC Pressão\",\n  \"acceptanceCriteria\": \"Erro <= 0.2 hPa\",\n  \"currentLocation\": \"Sala de Calibração\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 500.0,\n  \"rangeMax\": 1100.0,\n  \"calibrationRangeMin\": 800.0,\n  \"calibrationRangeMax\": 1100.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Barômetro criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('barometerId', json.id);",
+                      "    console.log('barometerId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.4 Cadastrar Padrão - Termômetro de Ambiente (Salva ambientThermometerId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-TER-AMB-01\",\n  \"name\": \"Termômetro Ambiental de Precisão\",\n  \"model\": \"1524\",\n  \"manufacturer\": \"Fluke Calibration\",\n  \"serialNumber\": \"FLK-881122\",\n  \"instrumentType\": \"Termômetro\",\n  \"resolution\": 0.01,\n  \"error\": 0.02,\n  \"expandedUncertainty\": 0.03,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-AMB-2026-003\",\n  \"calibratingLaboratory\": \"Lab RBC Temperatura\",\n  \"acceptanceCriteria\": \"Erro <= 0.1 C\",\n  \"currentLocation\": \"Sala de Calibração\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": -10.0,\n  \"rangeMax\": 60.0,\n  \"calibrationRangeMin\": 15.0,\n  \"calibrationRangeMax\": 30.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Termômetro Ambiente criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('ambientThermometerId', json.id);",
+                      "    console.log('ambientThermometerId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.5 Cadastrar Padrão - Higrômetro (Salva hygrometerId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-HIG-01\",\n  \"name\": \"Higrômetro de Umidade Relativa\",\n  \"model\": \"HMP110\",\n  \"manufacturer\": \"Vaisala\",\n  \"serialNumber\": \"VAI-667788\",\n  \"instrumentType\": \"Higrômetro\",\n  \"resolution\": 0.1,\n  \"error\": -0.5,\n  \"expandedUncertainty\": 1.2,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-UMID-2026-004\",\n  \"calibratingLaboratory\": \"Lab RBC Umidade\",\n  \"acceptanceCriteria\": \"Erro <= 2 %UR\",\n  \"currentLocation\": \"Sala de Calibração\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 100.0,\n  \"calibrationRangeMin\": 30.0,\n  \"calibrationRangeMax\": 80.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Higrômetro criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('hygrometerId', json.id);",
+                      "    console.log('hygrometerId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.6 Cadastrar Padrão - Termo-higrômetro Integrado (Salva thermoHygrometerId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-THIG-01\",\n  \"name\": \"Termo-higrômetro Integrado de Precisão\",\n  \"model\": \"testo 622\",\n  \"manufacturer\": \"Testo\",\n  \"serialNumber\": \"TST-112233\",\n  \"instrumentType\": \"Termo-higrômetro\",\n  \"resolution\": 0.1,\n  \"error\": 0.1,\n  \"expandedUncertainty\": 0.4,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-THIG-2026-005\",\n  \"calibratingLaboratory\": \"Lab RBC Clima\",\n  \"acceptanceCriteria\": \"Erro <= 0.5 C / 2 %UR\",\n  \"currentLocation\": \"Sala de Calibração\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 100.0,\n  \"calibrationRangeMin\": 15.0,\n  \"calibrationRangeMax\": 75.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Termo-higrômetro criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('thermoHygrometerId', json.id);",
+                      "    console.log('thermoHygrometerId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.7 Cadastrar Padrão - Picnômetro Gay-Lussac (Salva pycnometerId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"labTag\": \"PAD-PIC-01\",\n  \"name\": \"Picnômetro de Vidro Gay-Lussac 50 mL\",\n  \"model\": \"Gay-Lussac 50mL\",\n  \"manufacturer\": \"Brand\",\n  \"serialNumber\": \"BRD-445566\",\n  \"instrumentType\": \"Picnômetro\",\n  \"resolution\": 0.001,\n  \"error\": 0.002,\n  \"expandedUncertainty\": 0.005,\n  \"coverageFactor\": 2.0,\n  \"lastCalibrationDate\": \"2026-01-15T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-01-15T00:00:00Z\",\n  \"calibrationCertificateNumber\": \"CAL-PIC-2026-006\",\n  \"calibratingLaboratory\": \"Lab RBC Volume\",\n  \"acceptanceCriteria\": \"Volume 50 +- 0.05 mL\",\n  \"currentLocation\": \"Armário de Padrões A\",\n  \"calibrationIntervalMonths\": 12,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 50.0,\n  \"calibrationRangeMin\": 49.0,\n  \"calibrationRangeMax\": 51.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Padrão Picnômetro criado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('pycnometerId', json.id);",
+                      "    console.log('pycnometerId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.8 Cadastrar Certificado com Regressão Linear - Balança (Salva certificateId)",
               "event": [
                 {
                   "listen": "test",
@@ -415,6 +714,95 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "1.3.9 Cadastrar Certificado com Regressão Linear - Picnômetro",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{pycnometerId}}/certificates",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{pycnometerId}}",
+                    "certificates"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"standardEquipmentId\": \"{{pycnometerId}}\",\n  \"certificateNumber\": \"CAL-PIC-2026-701\",\n  \"calibratingLaboratory\": \"Lab Metrologia RBC Acreditado\",\n  \"calibrationDate\": \"2026-02-01T00:00:00Z\",\n  \"calibrationDueDate\": \"2027-02-01T00:00:00Z\",\n  \"calibrationRangeMin\": 49.0,\n  \"calibrationRangeMax\": 51.0,\n  \"fitType\": 0,\n  \"uncertaintyPolicy\": 0,\n  \"points\": [\n    {\n      \"order\": 1,\n      \"indicatedValue\": 49.98,\n      \"standardError\": -0.001,\n      \"correction\": 0.001,\n      \"expandedUncertainty\": 0.003,\n      \"coverageFactor\": 2.0\n    },\n    {\n      \"order\": 2,\n      \"indicatedValue\": 50.0,\n      \"standardError\": -0.002,\n      \"correction\": 0.002,\n      \"expandedUncertainty\": 0.003,\n      \"coverageFactor\": 2.0\n    },\n    {\n      \"order\": 3,\n      \"indicatedValue\": 50.02,\n      \"standardError\": -0.001,\n      \"correction\": 0.001,\n      \"expandedUncertainty\": 0.003,\n      \"coverageFactor\": 2.0\n    }\n  ],\n  \"isActive\": true\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Certificado do picnômetro cadastrado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.expect(json.isActive).to.be.true;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.3.10 Atualizar Informações Cadastrais do Padrão (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{standardId}}\",\n  \"labTag\": \"PAD-BAL-010-MOD\",\n  \"name\": \"Balança Analítica Padrão Atualizada\",\n  \"model\": \"XPE205-Plus\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balança Analítica\",\n  \"resolution\": 1e-05,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 220.0,\n  \"calibrationIntervalMonths\": 12,\n  \"currentLocation\": \"Sala Limpa B\",\n  \"acceptanceCriteria\": \"Erro <= 0.00004 g\",\n  \"maintenancePlan\": \"Calibração anual e verificação intermediária semestral.\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Informações do padrão atualizadas com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.name).to.eql(\"Balança Analítica Padrão Atualizada\");",
+                      "    pm.expect(json.labTag).to.eql(\"PAD-BAL-010-MOD\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             },
             {
               "name": "Listar Padrões Aptos para Uso",
@@ -646,7 +1034,7 @@
           "name": "1.4 Gestão de Equipamentos de Clientes",
           "item": [
             {
-              "name": "Cadastrar Equipamento (Salva equipmentId)",
+              "name": "1.4.1 Cadastrar Equipamento - Micropipeta com Faixa e Resolução (Salva equipmentId)",
               "event": [
                 {
                   "listen": "test",
@@ -688,6 +1076,96 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "1.4.2 Cadastrar Equipamento - Balão Volumétrico de Ponto Único (Salva flaskEquipmentId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"labTag\": \"BALAO-CLI-100\",\n  \"name\": \"Balão Volumétrico de Vidro Classe A\",\n  \"model\": \"Blaubrand\",\n  \"manufacturer\": \"Brand\",\n  \"serialNumber\": \"BV-991122\",\n  \"instrumentType\": \"Balão Volumétrico\",\n  \"unit\": \"mL\",\n  \"nominalCapacity\": 100.0,\n  \"rangeMin\": null,\n  \"rangeMax\": null,\n  \"resolution\": null,\n  \"currentLocation\": \"Sala de Calibração Volumétrica\",\n  \"acceptanceCriteria\": \"Erro máximo admissível conforme ISO 1042 Classe A (+- 0.10 mL)\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Balão volumétrico cadastrado com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.expect(json.nominalCapacity).to.eql(100.0);",
+                      "    pm.expect(json.resolution).to.be.null;",
+                      "    pm.collectionVariables.set('flaskEquipmentId', json.id);",
+                      "    console.log('flaskEquipmentId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.4.3 Atualizar Informações Cadastrais do Equipamento (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{equipmentId}}\",\n  \"labTag\": \"PIP-CLI-010-REV\",\n  \"name\": \"Micropipeta Monocanal Revisada\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-776655\",\n  \"instrumentType\": \"Micropipeta\",\n  \"unit\": \"µL\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"resolution\": 1,\n  \"nominalCapacity\": 1000,\n  \"currentLocation\": \"Bancada Metrológica 02\",\n  \"acceptanceCriteria\": \"Erro sistemático <= 0.8%\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Equipamento atualizado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.name).to.eql(\"Micropipeta Monocanal Revisada\");",
+                      "    pm.expect(json.labTag).to.eql(\"PIP-CLI-010-REV\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             },
             {
               "name": "Buscar / Listar Equipamentos",
@@ -836,7 +1314,7 @@
           "name": "1.5 Calibrações Metrológicas",
           "item": [
             {
-              "name": "Simulação de Cálculo Volumétrico (Sem persistir)",
+              "name": "1.5.1 Simulação de Cálculo - Termômetro e Higrômetro Separados (Sem persistir)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -845,10 +1323,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"atmosphericPressureHpa\": 1013.25,\n  \"ambientTemperatureCelsius\": 20.0,\n  \"relativeHumidityPercent\": 50.0,\n  \"balanceResolutionGrams\": 0.0001,\n  \"balanceCertificateUncertaintyGrams\": 0.0002,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 2, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 3, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 4, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 5, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.1, \"relativeHumidityPercent\": 50.3 },\n    { \"runNumber\": 6, \"fullMassGrams\": 199.984, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 7, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 8, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 9, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 10, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 }\n  ]\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
                   "host": [
@@ -861,28 +1335,33 @@
                     "volume",
                     "calculate"
                   ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
                 }
-              }
-            },
-            {
-              "name": "Executar e Persistir Calibração Volumétrica",
+              },
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test('Calibração salva com sucesso', function () {",
-                      "    pm.response.to.have.status(201);",
+                      "pm.test(\"Cálculo volumétrico realizado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
                       "    const json = pm.response.json();",
-                      "    pm.expect(json.id).to.not.be.empty;",
-                      "    pm.collectionVariables.set('calibrationId', json.id);",
-                      "    console.log('calibrationId salvo:', json.id);",
+                      "    pm.expect(json.nominalVolumeMl).to.eql(100.0);",
+                      "    pm.expect(json.pointsCount).to.eql(11);",
+                      "    pm.expect(json.meanVolumeV20Ml).to.be.above(90.0);",
+                      "    pm.expect(json.expandedUncertaintyMl).to.be.above(0);",
                       "});"
                     ],
                     "type": "text/javascript"
                   }
                 }
-              ],
+              ]
+            },
+            {
+              "name": "1.5.2 Simulação de Cálculo - Com Termo-higrômetro Integrado (Sem persistir)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -891,10 +1370,95 @@
                     "value": "application/json"
                   }
                 ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume",
+                    "calculate"
+                  ]
+                },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.5,\n  \"humidityPercent\": 52.0,\n  \"observations\": \"Calibração de alta precisão ISO 4787 / ISO 8655.\",\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 2, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 3, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 4, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 5, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.1, \"relativeHumidityPercent\": 50.3 },\n    { \"runNumber\": 6, \"fullMassGrams\": 199.984, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 7, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 8, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 9, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 10, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 }\n  ]\n}"
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"thermoHygrometerStandardId\": \"{{thermoHygrometerId}}\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Cálculo com termo-higrômetro integrado realizado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.meanVolumeV20Ml).to.be.above(90.0);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.5.3 Simulação de Cálculo - Com Densidade por Picnometria (Sem persistir)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume",
+                    "calculate"
+                  ]
                 },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"pycnometerStandardId\": \"{{pycnometerId}}\",\n  \"waterDensityGcm3\": 0.998245,\n  \"waterDensityUncertaintyGcm3\": 2e-05,\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Cálculo com densidade determinada por picnômetro realizado com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.meanVolumeV20Ml).to.be.above(90.0);",
+                      "    pm.expect(json.waterDensityGramsPerCm3).to.be.above(0.99);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.5.4 Executar e Persistir Calibração - Balão Volumétrico 100 mL (Salva calibrationId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume",
                   "host": [
@@ -906,8 +1470,74 @@
                     "calibrations",
                     "volume"
                   ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"equipmentId\": \"{{flaskEquipmentId}}\",\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.2,\n  \"humidityPercent\": 68.0,\n  \"observations\": \"Calibração de balão volumétrico com padrões ISO 17025.\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Calibração de balão volumétrico salva com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('calibrationId', json.id);",
+                      "    console.log('calibrationId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "1.5.5 Executar e Persistir Calibração - Com Picnometria (Salva calibrationId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calibrations/volume",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calibrations",
+                    "volume"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"pycnometerStandardId\": \"{{pycnometerId}}\",\n  \"waterDensityGcm3\": 0.998245,\n  \"waterDensityUncertaintyGcm3\": 2e-05,\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.2,\n  \"humidityPercent\": 68.0,\n  \"observations\": \"Calibração com densidade da água determinada por picnômetro gay-lussac.\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Calibração com picnômetro salva com sucesso', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "    pm.collectionVariables.set('calibrationId', json.id);",
+                      "    console.log('calibrationId salvo:', json.id);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             },
             {
               "name": "Obter Calibração por ID",
@@ -1549,6 +2179,47 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "Tentar Atualizar Padrão como Técnico (Esperado: 403 Forbidden)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/standardequipment/{{standardId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "standardequipment",
+                    "{{standardId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{standardId}}\",\n  \"labTag\": \"PAD-FORBIDDEN\",\n  \"model\": \"XPE205\",\n  \"manufacturer\": \"Mettler Toledo\",\n  \"serialNumber\": \"MT-887766\",\n  \"instrumentType\": \"Balança Analítica\",\n  \"resolution\": 1e-05,\n  \"rangeMin\": 0.0,\n  \"rangeMax\": 220.0\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Retornou 403 Forbidden como esperado', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             }
           ]
         },
@@ -1657,6 +2328,49 @@
               }
             },
             {
+              "name": "Atualizar Equipamento do Cliente (Permitido)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/equipment/{{equipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "equipment",
+                    "{{equipmentId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"id\": \"{{equipmentId}}\",\n  \"labTag\": \"PIP-CLI-010-TEC\",\n  \"name\": \"Micropipeta Monocanal Atualizada pelo Técnico\",\n  \"model\": \"Research Plus\",\n  \"manufacturer\": \"Eppendorf\",\n  \"serialNumber\": \"EP-776655\",\n  \"instrumentType\": \"Micropipeta\",\n  \"unit\": \"µL\",\n  \"rangeMin\": 100,\n  \"rangeMax\": 1000,\n  \"resolution\": 1,\n  \"nominalCapacity\": 1000,\n  \"currentLocation\": \"Bancada Metrológica 01\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Técnico atualizou equipamento com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.labTag).to.eql(\"PIP-CLI-010-TEC\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
               "name": "Atualizar Localização de Ensaio (Permitido)",
               "event": [
                 {
@@ -1742,19 +2456,6 @@
             },
             {
               "name": "Simulação de Cálculo Volumétrico (Permitido)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test('Cálculo simulado com sucesso', function () {",
-                      "    pm.response.to.have.status(200);",
-                      "});"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ],
               "request": {
                 "method": "POST",
                 "header": [
@@ -1763,10 +2464,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"atmosphericPressureHpa\": 1013.25,\n  \"ambientTemperatureCelsius\": 20.0,\n  \"relativeHumidityPercent\": 50.0,\n  \"balanceResolutionGrams\": 0.0001,\n  \"balanceCertificateUncertaintyGrams\": 0.0002,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 2, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 3, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 4, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 5, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.1, \"relativeHumidityPercent\": 50.3 },\n    { \"runNumber\": 6, \"fullMassGrams\": 199.984, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 7, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 8, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 9, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 10, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 }\n  ]\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume/calculate",
                   "host": [
@@ -1779,24 +2476,31 @@
                     "volume",
                     "calculate"
                   ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
                 }
-              }
-            },
-            {
-              "name": "Executar e Salvar Calibração Volumétrica Efetiva (Permitido)",
+              },
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test('Calibração executada e salva pelo Técnico', function () {",
-                      "    pm.response.to.have.status(201);",
+                      "pm.test(\"Técnico executou simulação com sucesso\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.pointsCount).to.eql(11);",
+                      "    pm.expect(json.meanVolumeV20Ml).to.be.above(90.0);",
                       "});"
                     ],
                     "type": "text/javascript"
                   }
                 }
-              ],
+              ]
+            },
+            {
+              "name": "Executar e Salvar Calibração Volumétrica Efetiva (Permitido)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1805,10 +2509,6 @@
                     "value": "application/json"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.5,\n  \"humidityPercent\": 52.0,\n  \"observations\": \"Calibração de rotina executada pelo técnico.\",\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"measurements\": [\n    { \"runNumber\": 1, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 2, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 3, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 4, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 5, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.1, \"relativeHumidityPercent\": 50.3 },\n    { \"runNumber\": 6, \"fullMassGrams\": 199.984, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 7, \"fullMassGrams\": 199.981, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.01, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.3, \"relativeHumidityPercent\": 50.1 },\n    { \"runNumber\": 8, \"fullMassGrams\": 199.983, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.03, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.0 },\n    { \"runNumber\": 9, \"fullMassGrams\": 199.982, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.3, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.2 },\n    { \"runNumber\": 10, \"fullMassGrams\": 199.980, \"emptyMassGrams\": 100.0, \"waterTemperatureCelsius\": 20.02, \"ambientTemperatureCelsius\": 20.2, \"atmosphericPressureHpa\": 1013.2, \"relativeHumidityPercent\": 50.1 }\n  ]\n}"
-                },
                 "url": {
                   "raw": "{{baseUrl}}/api/v1/calibrations/volume",
                   "host": [
@@ -1820,8 +2520,27 @@
                     "calibrations",
                     "volume"
                   ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"equipmentId\": \"{{equipmentId}}\",\n  \"nominalVolumeMl\": 100.0,\n  \"material\": 0,\n  \"balanceStandardId\": \"{{standardId}}\",\n  \"liquidThermometerStandardId\": \"{{liquidThermId}}\",\n  \"barometerStandardId\": \"{{barometerId}}\",\n  \"ambientThermometerStandardId\": \"{{ambientThermometerId}}\",\n  \"hygrometerStandardId\": \"{{hygrometerId}}\",\n  \"nextCalibrationDue\": \"2027-10-27T00:00:00Z\",\n  \"temperatureCelsius\": 20.2,\n  \"humidityPercent\": 68.0,\n  \"observations\": \"Calibração volumétrica realizada por técnico autorizado.\",\n  \"measurements\": [\n    {\n      \"runNumber\": 1,\n      \"fullMassGrams\": 259.739,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 2,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.97,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 3,\n      \"fullMassGrams\": 259.732,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 19.96,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 67\n    },\n    {\n      \"runNumber\": 4,\n      \"fullMassGrams\": 259.735,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 19.98,\n      \"ambientTemperatureCelsius\": 20.1,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 5,\n      \"fullMassGrams\": 259.736,\n      \"emptyMassGrams\": 160.081,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 6,\n      \"fullMassGrams\": 259.738,\n      \"emptyMassGrams\": 160.082,\n      \"waterTemperatureCelsius\": 20.02,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 7,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.01,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1017,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 8,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.08,\n      \"waterTemperatureCelsius\": 20.04,\n      \"ambientTemperatureCelsius\": 20.3,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 9,\n      \"fullMassGrams\": 259.737,\n      \"emptyMassGrams\": 160.078,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 10,\n      \"fullMassGrams\": 259.742,\n      \"emptyMassGrams\": 160.077,\n      \"waterTemperatureCelsius\": 20.05,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    },\n    {\n      \"runNumber\": 11,\n      \"fullMassGrams\": 259.74,\n      \"emptyMassGrams\": 160.079,\n      \"waterTemperatureCelsius\": 20.03,\n      \"ambientTemperatureCelsius\": 20.2,\n      \"atmosphericPressureHpa\": 1018,\n      \"relativeHumidityPercent\": 68\n    }\n  ]\n}"
                 }
-              }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Técnico salvou calibração com sucesso\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "    const json = pm.response.json();",
+                      "    pm.expect(json.id).to.not.be.empty;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
             }
           ]
         }
