@@ -17,7 +17,10 @@ public record VolumeStandardsResolutionRequest(
     Guid? HygrometerStandardId = null,
     Guid? ThermoHygrometerStandardId = null,
     decimal? ThermalExpansionCoefficient = null,
-    decimal? MeniscusSemiIntervalMl = null
+    decimal? MeniscusSemiIntervalMl = null,
+    decimal? WaterDensityGcm3 = null,
+    Guid? PycnometerStandardId = null,
+    decimal? WaterDensityUncertaintyGcm3 = null
 );
 
 public record VolumeStandardsResolutionResult(

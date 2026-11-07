@@ -64,6 +64,7 @@ public class QuestPdfCertificateGeneratorTests
             EquipmentCalibrationRangeMax: 100m,
             EquipmentUnit: "mL",
             EquipmentResolution: 0.1m,
+            EquipmentNominalCapacity: 100m,
             AmbientTemperatureCelsius: 20.5m,
             RelativeHumidityPercent: 55.0m,
             WaterTemperatureCelsius: 20.15m,
@@ -178,5 +179,44 @@ public class QuestPdfCertificateGeneratorTests
                 File.WriteAllBytes(imgPath, images[i]);
             }
         }
+    }
+
+    [Fact]
+    public async Task GenerateVolumeCertificatePdf_WithVolumetricFlaskAndPycnometer_ShouldGeneratePdfSuccessfully()
+    {
+        // Arrange
+        var baseReport = CreateSampleReportData();
+        var standardsWithPyc = baseReport.StandardsUsed.ToList();
+        standardsWithPyc.Add(new CertificateStandardUsedItemDto(
+            Role: "Picnômetro",
+            LabTag: "PAD-PIC-01",
+            Description: "Picnômetro Gay-Lussac 50mL",
+            CertificateNumber: "CAL-PIC-2026",
+            CalibratingLaboratory: "Inmetro RBC",
+            Correction: -0.00001m,
+            ExpandedUncertainty: 0.00004m,
+            CoverageFactor: 2.0m,
+            Resolution: 0m,
+            OperatingValue: 0.998245m,
+            IsExtrapolated: false,
+            WarningMessage: null,
+            CertificateDueDate: DateTime.UtcNow.AddMonths(10)));
+
+        var flaskReport = baseReport with
+        {
+            EquipmentResolution = null,
+            EquipmentRangeMin = null,
+            EquipmentRangeMax = null,
+            EquipmentNominalCapacity = 100m,
+            StandardsUsed = standardsWithPyc,
+            WaterDensityGcm3 = 0.998245m
+        };
+
+        // Act
+        var pdfBytes = await _generator.GenerateVolumeCertificatePdfAsync(flaskReport, new CertificateCustomizationOptions());
+
+        // Assert
+        pdfBytes.Should().NotBeNull();
+        pdfBytes.Length.Should().BeGreaterThan(1000);
     }
 }

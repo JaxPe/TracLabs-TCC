@@ -57,7 +57,7 @@ public class IssueCertificateCommandHandler : IRequestHandler<IssueCertificateCo
 
         var client = equipment?.Client;
         var firstPoint = record.MeasurementPoints.FirstOrDefault();
-        var nominalVolume = firstPoint?.NominalValue ?? equipment?.RangeMax ?? 0m;
+        var nominalVolume = firstPoint?.NominalValue ?? equipment?.NominalCapacity ?? equipment?.RangeMax ?? 0m;
 
         return new CertificateDetailDto(
             Id: cert.Id,

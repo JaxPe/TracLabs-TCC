@@ -10,6 +10,7 @@ using TracLabs.Application.Features.StandardEquipment.Commands.ReactivateStandar
 using TracLabs.Application.Features.StandardEquipment.Commands.RegisterCalibrationResult;
 using TracLabs.Application.Features.StandardEquipment.Commands.ReportOccurrence;
 using TracLabs.Application.Features.StandardEquipment.Commands.SendToCalibration;
+using TracLabs.Application.Features.StandardEquipment.Commands.UpdateStandardEquipment;
 using TracLabs.Application.Features.StandardEquipment.DTOs;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetExpiringStandards;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetStandardEquipment;
@@ -74,6 +75,18 @@ public class StandardEquipmentController : ControllerBase
     {
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    /// <summary>Atualiza as informações cadastrais do equipamento padrão (restrito a Supervisores).</summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = Roles.Supervisor)]
+    public async Task<ActionResult<StandardEquipmentDto>> Update(Guid id, [FromBody] UpdateStandardEquipmentCommand command)
+    {
+        if (id != command.Id)
+            return BadRequest(new { message = "O ID da rota não corresponde ao ID do corpo." });
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>Cadastra um novo certificado de calibração metrológica com tabela de pontos e regressão linear - Etapa 2 (restrito a Supervisores).</summary>

@@ -26,6 +26,9 @@ public enum StandardRole
     /// <summary>Termo-higrômetro utilizado para medição integrada de temperatura e umidade relativa do ar.</summary>
     ThermoHygrometer = 6,
 
+    /// <summary>Picnômetro padrão utilizado para a determinação experimental direta da massa específica da água.</summary>
+    Pycnometer = 7,
+
     /// <summary>Outro instrumento padrão auxiliar.</summary>
     Other = 99
 }

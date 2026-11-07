@@ -67,6 +67,10 @@ public class EquipmentConfiguration : IEntityTypeConfiguration<Equipment>
         builder.Property(e => e.RangeMin)
             .HasPrecision(18, 6);
 
+        builder.Property(e => e.NominalCapacity)
+            .HasPrecision(18, 6)
+            .IsRequired(false);
+
         builder.Property(e => e.RangeMax)
             .HasPrecision(18, 6);
 

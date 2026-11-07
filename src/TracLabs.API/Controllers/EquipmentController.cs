@@ -5,6 +5,7 @@ using TracLabs.Application.Constants;
 using TracLabs.Application.Features.Equipment.Commands.AddMaintenance;
 using TracLabs.Application.Features.Equipment.Commands.CreateEquipment;
 using TracLabs.Application.Features.Equipment.Commands.ReportOccurrence;
+using TracLabs.Application.Features.Equipment.Commands.UpdateEquipment;
 using TracLabs.Application.Features.Equipment.Commands.UpdateLocation;
 using TracLabs.Application.Features.Equipment.DTOs;
 using TracLabs.Application.Features.Equipment.Queries.GetEquipmentById;
@@ -66,6 +67,18 @@ public class EquipmentController : ControllerBase
     {
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    /// <summary>Atualiza as informações cadastrais do equipamento de cliente (correção de erros ou mudanças técnicas).</summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
+    public async Task<ActionResult<EquipmentDetailDto>> Update(Guid id, [FromBody] UpdateEquipmentCommand command)
+    {
+        if (id != command.Id)
+            return BadRequest(new { message = "O ID da rota não corresponde ao ID do corpo da requisição." });
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>Atualiza a localização física atual do equipamento no laboratório (ISO 17025 6.4.13 d).</summary>

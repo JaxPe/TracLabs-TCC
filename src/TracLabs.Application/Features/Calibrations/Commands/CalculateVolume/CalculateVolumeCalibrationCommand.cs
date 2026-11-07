@@ -19,6 +19,9 @@ public record CalculateVolumeCalibrationCommand(
     Guid? ThermoHygrometerStandardId = null,
     decimal? ThermalExpansionCoefficient = null,
     decimal? MeniscusSemiIntervalMl = null,
+    decimal? WaterDensityGcm3 = null,
+    Guid? PycnometerStandardId = null,
+    decimal? WaterDensityUncertaintyGcm3 = null,
     VolumeCalibrationRequest? DirectRequest = null
 ) : IRequest<VolumeCalibrationResultDto>;
 
@@ -68,6 +71,14 @@ public class CalculateVolumeCalibrationCommandValidator : AbstractValidator<Calc
                 .NotEmpty().WithMessage("A lista de medições gravimétricas é obrigatória.")
                 .Must(m => m != null && m.Count >= 7)
                 .WithMessage("A calibração volumétrica exige no mínimo 7 pontos de medição (repetições) para assegurar a confiabilidade estatística conforme a ABNT NBR ISO 4787.");
+
+            RuleFor(c => c)
+                .Must(c => !c.WaterDensityGcm3.HasValue || c.WaterDensityGcm3.Value <= 0 || (c.PycnometerStandardId.HasValue && c.PycnometerStandardId.Value != Guid.Empty))
+                .WithMessage("Ao informar a massa específica da água calculada por picnômetro, é obrigatório informar o picnômetro padrão utilizado.");
+
+            RuleFor(c => c)
+                .Must(c => !c.PycnometerStandardId.HasValue || c.PycnometerStandardId.Value == Guid.Empty || (c.WaterDensityGcm3.HasValue && c.WaterDensityGcm3.Value > 0))
+                .WithMessage("Ao informar o picnômetro padrão, é obrigatório informar o valor da massa específica da água determinada por ele.");
         });
     }
 
@@ -116,7 +127,10 @@ public class CalculateVolumeCalibrationCommandHandler
             command.HygrometerStandardId,
             command.ThermoHygrometerStandardId,
             command.ThermalExpansionCoefficient,
-            command.MeniscusSemiIntervalMl);
+            command.MeniscusSemiIntervalMl,
+            command.WaterDensityGcm3,
+            command.PycnometerStandardId,
+            command.WaterDensityUncertaintyGcm3);
 
         var resolution = await _standardResolver.ResolveAsync(resolutionRequest, cancellationToken);
         var result = _volumeCalibrationService.Calculate(resolution.CalculationRequest);

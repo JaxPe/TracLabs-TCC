@@ -26,6 +26,9 @@ public record CreateVolumeCalibrationCommand(
     string? Observations = null,
     decimal? ThermalExpansionCoefficient = null,
     decimal? AcceptanceCriteria = null,
+    decimal? WaterDensityGcm3 = null,
+    Guid? PycnometerStandardId = null,
+    decimal? WaterDensityUncertaintyGcm3 = null,
     // Parâmetros opcionais para compatibilidade retroativa
     Guid? StandardEquipmentId = null,
     decimal TemperatureCelsius = 20.0m,
@@ -61,6 +64,14 @@ public class CreateVolumeCalibrationCommandValidator : AbstractValidator<CreateV
         RuleFor(c => c)
             .Must(HaveValidMeasurements)
             .WithMessage("A calibração volumétrica exige no mínimo 7 pontos de medição (repetições) para assegurar a confiabilidade estatística e graus de liberdade adequados conforme a ABNT NBR ISO 4787 e DOC-CGCRE-027.");
+
+        RuleFor(c => c)
+            .Must(c => !c.WaterDensityGcm3.HasValue || c.WaterDensityGcm3.Value <= 0 || (c.PycnometerStandardId.HasValue && c.PycnometerStandardId.Value != Guid.Empty))
+            .WithMessage("Ao informar a massa específica da água calculada por picnômetro, é obrigatório informar o picnômetro padrão utilizado.");
+
+        RuleFor(c => c)
+            .Must(c => !c.PycnometerStandardId.HasValue || c.PycnometerStandardId.Value == Guid.Empty || (c.WaterDensityGcm3.HasValue && c.WaterDensityGcm3.Value > 0))
+            .WithMessage("Ao informar o picnômetro padrão, é obrigatório informar o valor da massa específica da água determinada por ele.");
     }
 
     private static bool HaveValidAmbientStandards(CreateVolumeCalibrationCommand c)
@@ -142,7 +153,7 @@ public class CreateVolumeCalibrationCommandHandler
                 $"Para calibração de instrumentos de pistão / microvolume ('{equipment.InstrumentType}'), a norma ABNT NBR ISO 8655-6 e o DOC-CGCRE-027 exigem no mínimo 10 repetições.");
         }
 
-        var nominalVol = request.NominalVolumeMl > 0 ? request.NominalVolumeMl : equipment.RangeMax;
+        var nominalVol = request.NominalVolumeMl > 0 ? request.NominalVolumeMl : (equipment.NominalCapacity ?? equipment.RangeMax ?? 0m);
         if (!equipment.IsWithinCalibrationRange(nominalVol))
         {
             warnings.Add($"O volume nominal de ensaio ({nominalVol} mL) do equipamento '{equipment.LabTag}' está fora da margem de calibração ({equipment.CalibrationRangeMin} a {equipment.CalibrationRangeMax} mL).");
@@ -164,7 +175,10 @@ public class CreateVolumeCalibrationCommandHandler
             request.HygrometerStandardId,
             request.ThermoHygrometerStandardId,
             request.ThermalExpansionCoefficient,
-            request.CalculationRequest?.MeniscusSemiIntervalMl);
+            request.CalculationRequest?.MeniscusSemiIntervalMl,
+            request.WaterDensityGcm3,
+            request.PycnometerStandardId,
+            request.WaterDensityUncertaintyGcm3);
 
         var resolution = await _standardResolver.ResolveAsync(resolutionRequest, cancellationToken);
         if (resolution.Warnings.Count > 0)

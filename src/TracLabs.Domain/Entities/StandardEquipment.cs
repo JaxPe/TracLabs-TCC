@@ -346,6 +346,54 @@ public class StandardEquipment : BaseEntity
         }
     }
 
+    /// <summary>Atualiza as informações cadastrais do padrão (ativo físico).</summary>
+    public void UpdateDetails(
+        string labTag,
+        string name,
+        string model,
+        string manufacturer,
+        string serialNumber,
+        string instrumentType,
+        decimal resolution,
+        decimal rangeMin,
+        decimal rangeMax,
+        int calibrationIntervalMonths,
+        string? softwareVersion,
+        string? firmwareVersion,
+        string? currentLocation,
+        string? acceptanceCriteria,
+        string? maintenancePlan,
+        string? referenceMaterialDocumentation)
+    {
+        if (string.IsNullOrWhiteSpace(labTag))
+            throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
+        if (rangeMin > rangeMax)
+            throw new ArgumentException("Range minimum cannot be greater than range maximum.");
+        if (resolution < 0)
+            throw new ArgumentException("Resolution cannot be negative.");
+        if (calibrationIntervalMonths <= 0)
+            throw new ArgumentException("Calibration interval must be positive.");
+
+        LabTag = labTag;
+        Name = string.IsNullOrWhiteSpace(name) ? instrumentType : name;
+        Model = model;
+        Manufacturer = manufacturer;
+        SerialNumber = serialNumber;
+        InstrumentType = instrumentType;
+        Resolution = resolution;
+        RangeMin = rangeMin;
+        RangeMax = rangeMax;
+        CalibrationIntervalMonths = calibrationIntervalMonths;
+        SoftwareVersion = softwareVersion;
+        FirmwareVersion = firmwareVersion;
+        CurrentLocation = string.IsNullOrWhiteSpace(currentLocation) ? CurrentLocation : currentLocation;
+        AcceptanceCriteria = acceptanceCriteria;
+        MaintenancePlan = maintenancePlan;
+        ReferenceMaterialDocumentation = referenceMaterialDocumentation;
+
+        MarkAsUpdated();
+    }
+
     /// <summary>Define ou atualiza as margens nominais e calibradas do padrão.</summary>
     public void SetRanges(decimal rangeMin, decimal rangeMax, decimal? calRangeMin = null, decimal? calRangeMax = null)
     {

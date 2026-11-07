@@ -62,10 +62,13 @@ public class Equipment : BaseEntity
     // ── Measurement Range & Calibration Margins ─────────────────────────────────
     
     /// <summary>Minimum value of the instrument's measurement range (capacidade nominal mínima).</summary>
-    public decimal RangeMin { get; private set; }
+    public decimal? RangeMin { get; private set; }
     
     /// <summary>Maximum value of the instrument's measurement range (capacidade nominal máxima).</summary>
-    public decimal RangeMax { get; private set; }
+    public decimal? RangeMax { get; private set; }
+
+    /// <summary>Capacidade/Volume nominal para instrumentos de ponto fixo / traço único (ex: balões volumétricos).</summary>
+    public decimal? NominalCapacity { get; private set; }
 
     /// <summary>Margem mínima da faixa de calibração solicitada/acreditada.</summary>
     public decimal? CalibrationRangeMin { get; private set; }
@@ -77,7 +80,7 @@ public class Equipment : BaseEntity
     public string Unit { get; private set; } = string.Empty;
     
     /// <summary>Instrument resolution/scale division (menor divisão de escala).</summary>
-    public decimal Resolution { get; private set; }
+    public decimal? Resolution { get; private set; }
     
     // ── Ownership ───────────────────────────────────────────────────────────────
     
@@ -122,20 +125,21 @@ public class Equipment : BaseEntity
     
     public Equipment(
         string labTag, string model, string manufacturer, string serialNumber,
-        string instrumentType, decimal rangeMin, decimal rangeMax,
-        string unit, decimal resolution, Guid clientId,
+        string instrumentType, decimal? rangeMin, decimal? rangeMax,
+        string unit, decimal? resolution, Guid clientId,
         string? name = null, string? softwareVersion = null, string? firmwareVersion = null,
         string? currentLocation = null, string? acceptanceCriteria = null,
         string? maintenancePlan = null, string? initialConditionNotes = null,
         EquipmentStatus status = EquipmentStatus.Received,
-        decimal? calibrationRangeMin = null, decimal? calibrationRangeMax = null)
+        decimal? calibrationRangeMin = null, decimal? calibrationRangeMax = null,
+        decimal? nominalCapacity = null)
     {
         // Domain validation — do not allow invalid state to ever exist
         if (string.IsNullOrWhiteSpace(labTag))
             throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
-        if (rangeMin >= rangeMax)
+        if (rangeMin.HasValue && rangeMax.HasValue && rangeMin.Value >= rangeMax.Value)
             throw new ArgumentException("Range minimum must be less than range maximum.");
-        if (resolution <= 0)
+        if (resolution.HasValue && resolution.Value <= 0)
             throw new ArgumentException("Resolution must be a positive value.");
         if (calibrationRangeMin.HasValue && calibrationRangeMax.HasValue && calibrationRangeMin.Value > calibrationRangeMax.Value)
             throw new ArgumentException("Calibration range minimum cannot be greater than maximum.");
@@ -147,8 +151,9 @@ public class Equipment : BaseEntity
         InstrumentType = instrumentType;
         RangeMin = rangeMin;
         RangeMax = rangeMax;
-        CalibrationRangeMin = calibrationRangeMin ?? rangeMin;
-        CalibrationRangeMax = calibrationRangeMax ?? rangeMax;
+        NominalCapacity = nominalCapacity;
+        CalibrationRangeMin = calibrationRangeMin ?? rangeMin ?? nominalCapacity;
+        CalibrationRangeMax = calibrationRangeMax ?? rangeMax ?? nominalCapacity;
         Unit = unit;
         Resolution = resolution;
         ClientId = clientId;
@@ -164,6 +169,62 @@ public class Equipment : BaseEntity
     }
     
     // ── Domain Methods ───────────────────────────────────────────────────────────
+
+    /// <summary>Atualiza as informações cadastrais e metrológicas do equipamento.</summary>
+    public void UpdateDetails(
+        string labTag,
+        string name,
+        string model,
+        string manufacturer,
+        string serialNumber,
+        string instrumentType,
+        string unit,
+        decimal? rangeMin,
+        decimal? rangeMax,
+        decimal? resolution,
+        decimal? nominalCapacity,
+        string? softwareVersion,
+        string? firmwareVersion,
+        string? currentLocation,
+        string? acceptanceCriteria,
+        string? maintenancePlan,
+        string? initialConditionNotes,
+        decimal? calibrationRangeMin = null,
+        decimal? calibrationRangeMax = null)
+    {
+        if (string.IsNullOrWhiteSpace(labTag))
+            throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
+        if (rangeMin.HasValue && rangeMax.HasValue && rangeMin.Value >= rangeMax.Value)
+            throw new ArgumentException("Range minimum must be less than range maximum.");
+        if (resolution.HasValue && resolution.Value <= 0)
+            throw new ArgumentException("Resolution must be a positive value.");
+        if (nominalCapacity.HasValue && nominalCapacity.Value <= 0)
+            throw new ArgumentException("Nominal capacity must be a positive value.");
+        if (calibrationRangeMin.HasValue && calibrationRangeMax.HasValue && calibrationRangeMin.Value > calibrationRangeMax.Value)
+            throw new ArgumentException("Calibration range minimum cannot be greater than maximum.");
+
+        LabTag = labTag;
+        Name = string.IsNullOrWhiteSpace(name) ? instrumentType : name;
+        Model = model;
+        Manufacturer = manufacturer;
+        SerialNumber = serialNumber;
+        InstrumentType = instrumentType;
+        Unit = unit;
+        RangeMin = rangeMin;
+        RangeMax = rangeMax;
+        Resolution = resolution;
+        NominalCapacity = nominalCapacity;
+        CalibrationRangeMin = calibrationRangeMin ?? rangeMin ?? nominalCapacity;
+        CalibrationRangeMax = calibrationRangeMax ?? rangeMax ?? nominalCapacity;
+        SoftwareVersion = softwareVersion;
+        FirmwareVersion = firmwareVersion;
+        CurrentLocation = string.IsNullOrWhiteSpace(currentLocation) ? CurrentLocation : currentLocation;
+        AcceptanceCriteria = acceptanceCriteria;
+        MaintenancePlan = maintenancePlan;
+        InitialConditionNotes = initialConditionNotes;
+
+        MarkAsUpdated();
+    }
 
     /// <summary>Atualiza a faixa de calibração do instrumento.</summary>
     public void SetCalibrationRange(decimal? min, decimal? max)

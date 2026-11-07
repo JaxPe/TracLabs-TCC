@@ -196,4 +196,108 @@ public class EquipmentIso17025Tests
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*não pode ser utilizado para calibração*");
     }
+
+    [Fact]
+    public void Equipment_VolumetricFlask_WithoutRangeAndResolution_ShouldSucceed()
+    {
+        // Arrange & Act
+        var flask = new Equipment(
+            labTag: "BAL-CLI-100",
+            model: "Classe A",
+            manufacturer: "Vidrolab",
+            serialNumber: "SN-BAL-100",
+            instrumentType: "Balão Volumétrico",
+            rangeMin: null,
+            rangeMax: null,
+            unit: "mL",
+            resolution: null,
+            clientId: Guid.NewGuid(),
+            name: "Balão Volumétrico de 100 mL",
+            nominalCapacity: 100m);
+
+        // Assert
+        flask.Should().NotBeNull();
+        flask.RangeMin.Should().BeNull();
+        flask.RangeMax.Should().BeNull();
+        flask.Resolution.Should().BeNull();
+        flask.NominalCapacity.Should().Be(100m);
+        flask.CalibrationRangeMin.Should().Be(100m);
+        flask.CalibrationRangeMax.Should().Be(100m);
+        flask.IsWithinCalibrationRange(100m).Should().BeTrue();
+        flask.IsWithinCalibrationRange(101m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equipment_UpdateDetails_ShouldUpdatePropertiesAndMarkAsUpdated()
+    {
+        // Arrange
+        var equipment = CreateClientVolumetricEquipment();
+
+        // Act
+        equipment.UpdateDetails(
+            labTag: "VOL-CLI-001-MOD",
+            name: "Balão Volumétrico 100 mL Modificado",
+            model: "Classe A Premium",
+            manufacturer: "Brand New",
+            serialNumber: "SN-VOL-100-NEW",
+            instrumentType: "Balão Volumétrico",
+            unit: "mL",
+            rangeMin: null,
+            rangeMax: null,
+            resolution: null,
+            nominalCapacity: 100m,
+            softwareVersion: null,
+            firmwareVersion: null,
+            currentLocation: "Armário de Vidrarias B",
+            acceptanceCriteria: "EMP ±0.08 mL",
+            maintenancePlan: "Limpeza com água ultrapura",
+            initialConditionNotes: "Perfeito estado");
+
+        // Assert
+        equipment.LabTag.Should().Be("VOL-CLI-001-MOD");
+        equipment.Name.Should().Be("Balão Volumétrico 100 mL Modificado");
+        equipment.Model.Should().Be("Classe A Premium");
+        equipment.Manufacturer.Should().Be("Brand New");
+        equipment.SerialNumber.Should().Be("SN-VOL-100-NEW");
+        equipment.NominalCapacity.Should().Be(100m);
+        equipment.Resolution.Should().BeNull();
+        equipment.RangeMin.Should().BeNull();
+        equipment.CurrentLocation.Should().Be("Armário de Vidrarias B");
+        equipment.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void StandardEquipment_UpdateDetails_ShouldUpdatePropertiesAndMarkAsUpdated()
+    {
+        // Arrange
+        var standard = CreateUsableVolumeStandard();
+
+        // Act
+        standard.UpdateDetails(
+            labTag: "PAD-BAL-001-MOD",
+            name: "Balança Mettler XP205 Atualizada",
+            model: "XP205 Plus",
+            manufacturer: "Mettler Toledo Inc.",
+            serialNumber: "SN-XP205-VOL-01-REV",
+            instrumentType: "Balança Analítica",
+            resolution: 0.00001m,
+            rangeMin: 0m,
+            rangeMax: 220m,
+            calibrationIntervalMonths: 24,
+            softwareVersion: "v2.0",
+            firmwareVersion: "v1.5",
+            currentLocation: "Sala Limpa",
+            acceptanceCriteria: "EMA <= 0.0003g",
+            maintenancePlan: "Verificação quinzenal",
+            referenceMaterialDocumentation: null);
+
+        // Assert
+        standard.LabTag.Should().Be("PAD-BAL-001-MOD");
+        standard.Name.Should().Be("Balança Mettler XP205 Atualizada");
+        standard.Model.Should().Be("XP205 Plus");
+        standard.RangeMax.Should().Be(220m);
+        standard.CalibrationIntervalMonths.Should().Be(24);
+        standard.CurrentLocation.Should().Be("Sala Limpa");
+        standard.UpdatedAt.Should().NotBeNull();
+    }
 }

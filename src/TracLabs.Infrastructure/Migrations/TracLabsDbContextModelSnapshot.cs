@@ -569,15 +569,19 @@ namespace TracLabs.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
-                    b.Property<decimal>("RangeMax")
+                    b.Property<decimal?>("NominalCapacity")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
 
-                    b.Property<decimal>("RangeMin")
+                    b.Property<decimal?>("RangeMax")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
 
-                    b.Property<decimal>("Resolution")
+                    b.Property<decimal?>("RangeMin")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("Resolution")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
 

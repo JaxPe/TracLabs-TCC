@@ -74,6 +74,22 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
             hygrometer = await LoadAndValidateStandardAsync(effectiveHygId, "Higrômetro", cancellationToken);
         }
 
+        TracLabs.Domain.Entities.StandardEquipment? pycnometer = null;
+        ResolvedStandardCorrection? pycnometerResolved = null;
+
+        if (request.WaterDensityGcm3.HasValue && request.WaterDensityGcm3.Value > 0)
+        {
+            if (!request.PycnometerStandardId.HasValue || request.PycnometerStandardId.Value == Guid.Empty)
+                throw new ArgumentException("Ao informar a massa específica da água calculada por picnômetro, é obrigatório informar o padrão de picnômetro utilizado (com certificado válido).", nameof(request));
+
+            pycnometer = await LoadAndValidateStandardAsync(request.PycnometerStandardId.Value, "Picnômetro", cancellationToken);
+            pycnometerResolved = ResolveStandard(pycnometer, request.WaterDensityGcm3.Value, "Picnômetro", warnings);
+        }
+        else if (request.PycnometerStandardId.HasValue && request.PycnometerStandardId.Value != Guid.Empty)
+        {
+            throw new ArgumentException("O padrão de picnômetro foi informado, porém o valor da massa específica da água medida não foi fornecido.", nameof(request));
+        }
+
         // ── 3. Determinação dos Pontos Operacionais Médios de Ensaio ─────────
         var defaultP = barometer.RangeMax > 0 && barometer.RangeMin > 0 ? (barometer.RangeMax + barometer.RangeMin) / 2m : 1013.25m;
         var defaultT = 20.0m;
@@ -146,6 +162,15 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
             HygrometerCorrectionPercent = hygrometerResolved.CalculatedCorrection
         };
 
+        if (request.WaterDensityGcm3.HasValue && request.WaterDensityGcm3.Value > 0)
+        {
+            calcReq.WaterDensityReferenceGramsPerCm3 = request.WaterDensityGcm3.Value;
+            calcReq.WaterDensityUncertaintyGramsPerCm3 = request.WaterDensityUncertaintyGcm3
+                ?? (pycnometerResolved?.CalculatedUncertainty > 0 ? pycnometerResolved.CalculatedUncertainty : 0.00005m);
+            calcReq.WaterDensityCoverageFactor = pycnometerResolved?.CoverageFactor > 0 ? pycnometerResolved.CoverageFactor : 2.0m;
+        }
+
+
         // ── 6. Fábrica de Snapshots dos Padrões (ISO 17025) ───────────────────
         List<CalibrationStandardUsed> BuildStandardsUsed(Guid calibrationRecordId)
         {
@@ -172,6 +197,12 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
 
                 var activeHygCert = hygrometer.GetActiveCertificate();
                 standardsUsed.Add(new(calibrationRecordId, hygrometer, StandardRole.Hygrometer, hygrometerResolved, activeHygCert?.Id, activeHygCert?.CertificateNumber, activeHygCert?.CalibratingLaboratory, activeHygCert?.CalibrationDueDate ?? hygrometer.CalibrationDueDate));
+            }
+
+            if (pycnometer != null && pycnometerResolved != null)
+            {
+                var activePycCert = pycnometer.GetActiveCertificate();
+                standardsUsed.Add(new(calibrationRecordId, pycnometer, StandardRole.Pycnometer, pycnometerResolved, activePycCert?.Id, activePycCert?.CertificateNumber, activePycCert?.CalibratingLaboratory, activePycCert?.CalibrationDueDate ?? pycnometer.CalibrationDueDate));
             }
 
             return standardsUsed;

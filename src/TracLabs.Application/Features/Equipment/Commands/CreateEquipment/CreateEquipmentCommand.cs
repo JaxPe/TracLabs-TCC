@@ -14,10 +14,10 @@ public record CreateEquipmentCommand(
     string Manufacturer,
     string SerialNumber,
     string InstrumentType,
-    decimal RangeMin,
-    decimal RangeMax,
+    decimal? RangeMin,
+    decimal? RangeMax,
     string Unit,
-    decimal Resolution,
+    decimal? Resolution,
     Guid ClientId,
     string? Name = null,
     string? SoftwareVersion = null,
@@ -25,7 +25,8 @@ public record CreateEquipmentCommand(
     string? CurrentLocation = null,
     string? AcceptanceCriteria = null,
     string? MaintenancePlan = null,
-    string? InitialConditionNotes = null) : IRequest<EquipmentDetailDto>;
+    string? InitialConditionNotes = null,
+    decimal? NominalCapacity = null) : IRequest<EquipmentDetailDto>;
 
 public class CreateEquipmentCommandValidator : AbstractValidator<CreateEquipmentCommand>
 {
@@ -40,16 +41,32 @@ public class CreateEquipmentCommandValidator : AbstractValidator<CreateEquipment
         RuleFor(e => e.SerialNumber).NotEmpty().MaximumLength(100);
         RuleFor(e => e.InstrumentType).NotEmpty().MaximumLength(100);
         RuleFor(e => e.Unit).NotEmpty().MaximumLength(20);
-
-        RuleFor(e => e.RangeMax)
-            .GreaterThan(e => e.RangeMin)
-            .WithMessage("O limite superior da faixa deve ser maior que o limite inferior.");
-
-        RuleFor(e => e.Resolution)
-            .GreaterThan(0)
-            .WithMessage("A resolução deve ser um valor positivo.");
-
         RuleFor(e => e.ClientId).NotEmpty().WithMessage("O cliente proprietário deve ser informado.");
+
+        When(e => e.RangeMin.HasValue && e.RangeMax.HasValue, () =>
+        {
+            RuleFor(e => e.RangeMax!.Value)
+                .GreaterThan(e => e.RangeMin!.Value)
+                .WithMessage("O limite superior da faixa deve ser maior que o limite inferior.");
+        });
+
+        When(e => e.Resolution.HasValue, () =>
+        {
+            RuleFor(e => e.Resolution!.Value)
+                .GreaterThan(0)
+                .WithMessage("A resolução deve ser um valor positivo.");
+        });
+
+        When(e => e.NominalCapacity.HasValue, () =>
+        {
+            RuleFor(e => e.NominalCapacity!.Value)
+                .GreaterThan(0)
+                .WithMessage("A capacidade nominal deve ser um valor positivo.");
+        });
+
+        RuleFor(e => e)
+            .Must(e => (e.RangeMin.HasValue && e.RangeMax.HasValue) || e.NominalCapacity.HasValue || (e.RangeMax.HasValue && e.RangeMax.Value > 0))
+            .WithMessage("O equipamento deve possuir uma faixa de medição (RangeMin/RangeMax) ou uma Capacidade Nominal especificada (ex: balões volumétricos).");
     }
 }
 
@@ -99,7 +116,11 @@ public class CreateEquipmentCommandHandler : IRequestHandler<CreateEquipmentComm
             request.CurrentLocation,
             request.AcceptanceCriteria,
             request.MaintenancePlan,
-            request.InitialConditionNotes);
+            request.InitialConditionNotes,
+            Domain.Enums.EquipmentStatus.Received,
+            null,
+            null,
+            request.NominalCapacity);
 
         await _equipmentRepository.AddAsync(equipment, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -121,6 +142,7 @@ public class CreateEquipmentCommandHandler : IRequestHandler<CreateEquipmentComm
             e.RangeMax,
             e.Unit,
             e.Resolution,
+            e.NominalCapacity,
             e.ClientId,
             clientName ?? e.Client?.Name,
             e.SoftwareVersion,

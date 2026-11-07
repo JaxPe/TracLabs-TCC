@@ -250,4 +250,78 @@ public class CalculateVolumeCalibrationCommandHandlerTests
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*não está apto para uso metrológico*");
     }
+
+    [Fact]
+    public async Task Handle_WithWaterDensityAndPycnometer_ShouldApplyPycnometerDensityAndUncertainty()
+    {
+        // Arrange
+        var pycnometer = CreateMockStandard("PAD-PIC-01", "Picnômetro", error: 0.00001m, uncertainty: 0.00004m, resolution: 0m);
+        SetupStandardMock(pycnometer);
+
+        var customDensity = 0.998245m;
+
+        var command = new CalculateVolumeCalibrationCommand(
+            NominalVolumeMl: 100.0m,
+            Measurements: CreateSampleMeasurements(7),
+            BalanceStandardId: _balance.Id,
+            LiquidThermometerStandardId: _liquidThermometer.Id,
+            BarometerStandardId: _barometer.Id,
+            ThermoHygrometerStandardId: _thermoHygrometer.Id,
+            WaterDensityGcm3: customDensity,
+            PycnometerStandardId: pycnometer.Id);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.WaterDensityGramsPerCm3.Should().Be(customDensity);
+        result.UncertaintyBudget.Should().Contain(b => b.Symbol == "rw" && b.EstimatedValue == customDensity);
+    }
+
+    [Fact]
+    public void Validator_WhenWaterDensityProvidedWithoutPycnometer_ShouldFailValidation()
+    {
+        // Arrange
+        var validator = new CalculateVolumeCalibrationCommandValidator();
+        var command = new CalculateVolumeCalibrationCommand(
+            NominalVolumeMl: 100.0m,
+            Measurements: CreateSampleMeasurements(7),
+            BalanceStandardId: _balance.Id,
+            LiquidThermometerStandardId: _liquidThermometer.Id,
+            BarometerStandardId: _barometer.Id,
+            ThermoHygrometerStandardId: _thermoHygrometer.Id,
+            WaterDensityGcm3: 0.998234m,
+            PycnometerStandardId: null);
+
+        // Act
+        var valResult = validator.Validate(command);
+
+        // Assert
+        valResult.IsValid.Should().BeFalse();
+        valResult.Errors.Should().Contain(e => e.ErrorMessage.Contains("picnômetro padrão"));
+    }
+
+    [Fact]
+    public void Validator_WhenPycnometerProvidedWithoutWaterDensity_ShouldFailValidation()
+    {
+        // Arrange
+        var validator = new CalculateVolumeCalibrationCommandValidator();
+        var command = new CalculateVolumeCalibrationCommand(
+            NominalVolumeMl: 100.0m,
+            Measurements: CreateSampleMeasurements(7),
+            BalanceStandardId: _balance.Id,
+            LiquidThermometerStandardId: _liquidThermometer.Id,
+            BarometerStandardId: _barometer.Id,
+            ThermoHygrometerStandardId: _thermoHygrometer.Id,
+            WaterDensityGcm3: null,
+            PycnometerStandardId: Guid.NewGuid());
+
+        // Act
+        var valResult = validator.Validate(command);
+
+        // Assert
+        valResult.IsValid.Should().BeFalse();
+        valResult.Errors.Should().Contain(e => e.ErrorMessage.Contains("massa específica da água determinada"));
+    }
 }

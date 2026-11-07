@@ -88,7 +88,7 @@ public static class CertificateReportBuilder
         else
         {
             // Instrumento de capacidade única / ponto único (ex: Balão Volumétrico, Picnômetro)
-            var nomVal = groupedPoints.FirstOrDefault()?.Key ?? equipment.RangeMax;
+            var nomVal = groupedPoints.FirstOrDefault()?.Key ?? equipment.NominalCapacity ?? equipment.RangeMax ?? 0m;
             var calculatedVolume = nomVal + record.MeanError;
             decimal? stdDev = null;
             if (record.MeasurementPoints.Count > 1)
@@ -109,7 +109,7 @@ public static class CertificateReportBuilder
             ));
         }
 
-        var nominalVolume = resultPoints.FirstOrDefault()?.NominalVolumeMl ?? equipment.RangeMax;
+        var nominalVolume = resultPoints.FirstOrDefault()?.NominalVolumeMl ?? equipment.NominalCapacity ?? equipment.RangeMax ?? 0m;
         var calculatedVolumeV20 = resultPoints.FirstOrDefault()?.MeasuredVolumeMl ?? (nominalVolume + record.MeanError);
 
         return new CertificateReportDto(
@@ -146,6 +146,7 @@ public static class CertificateReportBuilder
             EquipmentCalibrationRangeMax: equipment.CalibrationRangeMax,
             EquipmentUnit: equipment.Unit,
             EquipmentResolution: equipment.Resolution,
+            EquipmentNominalCapacity: equipment.NominalCapacity,
             // Condições Ambientais
             AmbientTemperatureCelsius: record.TemperatureCelsius,
             RelativeHumidityPercent: record.HumidityPercent,
@@ -180,6 +181,7 @@ public static class CertificateReportBuilder
         StandardRole.Hygrometer => "Higrômetro",
         StandardRole.ThermoHygrometer => "Termo-higrômetro",
         StandardRole.ReferenceWeights => "Pesos-Padrão",
+        StandardRole.Pycnometer => "Picnômetro",
         _ => role.ToString()
     };
 }
