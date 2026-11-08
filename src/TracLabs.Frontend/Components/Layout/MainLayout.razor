@@ -1,0 +1,90 @@
+@inherits LayoutComponentBase
+@using TracLabs.Frontend.Services.Theme
+@using TracLabs.Frontend.Services.Auth
+@inject IThemeService ThemeService
+@inject IUserContextService UserContext
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@if (!_isInitialized || !UserContext.IsAuthenticated)
+{
+    <!-- Quando deslogado ou checando sessão, não renderiza menus nem conteúdo -->
+    <div class="d-flex align-items-center justify-content-center min-vh-100" style="background-color: var(--trac-bg-base); min-height: 100vh;">
+        <div class="spinner-border" style="color: var(--trac-brand-primary); width: 2.5rem; height: 2.5rem;" role="status">
+            <span class="visually-hidden">Carregando TracLabs...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="trac-app-layout">
+        <!-- Sidebar Navigation -->
+        <NavMenu IsCollapsed="@_sidebarCollapsed" OnToggleCollapse="@ToggleSidebar" />
+
+        <!-- Application Body Area -->
+        <div class="trac-main-area">
+            <!-- Sticky Header -->
+            <Header IsSidebarCollapsed="@_sidebarCollapsed" OnToggleSidebar="@ToggleSidebar" />
+
+            <!-- Main Viewport Content -->
+            <main class="trac-content">
+                @Body
+            </main>
+        </div>
+    </div>
+}
+
+<!-- Tela Flutuante Global de Alerta de Erros e Mensagens -->
+<FloatingAlertModal />
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocorreu um erro inesperado.
+    <a href="." class="reload">Recarregar</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool _sidebarCollapsed = false;
+    private bool _isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ThemeService.OnThemeChanged += HandleStateChanged;
+            UserContext.OnUserChanged += HandleStateChanged;
+            await ThemeService.InitializeAsync();
+            await UserContext.InitializeAsync();
+            _isInitialized = true;
+
+            if (!UserContext.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleSidebar()
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
+        StateHasChanged();
+    }
+
+    private void HandleStateChanged()
+    {
+        if (_isInitialized && !UserContext.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleStateChanged;
+        UserContext.OnUserChanged -= HandleStateChanged;
+    }
+}

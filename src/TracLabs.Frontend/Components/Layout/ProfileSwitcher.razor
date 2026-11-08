@@ -1,0 +1,80 @@
+@using TracLabs.Frontend.Services.Auth
+@inject IUserContextService UserContext
+@inject NavigationManager Navigation
+
+<div class="position-relative" style="position: relative;">
+    @if (!UserContext.IsAuthenticated)
+    {
+        <button class="trac-btn trac-btn-primary trac-btn-sm" style="height: 36px;" @onclick="@(() => Navigation.NavigateTo("/login"))">
+            Entrar
+        </button>
+    }
+    else
+    {
+        <button class="trac-btn trac-btn-secondary" style="height: 36px; padding: 0 0.75rem; gap: 0.5rem;" @onclick="ToggleDropdown" title="Menu do Usuário">
+            <!-- Avatar circle with Initials -->
+            <span style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--trac-brand-primary); color: #FFFFFF; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;">
+                @UserContext.CurrentUser.AvatarInitials
+            </span>
+            <span class="d-none d-md-inline" style="font-weight: 600; font-size: 0.8125rem;">
+                @UserContext.CurrentUser.Name
+            </span>
+            <span class="trac-badge @(UserContext.CurrentUser.Role == UserRole.Supervisor ? "trac-badge-info" : "trac-badge-neutral")" style="font-size: 0.7rem; padding: 0.1rem 0.4rem;">
+                @(UserContext.CurrentUser.Role == UserRole.Supervisor ? "Supervisor" : "Técnico")
+            </span>
+            <svg style="width: 14px; height: 14px; color: var(--trac-text-muted);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+
+        @if (_isOpen)
+        {
+            <div style="position: absolute; right: 0; top: calc(100% + 6px); width: 300px; background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-lg); box-shadow: var(--trac-shadow-lg); z-index: 150; padding: 0.875rem;">
+                <div style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--trac-border-subtle); margin-bottom: 0.75rem;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--trac-brand-primary); color: #FFFFFF; font-size: 0.875rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;">
+                            @UserContext.CurrentUser.AvatarInitials
+                        </span>
+                        <div>
+                            <div style="font-size: 0.875rem; font-weight: 700; color: var(--trac-text-primary);">@UserContext.CurrentUser.Name</div>
+                            <div style="font-size: 0.75rem; color: var(--trac-text-secondary);">@UserContext.CurrentUser.Email</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 mt-1">
+                        <span class="trac-badge @(UserContext.CurrentUser.Role == UserRole.Supervisor ? "trac-badge-info" : "trac-badge-neutral")" style="font-size: 0.7rem;">
+                            @UserContext.CurrentUser.RoleDescription
+                        </span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--trac-text-muted); margin-top: 0.35rem;">
+                        Reg.: <strong>@UserContext.CurrentUser.RegistrationNumber</strong>
+                    </div>
+                </div>
+
+                <!-- Logout / Sair do Sistema -->
+                <button type="button" 
+                        class="trac-btn trac-btn-secondary w-100" 
+                        style="justify-content: center; gap: 0.5rem; color: var(--trac-danger-600); border-color: var(--trac-danger-500); font-weight: 600;"
+                        @onclick="HandleLogout">
+                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Encerrar Sessão (Logout)</span>
+                </button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool _isOpen = false;
+
+    private void ToggleDropdown() => _isOpen = !_isOpen;
+
+    private async Task HandleLogout()
+    {
+        _isOpen = false;
+        await UserContext.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}

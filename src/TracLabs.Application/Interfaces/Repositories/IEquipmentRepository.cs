@@ -1,3 +1,6 @@
+using TracLabs.Domain.Entities;
+using TracLabs.Domain.Enums;
+
 namespace TracLabs.Application.Interfaces.Repositories;
 
 /// <summary>
@@ -51,5 +54,6 @@ public interface IEquipmentRepository : IRepository<Equipment>
         string? model,
         string? clientName,
         EquipmentStatus? status,
+        Guid? clientId = null,
         CancellationToken cancellationToken = default);
 }

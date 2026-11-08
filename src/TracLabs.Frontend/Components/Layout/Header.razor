@@ -1,0 +1,56 @@
+@using TracLabs.Frontend.Services.Theme
+@using TracLabs.Frontend.Services.Auth
+@inject IThemeService ThemeService
+@inject IUserContextService UserContext
+
+<header class="trac-header">
+    <div class="trac-header-left">
+        <!-- Sidebar Toggle Icon -->
+        <button class="trac-btn-icon" @onclick="OnToggleSidebar" title="Alternar Barra Lateral" aria-label="Alternar Barra Lateral">
+            <svg class="trac-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+
+        <!-- Dynamic Breadcrumbs -->
+        <Breadcrumbs />
+    </div>
+
+    <div class="trac-header-right">
+        <!-- System Health Pill -->
+        <div class="d-none d-lg-flex align-items-center gap-2 px-2 py-1" style="font-size: 0.75rem; color: var(--trac-text-secondary); background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-sm);">
+            <span class="trac-pulse-dot" style="background-color: var(--trac-success-500);"></span>
+            <span>Ambiente: <strong>20.2°C / 68% UR</strong></span>
+        </div>
+
+        <!-- Light / Dark Mode Toggle Button -->
+        <button class="trac-btn-icon" @onclick="ThemeService.ToggleThemeModeAsync" 
+                title="@(ThemeService.CurrentTheme == ThemeMode.Dark ? "Mudar para Modo Claro (#FFFFFF)" : "Mudar para Modo Escuro (#09090B)")"
+                aria-label="Alternar Modo Claro e Escuro">
+            @if (ThemeService.CurrentTheme == ThemeMode.Dark)
+            {
+                <!-- Sun Icon -->
+                <svg class="trac-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            }
+            else
+            {
+                <!-- Moon Icon -->
+                <svg class="trac-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            }
+        </button>
+
+        <!-- User Profile & Session Menu with Logout -->
+        <ProfileSwitcher />
+    </div>
+</header>
+
+@code {
+    [Parameter] public bool IsSidebarCollapsed { get; set; }
+    [Parameter] public EventCallback OnToggleSidebar { get; set; }
+}

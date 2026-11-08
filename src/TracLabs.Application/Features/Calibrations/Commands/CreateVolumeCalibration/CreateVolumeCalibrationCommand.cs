@@ -193,7 +193,9 @@ public class CreateVolumeCalibrationCommandHandler
         var technicianId = _currentUserService.UserId ?? "SYSTEM_TECH";
         var technicianName = _currentUserService.FullName ?? "Técnico Metrologista";
         var nextDue = request.NextCalibrationDue != default
-            ? request.NextCalibrationDue
+            ? (request.NextCalibrationDue.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.NextCalibrationDue, DateTimeKind.Utc)
+                : request.NextCalibrationDue.ToUniversalTime())
             : DateTime.UtcNow.AddYears(1);
 
         var tempAmb = measurementsList.Count > 0

@@ -1,0 +1,35 @@
+@inherits LayoutComponentBase
+@using TracLabs.Frontend.Services.Theme
+@inject IThemeService ThemeService
+@implements IDisposable
+
+<div class="trac-auth-layout d-flex align-items-center justify-content-center min-vh-100 p-3" style="background-color: var(--trac-bg-base); min-height: 100vh;">
+    <main style="max-width: 480px; width: 100%;">
+        @Body
+    </main>
+</div>
+
+<!-- Tela Flutuante Global de Alerta de Erros e Mensagens -->
+<FloatingAlertModal />
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ThemeService.OnThemeChanged += HandleThemeChanged;
+            await ThemeService.InitializeAsync();
+            StateHasChanged();
+        }
+    }
+
+    private void HandleThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= HandleThemeChanged;
+    }
+}

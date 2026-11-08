@@ -36,9 +36,10 @@ public class EquipmentController : ControllerBase
         [FromQuery] string? serialNumber,
         [FromQuery] string? model,
         [FromQuery] string? clientName,
-        [FromQuery] EquipmentStatus? status)
+        [FromQuery] EquipmentStatus? status,
+        [FromQuery] Guid? clientId = null)
     {
-        var result = await _mediator.Send(new SearchEquipmentQuery(labTag, serialNumber, model, clientName, status));
+        var result = await _mediator.Send(new SearchEquipmentQuery(labTag, serialNumber, model, clientName, status, clientId));
         return Ok(result);
     }
 
@@ -117,4 +118,3 @@ public class EquipmentController : ControllerBase
 }
 
 public record UpdateLocationRequest(string NewLocation);
-

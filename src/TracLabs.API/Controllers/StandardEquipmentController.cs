@@ -13,8 +13,10 @@ using TracLabs.Application.Features.StandardEquipment.Commands.SendToCalibration
 using TracLabs.Application.Features.StandardEquipment.Commands.UpdateStandardEquipment;
 using TracLabs.Application.Features.StandardEquipment.DTOs;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetExpiringStandards;
+using TracLabs.Application.Features.StandardEquipment.Queries.GetStandardCertificates;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetStandardEquipment;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetStandardEquipmentById;
+using TracLabs.Application.Features.StandardEquipment.Queries.GetStandardUsageHistory;
 using TracLabs.Application.Features.StandardEquipment.Queries.GetUsableStandards;
 using TracLabs.Domain.Enums;
 
@@ -68,6 +70,24 @@ public class StandardEquipmentController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Lista todos os certificados de calibração metrológica vinculados a este equipamento padrão (atuais e históricos).</summary>
+    [HttpGet("{id:guid}/certificates")]
+    [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
+    public async Task<ActionResult<IReadOnlyList<StandardCertificateDto>>> GetCertificates(Guid id)
+    {
+        var result = await _mediator.Send(new GetStandardCertificatesQuery(id));
+        return Ok(result);
+    }
+
+    /// <summary>Lista o histórico completo de calibrações em que este equipamento padrão foi utilizado (rastreabilidade ISO 17025 6.4.13).</summary>
+    [HttpGet("{id:guid}/usage")]
+    [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
+    public async Task<ActionResult<IReadOnlyList<StandardCalibrationUsageDto>>> GetUsage(Guid id)
+    {
+        var result = await _mediator.Send(new GetStandardUsageHistoryQuery(id));
+        return Ok(result);
+    }
+
     /// <summary>Cadastra um novo equipamento padrão do laboratório - Etapa 1: Ativo Físico (restrito a Supervisores).</summary>
     [HttpPost]
     [Authorize(Roles = Roles.Supervisor)]
@@ -82,8 +102,14 @@ public class StandardEquipmentController : ControllerBase
     [Authorize(Roles = Roles.Supervisor)]
     public async Task<ActionResult<StandardEquipmentDto>> Update(Guid id, [FromBody] UpdateStandardEquipmentCommand command)
     {
-        if (id != command.Id)
+        if (command.Id == Guid.Empty)
+        {
+            command = command with { Id = id };
+        }
+        else if (id != command.Id)
+        {
             return BadRequest(new { message = "O ID da rota não corresponde ao ID do corpo." });
+        }
 
         var result = await _mediator.Send(command);
         return Ok(result);

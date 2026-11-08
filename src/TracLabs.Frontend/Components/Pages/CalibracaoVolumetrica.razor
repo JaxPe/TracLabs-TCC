@@ -1,0 +1,1171 @@
+@page "/calibracao"
+@implements IDisposable
+@using System.Threading
+@using Microsoft.AspNetCore.Components
+@inject IMetrologyDataService DataService
+@inject IUserContextService UserContext
+@inject NavigationManager Navigation
+@inject INotificationModalService NotificationModal
+
+<div>
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="trac-badge trac-badge-info">ABNT NBR ISO 4787:2013</span>
+                <span class="trac-badge trac-badge-neutral">Método Gravimétrico</span>
+            </div>
+            <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--trac-text-primary); margin: 0;">
+                Ensaio de Calibração Volumétrica
+            </h1>
+            <p style="font-size: 0.875rem; color: var(--trac-text-secondary); margin: 0.25rem 0 0 0;">
+                Bancada analítica de determinação gravimétrica de volume e cálculo de incertezas
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="PrefillBenchmarkData" title="Carregar 11 repetições oficiais da planilha de referência">
+                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Preencher com Dados de Referência (100 mL)
+            </button>
+            <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="SaveAndGenerateCertificate" disabled="@(!IsFormValid || _isSubmitting)">
+                @if (_isSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Processando...</span>
+                }
+                else
+                {
+                    <span>Gerar Minuta de Certificado &rarr;</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    <!-- Top Configuration Row: Equipment & Environmental Conditions -->
+    <div class="row mb-4">
+        <!-- Instrument Under Calibration Card -->
+        <div class="col-12 col-lg-5 mb-3">
+            <div class="trac-card h-100">
+                <div class="trac-card-header">
+                    <span style="font-weight: 700; font-size: 0.875rem; color: var(--trac-text-primary);">
+                        1. Instrumento sob Calibração
+                    </span>
+                    <span class="trac-badge trac-badge-info">@_selectedEquipment.AccuracyClass</span>
+                </div>
+                <div class="trac-card-body">
+                    <div class="trac-form-group">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="trac-label mb-0">Equipamento Selecionado</label>
+                            <span class="trac-badge @GetEquipmentStatusBadgeClass(_selectedEquipment.Status)">
+                                @GetEquipmentStatusLabel(_selectedEquipment.Status)
+                            </span>
+                        </div>
+                        <select class="trac-select" value="@_selectedEquipment.LabTag" @onchange="OnEquipmentChanged">
+                            @foreach (var eq in _availableEquipment)
+                            {
+                                <option value="@eq.LabTag">[@GetEquipmentStatusLabel(eq.Status)] @eq.LabTag — @eq.Description (@eq.ClientName)</option>
+                            }
+                        </select>
+                        @if (!IsEquipmentCalibratable(_selectedEquipment.Status))
+                        {
+                            <div class="mt-2 p-2" style="background-color: var(--trac-warning-50); border: 1px solid var(--trac-warning-200); border-radius: var(--trac-radius-sm); font-size: 0.75rem; color: var(--trac-warning-800);">
+                                ⚠️ Instrumento no status <strong>@GetEquipmentStatusLabel(_selectedEquipment.Status)</strong>. Apenas instrumentos com status <em>Recebido</em> ou <em>Aprovado</em> podem ser calibrados.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-2">
+                            <label class="trac-label">Capacidade Nominal (V<sub>0</sub>)</label>
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" step="0.001" min="0.001" class="trac-input trac-mono fw-bold" 
+                                       @bind="_calibration.NominalCapacity" @bind:after="OnNominalCapacityChanged" />
+                                <span class="trac-hint">@_selectedEquipment.Unit</span>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <label class="trac-label">Tolerância EMA (&plusmn;)</label>
+                            <div class="d-flex align-items-center gap-1">
+                                <input type="number" step="0.001" min="0.0001" class="trac-input trac-mono fw-bold" 
+                                       @bind="_calibration.MaxPermissibleError" @bind:after="Recalculate" />
+                                <span class="trac-hint">@_selectedEquipment.Unit</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <span class="trac-hint">Material Construtivo</span>
+                            <select class="trac-select mt-1" @bind="_calibration.Material" @bind:after="Recalculate">
+                                <option value="@VolumetricMaterial.SodaLimeGlass">Vidro Soda-Cal (4.2e-5)</option>
+                                <option value="@VolumetricMaterial.BorosilicateGlass33">Borossilicato 3.3 (9.9e-6)</option>
+                                <option value="@VolumetricMaterial.BorosilicateGlass50">Borossilicato 5.0 (1.5e-5)</option>
+                                <option value="@VolumetricMaterial.Polypropylene">Polipropileno (4.5e-4)</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <span class="trac-hint">Operador Executor</span>
+                            <input type="text" class="trac-input mt-1" value="@UserContext.CurrentUser.Name" disabled />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environmental Conditions & Standards Card -->
+        <div class="col-12 col-lg-7 mb-3">
+            <div class="trac-card h-100">
+                <div class="trac-card-header">
+                    <span style="font-weight: 700; font-size: 0.875rem; color: var(--trac-text-primary);">
+                        2. Condições Ambientais e Padrões Rastreáveis RBC
+                    </span>
+                    <!-- Live Metrology Pill -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="trac-badge trac-badge-success trac-mono" title="Fator de conversão gravimétrica Z">
+                            Z = @_calibration.CalculatedZFactor.ToString("F5") mL/g
+                        </span>
+                    </div>
+                </div>
+                <div class="trac-card-body">
+                    <!-- Calculated Environmental Means Live Panel -->
+                    <div class="p-3 mb-2" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-1 mb-2">
+                            <span style="font-weight: 600; font-size: 0.8125rem; color: var(--trac-text-primary);">
+                                Médias Ambientais das Corridas de Medição
+                            </span>
+                            <span class="trac-hint" style="font-size: 0.75rem;">Calculadas automaticamente a partir dos pontos</span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 text-center" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-sm);">
+                                    <div class="trac-hint" style="font-size: 0.7rem;">T<sub>água</sub> Média</div>
+                                    <div class="trac-mono fw-bold" style="font-size: 0.9375rem; color: var(--trac-text-primary);">
+                                        @_calibration.WaterTemperatureCelsius.ToString("F2") °C
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 text-center" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-sm);">
+                                    <div class="trac-hint" style="font-size: 0.7rem;">T<sub>amb</sub> Média</div>
+                                    <div class="trac-mono fw-bold" style="font-size: 0.9375rem; color: var(--trac-text-primary);">
+                                        @_calibration.AmbientTemperatureCelsius.ToString("F2") °C
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 text-center" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-sm);">
+                                    <div class="trac-hint" style="font-size: 0.7rem;">P<sub>atm</sub> Média</div>
+                                    <div class="trac-mono fw-bold" style="font-size: 0.9375rem; color: var(--trac-text-primary);">
+                                        @_calibration.AtmosphericPressureHpa.ToString("F1") hPa
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 text-center" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-sm);">
+                                    <div class="trac-hint" style="font-size: 0.7rem;">&phi; (%UR) Média</div>
+                                    <div class="trac-mono fw-bold" style="font-size: 0.9375rem; color: var(--trac-text-primary);">
+                                        @_calibration.RelativeHumidityPercent.ToString("F1") %
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Water Density Input Toggle & Field (Pycnometer / Digital Densimeter) -->
+                    <div class="p-3 my-2" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+                            <label class="d-flex align-items-center gap-2 mb-0" style="cursor: pointer;">
+                                <input type="checkbox" class="form-check-input mt-0" checked="@_isManualDensity" @onchange="OnToggleManualDensity" />
+                                <span style="font-weight: 600; font-size: 0.875rem; color: var(--trac-text-primary);">
+                                    Informar densidade da água manualmente (picnômetro / densímetro digital)
+                                </span>
+                            </label>
+                            @if (_isManualDensity)
+                            {
+                                <span class="trac-badge trac-badge-warning" style="font-size: 0.75rem;">
+                                    Modo Picnometria Ativo
+                                </span>
+                            }
+                        </div>
+
+                        @if (_isManualDensity)
+                        {
+                            <div class="row align-items-center mt-2">
+                                <div class="col-12 col-md-5 mb-2 mb-md-0">
+                                    <label class="trac-label">Densidade da Água &rho;<sub>w</sub> (g/cm³)</label>
+                                    <input type="number" step="0.0001" min="0.5" max="1.5" 
+                                           class="trac-input trac-mono" 
+                                           placeholder="ex: 0.9982" 
+                                           @bind="_calibration.WaterDensityGcm3" 
+                                           @bind:after="Recalculate" />
+                                </div>
+                                <div class="col-12 col-md-7">
+                                    <div class="p-2" style="background-color: var(--trac-bg-surface); border-left: 3px solid @(HasValidPycnometerSelected ? "var(--trac-success-500)" : "var(--trac-danger-500)"); border-radius: var(--trac-radius-sm); font-size: 0.8125rem;">
+                                        <div style="font-weight: 600; color: @(HasValidPycnometerSelected ? "var(--trac-success-600)" : "var(--trac-danger-600)");">
+                                            @(HasValidPycnometerSelected ? "✔ Padrão Picnômetro Válido Selecionado" : "⚠ Seleção de Picnômetro Obrigatória")
+                                        </div>
+                                        <div style="color: var(--trac-text-secondary); font-size: 0.75rem;">
+                                            Obrigatório selecionar picnômetro ou densímetro digital padrão com certificado válido. O fator Z utilizará este valor.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Calculated Air & Water Density Live Badges -->
+                    <div class="d-flex flex-wrap gap-2 p-2 mt-2 mb-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md); font-size: 0.75rem;">
+                        @if (_calibration.IsManualWaterDensity)
+                        {
+                            <div>&bull; &rho;<sub>água</sub> (Manual/Picnômetro): <strong class="trac-mono text-warning">@_calibration.CalculatedWaterDensity.ToString("F6") g/cm³</strong></div>
+                        }
+                        else
+                        {
+                            <div>&bull; &rho;<sub>água</sub> (Tanaka): <strong class="trac-mono">@_calibration.CalculatedWaterDensity.ToString("F6") g/cm³</strong></div>
+                        }
+                        <div>&bull; &rho;<sub>ar</sub> (Spieweck): <strong class="trac-mono">@_calibration.CalculatedAirDensity.ToString("F4") kg/m³</strong></div>
+                        <div>&bull; &gamma;<sub>dilat</sub>: <strong class="trac-mono">@MetrologyCalculations.ResolveThermalExpansionCoefficient(_calibration.Material) °C⁻¹</strong></div>
+                    </div>
+
+                    <!-- Standards Pickers (All 6 Required Metrological Standards) -->
+                    <div class="mt-3 pt-3" style="border-top: 1px solid var(--trac-border-default);">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span style="font-weight: 700; font-size: 0.8125rem; color: var(--trac-text-primary);">
+                                Padrões Metrológicos Rastreáveis RBC (ISO 4787 / ISO 8655 / DOC-CGCRE-027)
+                            </span>
+                            <span class="trac-hint">Rastreabilidade Obrigatória</span>
+                        </div>
+
+                        <div class="row">
+                            <!-- 1. Balança -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">1. Balança Analítica Padrão <span class="text-danger">*</span></label>
+                                <select class="trac-select" @bind="_calibration.BalanceStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Selecione a Balança Padrão --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Balance))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 2. Termômetro do Líquido -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">2. Termômetro de Imersão / Líquido <span class="text-danger">*</span></label>
+                                <select class="trac-select" @bind="_calibration.LiquidThermometerStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Selecione o Termômetro do Líquido --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.LiquidThermometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 3. Barômetro -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">3. Barômetro Digital Padrão <span class="text-danger">*</span></label>
+                                <select class="trac-select" @bind="_calibration.BarometerStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Selecione o Barômetro Padrão --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Barometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 4. Termo-Higrômetro Integrado -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">4. Termo-Higrômetro Integrado (Ambiente)</label>
+                                <select class="trac-select" @bind="_calibration.ThermoHygrometerStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Não utilizar (usar sensores individuais) --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.ThermoHygrometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 5. Termômetro Ambiente -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">5. Termômetro de Ambiente Padrão</label>
+                                <select class="trac-select" @bind="_calibration.AmbientThermometerStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Não utilizar (usar termo-higrômetro) --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.AmbientThermometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 6. Higrômetro -->
+                            <div class="col-12 col-md-6 mb-2">
+                                <label class="trac-label">6. Higrômetro de Bancada Padrão</label>
+                                <select class="trac-select" @bind="_calibration.HygrometerStandardId" @bind:after="Recalculate">
+                                    <option value="">-- Não utilizar (usar termo-higrômetro) --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Hygrometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔" : "⚠ INVÁLIDO")</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- 7. Picnômetro ou Densímetro Digital -->
+                            <div class="col-12 mb-2">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <label class="trac-label mb-1">
+                                        7. Picnômetro ou Densímetro Digital Padrão
+                                        @if (_calibration.RequiresPycnometer)
+                                        {
+                                            <span class="text-danger fw-bold ms-1">* Obrigatório para densidade manual</span>
+                                        }
+                                    </label>
+                                    @if (_calibration.RequiresPycnometer)
+                                    {
+                                        <span class="trac-badge @(HasValidPycnometerSelected ? "trac-badge-success" : "trac-badge-danger")" style="font-size: 0.7rem;">
+                                            @(HasValidPycnometerSelected ? "✔ Picnômetro Válido" : "⚠ Picnômetro Obrigatório / Inválido")
+                                        </span>
+                                    }
+                                </div>
+                                <select class="trac-select" @bind="_calibration.PycnometerStandardId" @bind:after="Recalculate" 
+                                        style="@(_calibration.RequiresPycnometer && !HasValidPycnometerSelected ? "border-color: var(--trac-danger-500); background-color: var(--trac-status-danger-bg);" : "")">
+                                    <option value="">-- @(_calibration.RequiresPycnometer ? "Selecione o Picnômetro Obrigatório..." : "Não aplicável (cálculo de densidade via Tanaka)") --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Pycnometer))
+                                    {
+                                        <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔ Válido" : "⚠ INVÁLIDO / FORA DE CALIBRAÇÃO")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation & Metrological Conformity Banner -->
+    @{
+        var validationErrors = GetValidationErrors();
+    }
+    @if (validationErrors.Count > 0)
+    {
+        <div class="trac-card mb-4" style="border-left: 4px solid var(--trac-warning-500); background-color: var(--trac-status-warning-bg);">
+            <div class="trac-card-body p-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <svg style="width: 22px; height: 22px; color: var(--trac-warning-600); flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <strong style="font-size: 0.9375rem; color: var(--trac-status-warning-text);">
+                        Pendências Metrológicas para Emissão de Certificado (ABNT NBR ISO 4787 / ISO 8655 / DOC-CGCRE-027):
+                    </strong>
+                </div>
+                <ul class="mb-0 ps-3" style="font-size: 0.875rem; color: var(--trac-status-warning-text);">
+                    @foreach (var err in validationErrors)
+                    {
+                        <li class="mb-1">@err</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="trac-card mb-4" style="border-left: 4px solid var(--trac-success-500); background-color: var(--trac-status-conforming-bg);">
+            <div class="trac-card-body p-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <svg style="width: 20px; height: 20px; color: var(--trac-success-600);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span style="font-size: 0.875rem; color: var(--trac-status-conforming-text); font-weight: 600;">
+                        Critérios Metrológicos Atendidos: @_validPointsCount medições válidas registradas (mínimo &ge; 7) e todos os padrões rastreáveis válidos vinculados.
+                    </span>
+                </div>
+                <span class="trac-badge trac-badge-success">Apto para Emissão</span>
+            </div>
+        </div>
+    }
+
+    <!-- Gravimetric Measurement Runs Table with Environmental Conditions per Point -->
+    <div class="trac-card mb-4">
+        <div class="trac-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                    3. Registro das Pesagens Gravimétricas e Condições por Ponto (Balança Analítica)
+                </span>
+                <span class="trac-badge trac-badge-neutral">@_calibration.Measurements.Count repetições</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="ReplicateFirstRowConditionsToAllRows" title="Replicar as condições ambientais da primeira corrida para todas as repetições">
+                    Replicar Condições da 1ª Corrida
+                </button>
+                <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="AddMeasurementRow">
+                    + Adicionar Corrida
+                </button>
+            </div>
+        </div>
+
+        <div class="trac-card-body p-0">
+            <div class="trac-table-container" style="border: none; border-radius: 0; overflow-x: auto;">
+                <table class="trac-table" style="min-width: 1200px;">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 45px;">#</th>
+                            <th style="min-width: 110px;">Massa Vazia / Tara (M<sub>v</sub>, g)</th>
+                            <th style="min-width: 110px;">Massa Cheia (M<sub>c</sub>, g)</th>
+                            <th style="min-width: 100px;">Massa Aparente (m<sub>a</sub>, g)</th>
+                            <th style="min-width: 85px;">T<sub>água</sub> (°C)</th>
+                            <th style="min-width: 85px;">T<sub>amb</sub> (°C)</th>
+                            <th style="min-width: 95px;">P<sub>atm</sub> (hPa)</th>
+                            <th style="min-width: 80px;">&phi; (%UR)</th>
+                            <th style="min-width: 85px;">&rho;<sub>ar</sub> (kg/m³)</th>
+                            <th style="min-width: 85px;">Fator Z (mL/g)</th>
+                            <th style="min-width: 95px;">Volume V<sub>20</sub> (mL)</th>
+                            <th style="min-width: 95px;">Desvio E<sub>s</sub> (mL)</th>
+                            <th class="text-end" style="width: 60px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < _calibration.Measurements.Count; i++)
+                        {
+                            var index = i;
+                            var pt = _calibration.Measurements[index];
+                            <tr style="background-color: @(pt.HasError ? "var(--trac-status-danger-bg)" : "transparent");">
+                                <td class="text-center trac-mono fw-bold">@pt.RunNumber</td>
+                                <td>
+                                    <input type="number" step="0.001" class="trac-input trac-mono" style="width: 100px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.EmptyMassGrams" @bind:after="Recalculate" />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.001" class="trac-input trac-mono" style="width: 100px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.FullMassGrams" @bind:after="Recalculate" />
+                                    @if (pt.HasError)
+                                    {
+                                        <div style="font-size: 0.7rem; color: var(--trac-danger-600); margin-top: 2px;">
+                                            @pt.ErrorMessage
+                                        </div>
+                                    }
+                                </td>
+                                <td class="trac-mono fw-bold" style="color: var(--trac-brand-primary); white-space: nowrap;">
+                                    @pt.ApparentWaterMassGrams.ToString("F3") g
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="trac-input trac-mono" style="width: 80px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.WaterTemperatureCelsius" @bind:after="Recalculate" />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="trac-input trac-mono" style="width: 80px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.AmbientTemperatureCelsius" @bind:after="Recalculate" />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.1" class="trac-input trac-mono" style="width: 90px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.AtmosphericPressureHpa" @bind:after="Recalculate" />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.1" class="trac-input trac-mono" style="width: 75px; padding: 0.25rem 0.4rem;" 
+                                           @bind="pt.RelativeHumidityPercent" @bind:after="Recalculate" />
+                                </td>
+                                <td class="trac-mono" style="white-space: nowrap;" title="Densidade do ar por Spieweck na corrida">
+                                    @pt.CalculatedAirDensity.ToString("F4")
+                                </td>
+                                <td class="trac-mono" style="white-space: nowrap;" title="Fator Z gravimétrico da corrida">
+                                    @pt.CalculatedZFactor.ToString("F5")
+                                </td>
+                                <td class="trac-mono fw-bold" style="white-space: nowrap;">
+                                    @pt.CalculatedVolumeMl.ToString("F4") mL
+                                </td>
+                                <td class="trac-mono" style="white-space: nowrap; color: @((_calibration.MaxPermissibleError > 0 && Math.Abs(pt.DeviationMl) > _calibration.MaxPermissibleError) ? "var(--trac-danger-600)" : "var(--trac-text-primary)");"
+                                    title="@((_calibration.MaxPermissibleError > 0 && Math.Abs(pt.DeviationMl) > _calibration.MaxPermissibleError) ? $"Desvio ({pt.DeviationMl:F4} mL) excede o EMA (±{_calibration.MaxPermissibleError:F3} mL)" : $"Desvio ({pt.DeviationMl:F4} mL) dentro do EMA (±{_calibration.MaxPermissibleError:F3} mL)")">
+                                    @(pt.DeviationMl >= 0 ? "+" : "")@pt.DeviationMl.ToString("F4") mL
+                                </td>
+                                <td class="text-end">
+                                    <button class="trac-btn-icon" style="color: var(--trac-danger-600);" @onclick="@(() => RemoveMeasurementRow(index))" title="Remover corrida">
+                                        &times;
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistical Outputs & Conformity Decision Panel -->
+    <div class="trac-card mb-4">
+        <div class="trac-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                    4. Resultados Metrológicos Consolidados e Avaliação de Conformidade
+                </span>
+                @if (_isCalculatingApi)
+                {
+                    <span class="trac-badge trac-badge-warning" style="font-size: 0.75rem;">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style="width: 10px; height: 10px; border-width: 2px;"></span>
+                        Sincronizando com API...
+                    </span>
+                }
+                else if (_apiCalculationSucceeded)
+                {
+                    <span class="trac-badge trac-badge-success" style="font-size: 0.75rem;" title="Cálculos gerados pelo motor oficial da API">
+                        &check; Metrologia Oficial Calculada pela API
+                    </span>
+                }
+            </div>
+
+            @if (_calibration.Result == CalibrationResult.Conforming)
+            {
+                <span class="trac-badge trac-badge-success p-2" style="font-size: 0.875rem;">
+                    &check; CONFORME (Dentro da Tolerância)
+                </span>
+            }
+            else if (_calibration.Result == CalibrationResult.NonConforming)
+            {
+                <span class="trac-badge trac-badge-danger p-2" style="font-size: 0.875rem;">
+                    &cross; NÃO CONFORME (Excede EMA)
+                </span>
+            }
+            else
+            {
+                <span class="trac-badge trac-badge-neutral p-2">
+                    Aguardando Medições
+                </span>
+            }
+        </div>
+
+        <div class="trac-card-body">
+            <div class="row text-center mb-3">
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="p-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <span class="trac-stat-title">Volume Médio (V20)</span>
+                        <div class="trac-stat-value" style="font-size: 1.5rem; color: var(--trac-brand-primary);">
+                            @_calibration.MeanV20.ToString("F4") <span style="font-size: 0.875rem;">mL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="p-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <span class="trac-stat-title">Erro Sistemático (Es)</span>
+                        <div class="trac-stat-value" style="font-size: 1.5rem; color: @(_calibration.Result == CalibrationResult.Conforming ? "var(--trac-success-600)" : "var(--trac-danger-600)");">
+                            @(_calibration.SystematicError >= 0 ? "+" : "")@_calibration.SystematicError.ToString("F4") <span style="font-size: 0.875rem;">mL</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--trac-text-muted);">Es%: @_calibration.RelativeSystematicErrorPercent.ToString("F4")%</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="p-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <span class="trac-stat-title">Desvio Padrão (s)</span>
+                        <div class="trac-stat-value" style="font-size: 1.5rem;">
+                            @_calibration.SampleStdDev.ToString("F5") <span style="font-size: 0.875rem;">mL</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--trac-text-muted);">CV%: @_calibration.CoefficientOfVariationPercent.ToString("F4")%</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="p-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                        <span class="trac-stat-title">Incerteza Expandida (U)</span>
+                        <div class="trac-stat-value" style="font-size: 1.5rem; color: var(--trac-text-primary);">
+                            &plusmn;@_calibration.ExpandedUncertainty.ToString("F4") <span style="font-size: 0.875rem;">mL</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--trac-text-muted);">k = @_calibration.CoverageFactor (95.45%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statement Box -->
+            <div class="p-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md);">
+                <div style="font-weight: 600; font-size: 0.8125rem; color: var(--trac-text-secondary); margin-bottom: 0.25rem;">
+                    Declaração Metrológica de Conformidade (ISO/IEC 17025:2017 item 7.8.6):
+                </div>
+                <div style="font-size: 0.875rem; color: var(--trac-text-primary);">
+                    @_calibration.ConformityStatement
+                </div>
+            </div>
+        </div>
+
+        <div class="trac-card-footer d-flex justify-content-between align-items-center">
+            <span style="font-size: 0.75rem; color: var(--trac-text-muted);">
+                Série verificada com os parâmetros oficiais da planilha benchmark (planilha volume 11-08-25.xlsx).
+            </span>
+
+            <div class="d-flex gap-2">
+                <button class="trac-btn trac-btn-secondary" @onclick="SaveDraft" disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Salvando...</span>
+                    }
+                    else
+                    {
+                        <span>Salvar Rascunho</span>
+                    }
+                </button>
+                <button class="trac-btn trac-btn-primary" @onclick="SaveAndGenerateCertificate" disabled="@(!IsFormValid || _isSubmitting)">
+                    @if (_isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <span>Processando...</span>
+                    }
+                    else
+                    {
+                        <span>Gerar Minuta de Certificado &rarr;</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Tag { get; set; }
+
+    private List<ClientEquipmentDto> _availableEquipment = new();
+    private ClientEquipmentDto _selectedEquipment = new();
+    private List<StandardEquipmentDto> _standards = new();
+    private CalibrationRecordDto _calibration = new();
+    private bool _isManualDensity;
+    private bool _isSubmitting = false;
+    private Timer? _debounceTimer;
+    private bool _isCalculatingApi;
+    private bool _apiCalculationSucceeded;
+
+    private int _validPointsCount => _calibration.Measurements.Count(m => m.FullMassGrams > m.EmptyMassGrams);
+
+    private bool HasValidPycnometerSelected
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_calibration.PycnometerStandardId)) return false;
+            var p = _standards.FirstOrDefault(s => s.Id == _calibration.PycnometerStandardId);
+            return p != null && p.IsValid;
+        }
+    }
+
+    private bool IsFormValid => GetValidationErrors().Count == 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availableEquipment = await DataService.GetClientEquipmentAsync();
+        _standards = await DataService.GetStandardEquipmentAsync();
+
+        // Default or Tag matching (prioritizing calibratable status)
+        if (!string.IsNullOrWhiteSpace(Tag))
+        {
+            _selectedEquipment = _availableEquipment.FirstOrDefault(e => e.LabTag.Equals(Tag, StringComparison.OrdinalIgnoreCase)) 
+                                ?? _availableEquipment.FirstOrDefault(e => IsEquipmentCalibratable(e.Status))
+                                ?? _availableEquipment.FirstOrDefault() 
+                                ?? new ClientEquipmentDto();
+        }
+        else
+        {
+            _selectedEquipment = _availableEquipment.FirstOrDefault(e => IsEquipmentCalibratable(e.Status)) 
+                                ?? _availableEquipment.FirstOrDefault() 
+                                ?? new ClientEquipmentDto();
+        }
+
+        if (_selectedEquipment.NominalCapacity <= 0)
+        {
+            _selectedEquipment.NominalCapacity = 100.0m;
+        }
+        if (_selectedEquipment.MaxPermissibleError <= 0)
+        {
+            _selectedEquipment.MaxPermissibleError = MetrologyCalculations.ResolveMaxPermissibleError(_selectedEquipment.NominalCapacity, _selectedEquipment.AccuracyClass);
+        }
+        if (string.IsNullOrWhiteSpace(_selectedEquipment.Unit))
+        {
+            _selectedEquipment.Unit = "mL";
+        }
+
+        // Initialize calibration record
+        _calibration = new CalibrationRecordDto
+        {
+            EquipmentId = _selectedEquipment.Id,
+            EquipmentTag = _selectedEquipment.LabTag,
+            EquipmentDescription = _selectedEquipment.Description,
+            ClientId = _selectedEquipment.ClientId,
+            ClientName = _selectedEquipment.ClientName,
+            NominalCapacity = _selectedEquipment.NominalCapacity,
+            MaxPermissibleError = _selectedEquipment.MaxPermissibleError,
+            AccuracyClass = _selectedEquipment.AccuracyClass,
+            TechnicianId = UserContext.CurrentUser.Id,
+            TechnicianName = UserContext.CurrentUser.Name,
+            BalanceStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Balance && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.Balance)?.Id ?? "",
+            LiquidThermometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.LiquidThermometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.LiquidThermometer)?.Id ?? "",
+            BarometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Barometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.Barometer)?.Id ?? "",
+            ThermoHygrometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.ThermoHygrometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.ThermoHygrometer)?.Id ?? "",
+            AmbientThermometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.AmbientThermometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.AmbientThermometer)?.Id,
+            HygrometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Hygrometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.Hygrometer)?.Id,
+            PycnometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Pycnometer && s.IsValid)?.Id,
+            Measurements = MetrologyCalculations.GetBenchmark100MlPoints()
+        };
+
+        _isManualDensity = _calibration.IsManualWaterDensity;
+
+        Recalculate();
+        await TriggerApiCalculationAsync();
+    }
+
+    private void OnNominalCapacityChanged()
+    {
+        if (_calibration.NominalCapacity <= 0)
+        {
+            _calibration.NominalCapacity = 100.0m;
+        }
+        _selectedEquipment.NominalCapacity = _calibration.NominalCapacity;
+        _calibration.MaxPermissibleError = MetrologyCalculations.ResolveMaxPermissibleError(_calibration.NominalCapacity, _selectedEquipment.AccuracyClass);
+        _selectedEquipment.MaxPermissibleError = _calibration.MaxPermissibleError;
+        Recalculate();
+    }
+
+    private void OnEquipmentChanged(ChangeEventArgs e)
+    {
+        var tag = e.Value?.ToString();
+        var eq = _availableEquipment.FirstOrDefault(item => item.LabTag == tag);
+        if (eq != null)
+        {
+            if (eq.NominalCapacity <= 0)
+            {
+                eq.NominalCapacity = 100.0m;
+            }
+            if (eq.MaxPermissibleError <= 0)
+            {
+                eq.MaxPermissibleError = MetrologyCalculations.ResolveMaxPermissibleError(eq.NominalCapacity, eq.AccuracyClass);
+            }
+            _selectedEquipment = eq;
+            _calibration.EquipmentId = eq.Id;
+            _calibration.EquipmentTag = eq.LabTag;
+            _calibration.EquipmentDescription = eq.Description;
+            _calibration.ClientId = eq.ClientId;
+            _calibration.ClientName = eq.ClientName;
+            _calibration.NominalCapacity = eq.NominalCapacity;
+            _calibration.MaxPermissibleError = eq.MaxPermissibleError;
+            _calibration.AccuracyClass = eq.AccuracyClass;
+            Recalculate();
+        }
+    }
+
+    private void OnToggleManualDensity(ChangeEventArgs e)
+    {
+        _isManualDensity = (bool)(e.Value ?? false);
+        if (_isManualDensity)
+        {
+            if (!_calibration.WaterDensityGcm3.HasValue || _calibration.WaterDensityGcm3.Value <= 0)
+            {
+                _calibration.WaterDensityGcm3 = _calibration.CalculatedWaterDensity > 0 
+                    ? _calibration.CalculatedWaterDensity 
+                    : 0.998205m;
+            }
+            if (string.IsNullOrWhiteSpace(_calibration.PycnometerStandardId))
+            {
+                _calibration.PycnometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Pycnometer && s.IsValid)?.Id;
+            }
+        }
+        else
+        {
+            _calibration.WaterDensityGcm3 = null;
+        }
+        Recalculate();
+    }
+
+    private void PrefillBenchmarkData()
+    {
+        _calibration.Measurements = MetrologyCalculations.GetBenchmark100MlPoints();
+        Recalculate();
+    }
+
+    private void AddMeasurementRow()
+    {
+        var nextRun = _calibration.Measurements.Count + 1;
+        _calibration.Measurements.Add(new VolumeMeasurementPointDto
+        {
+            RunNumber = nextRun,
+            EmptyMassGrams = 160.080m,
+            FullMassGrams = 259.740m,
+            WaterTemperatureCelsius = _calibration.WaterTemperatureCelsius > 0 ? _calibration.WaterTemperatureCelsius : 20.0m,
+            AmbientTemperatureCelsius = _calibration.AmbientTemperatureCelsius > 0 ? _calibration.AmbientTemperatureCelsius : 20.0m,
+            AtmosphericPressureHpa = _calibration.AtmosphericPressureHpa > 0 ? _calibration.AtmosphericPressureHpa : 1013.25m,
+            RelativeHumidityPercent = _calibration.RelativeHumidityPercent > 0 ? _calibration.RelativeHumidityPercent : 50.0m
+        });
+        Recalculate();
+    }
+
+    private void ReplicateFirstRowConditionsToAllRows()
+    {
+        var first = _calibration.Measurements.FirstOrDefault();
+        if (first == null) return;
+
+        foreach (var pt in _calibration.Measurements)
+        {
+            pt.WaterTemperatureCelsius = first.WaterTemperatureCelsius;
+            pt.AmbientTemperatureCelsius = first.AmbientTemperatureCelsius;
+            pt.AtmosphericPressureHpa = first.AtmosphericPressureHpa;
+            pt.RelativeHumidityPercent = first.RelativeHumidityPercent;
+        }
+        Recalculate();
+    }
+
+    private void ApplyHeaderConditionsToAllRows()
+    {
+        foreach (var pt in _calibration.Measurements)
+        {
+            pt.WaterTemperatureCelsius = _calibration.WaterTemperatureCelsius;
+            pt.AmbientTemperatureCelsius = _calibration.AmbientTemperatureCelsius;
+            pt.AtmosphericPressureHpa = _calibration.AtmosphericPressureHpa;
+            pt.RelativeHumidityPercent = _calibration.RelativeHumidityPercent;
+        }
+        Recalculate();
+    }
+
+    private void RemoveMeasurementRow(int index)
+    {
+        if (index >= 0 && index < _calibration.Measurements.Count)
+        {
+            _calibration.Measurements.RemoveAt(index);
+            // Re-index
+            for (int i = 0; i < _calibration.Measurements.Count; i++)
+            {
+                _calibration.Measurements[i].RunNumber = i + 1;
+            }
+            Recalculate();
+        }
+    }
+
+    private void Recalculate()
+    {
+        var nominal = _calibration.NominalCapacity > 0 ? _calibration.NominalCapacity : (_selectedEquipment.NominalCapacity > 0 ? _selectedEquipment.NominalCapacity : 100.0m);
+        var ema = _calibration.MaxPermissibleError > 0 ? _calibration.MaxPermissibleError : (_selectedEquipment.MaxPermissibleError > 0 ? _selectedEquipment.MaxPermissibleError : MetrologyCalculations.ResolveMaxPermissibleError(nominal, _selectedEquipment.AccuracyClass));
+
+        _calibration.NominalCapacity = nominal;
+        _calibration.MaxPermissibleError = ema;
+        _selectedEquipment.NominalCapacity = nominal;
+        _selectedEquipment.MaxPermissibleError = ema;
+
+        if (_calibration.Measurements.Count > 0)
+        {
+            _calibration.WaterTemperatureCelsius = Math.Round(_calibration.Measurements.Average(m => m.WaterTemperatureCelsius), 2);
+            _calibration.AmbientTemperatureCelsius = Math.Round(_calibration.Measurements.Average(m => m.AmbientTemperatureCelsius), 2);
+            _calibration.AtmosphericPressureHpa = Math.Round(_calibration.Measurements.Average(m => m.AtmosphericPressureHpa), 1);
+            _calibration.RelativeHumidityPercent = Math.Round(_calibration.Measurements.Average(m => m.RelativeHumidityPercent), 1);
+        }
+
+        // Feedback imediato nos pontos
+        foreach (var m in _calibration.Measurements)
+        {
+            if (m.FullMassGrams > m.EmptyMassGrams)
+            {
+                if (m.CalculatedVolumeMl <= 0)
+                {
+                    m.CalculatedVolumeMl = Math.Round((m.FullMassGrams - m.EmptyMassGrams) * 1.0029m, 4);
+                }
+                m.DeviationMl = m.CalculatedVolumeMl - nominal;
+            }
+        }
+
+        if (DataService is MockMetrologyDataService)
+        {
+            TriggerApiCalculationAsync().GetAwaiter().GetResult();
+        }
+        else
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(TriggerApiCalculationAsync);
+            }, null, 600, Timeout.Infinite);
+        }
+
+        StateHasChanged();
+    }
+    private async Task TriggerApiCalculationAsync()
+    {
+        if (_validPointsCount < 7 || !_calibration.HasValidStandards())
+        {
+            _apiCalculationSucceeded = false;
+            StateHasChanged();
+            return;
+        }
+
+        _isCalculatingApi = true;
+        StateHasChanged();
+
+        try
+        {
+            var req = new VolumeCalibrationCalculationRequest
+            {
+                NominalVolumeMl = _calibration.NominalCapacity,
+                Material = _calibration.Material,
+                BalanceStandardId = Guid.TryParse(_calibration.BalanceStandardId, out var bg) ? bg : Guid.Empty,
+                LiquidThermometerStandardId = Guid.TryParse(_calibration.LiquidThermometerStandardId, out var lg) ? lg : Guid.Empty,
+                BarometerStandardId = Guid.TryParse(_calibration.BarometerStandardId, out var brg) ? brg : Guid.Empty,
+                AmbientThermometerStandardId = Guid.TryParse(_calibration.AmbientThermometerStandardId, out var at) ? at : null,
+                HygrometerStandardId = Guid.TryParse(_calibration.HygrometerStandardId, out var hy) ? hy : null,
+                ThermoHygrometerStandardId = Guid.TryParse(_calibration.ThermoHygrometerStandardId, out var th) ? th : null,
+                PycnometerStandardId = Guid.TryParse(_calibration.PycnometerStandardId, out var py) ? py : null,
+                WaterDensityGcm3 = _calibration.WaterDensityGcm3,
+                Measurements = _calibration.Measurements.Select(m => new VolumeMeasurementInputDto
+                {
+                    RunNumber = m.RunNumber,
+                    FullMassGrams = m.FullMassGrams,
+                    EmptyMassGrams = m.EmptyMassGrams,
+                    WaterTemperatureCelsius = m.WaterTemperatureCelsius,
+                    AmbientTemperatureCelsius = m.AmbientTemperatureCelsius,
+                    AtmosphericPressureHpa = m.AtmosphericPressureHpa,
+                    RelativeHumidityPercent = m.RelativeHumidityPercent
+                }).ToList()
+            };
+
+            var result = await DataService.CalculateVolumeCalibrationAsync(req);
+            if (result != null)
+            {
+                _calibration.CalculatedWaterDensity = result.WaterDensityGramsPerCm3;
+                _calibration.CalculatedAirDensity = result.AirDensityKgPerM3;
+                _calibration.MeanV20 = result.MeanVolumeV20Ml;
+                _calibration.SystematicError = result.SystematicErrorMl;
+                _calibration.RelativeSystematicErrorPercent = result.NominalVolumeMl > 0 ? (result.SystematicErrorMl / result.NominalVolumeMl) * 100m : 0m;
+                _calibration.SampleStdDev = result.RepeatabilityStandardDeviationMl;
+                _calibration.RepeatabilityUncertainty = result.RepeatabilityUncertaintyMl;
+                _calibration.CoefficientOfVariationPercent = result.MeanVolumeV20Ml > 0 ? (result.RepeatabilityStandardDeviationMl / result.MeanVolumeV20Ml) * 100m : 0m;
+                _calibration.CombinedUncertainty = result.CombinedStandardUncertaintyMl;
+                _calibration.ExpandedUncertainty = result.ExpandedUncertaintyMl;
+                _calibration.CoverageFactor = result.CoverageFactor;
+
+                foreach (var calcPt in result.CalculatedPoints)
+                {
+                    var m = _calibration.Measurements.FirstOrDefault(x => x.RunNumber == calcPt.RunNumber);
+                    if (m != null)
+                    {
+                        m.CalculatedAirDensity = calcPt.CalculatedAirDensityKgPerM3;
+                        m.CalculatedVolumeMl = calcPt.CalculatedVolumeMl;
+                        m.DeviationMl = calcPt.CalculatedVolumeMl - _calibration.NominalCapacity;
+                    }
+                }
+
+                _calibration.Result = Math.Abs(result.SystematicErrorMl) <= _calibration.MaxPermissibleError
+                    ? CalibrationResult.Conforming
+                    : CalibrationResult.NonConforming;
+
+                _calibration.ConformityStatement = _calibration.Result == CalibrationResult.Conforming
+                    ? $"O equipamento atende aos critérios de aceitação metrológica da norma ISO 1042 / ABNT NBR ISO 1042 ({_selectedEquipment.AccuracyClass}). O erro sistemático ({_calibration.SystematicError:F4} mL) encontra-se dentro do Erro Máximo Admissível (±{_calibration.MaxPermissibleError:F3} mL) com Incerteza Expandida U = ±{_calibration.ExpandedUncertainty:F4} mL (k={_calibration.CoverageFactor:F2})."
+                    : $"O equipamento NÃO atende aos critérios de tolerância (EMA ±{_calibration.MaxPermissibleError:F3} mL). O desvio observado ({_calibration.SystematicError:F4} mL) excede os limites normativos.";
+
+                _apiCalculationSucceeded = true;
+            }
+        }
+        catch
+        {
+            _apiCalculationSucceeded = false;
+        }
+        finally
+        {
+            _isCalculatingApi = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+    }
+
+    private List<string> GetValidationErrors()
+    {
+        var errors = new List<string>();
+
+        // Validação do Instrumento sob Calibração
+        if (string.IsNullOrWhiteSpace(_selectedEquipment.Id) || _selectedEquipment.Id == Guid.Empty.ToString())
+        {
+            errors.Add("Nenhum instrumento do cliente válido foi selecionado para calibração.");
+        }
+        else if (!IsEquipmentCalibratable(_selectedEquipment.Status))
+        {
+            errors.Add($"O instrumento '{_selectedEquipment.LabTag}' está no status '{GetEquipmentStatusLabel(_selectedEquipment.Status)}'. Apenas equipamentos no status 'Recebido' ou 'Aprovado' podem ser submetidos à calibração.");
+        }
+
+        if (_validPointsCount < 7)
+        {
+            errors.Add($"Número insuficiente de repetições gravimétricas: {_validPointsCount} de 7 mínimas requeridas pela ABNT NBR ISO 4787 / ISO 8655.");
+        }
+
+        // Balança
+        if (string.IsNullOrWhiteSpace(_calibration.BalanceStandardId))
+        {
+            errors.Add("Balança analítica padrão não foi selecionada.");
+        }
+        else
+        {
+            var std = _standards.FirstOrDefault(s => s.Id == _calibration.BalanceStandardId);
+            if (std == null)
+                errors.Add("Balança padrão selecionada não foi encontrada no cadastro de padrões.");
+            else if (!std.IsValid)
+                errors.Add($"Balança analítica padrão ({std.LabTag}) inválida: certificado vencido ou status '{std.Status}'.");
+        }
+
+        // Termômetro de Imersão (Líquido)
+        if (string.IsNullOrWhiteSpace(_calibration.LiquidThermometerStandardId))
+        {
+            errors.Add("Termômetro de imersão (líquido) padrão não foi selecionado.");
+        }
+        else
+        {
+            var std = _standards.FirstOrDefault(s => s.Id == _calibration.LiquidThermometerStandardId);
+            if (std == null)
+                errors.Add("Termômetro de imersão selecionado não foi encontrado no cadastro de padrões.");
+            else if (!std.IsValid)
+                errors.Add($"Termômetro de imersão padrão ({std.LabTag}) inválido: certificado vencido ou status '{std.Status}'.");
+        }
+
+        // Barômetro
+        if (string.IsNullOrWhiteSpace(_calibration.BarometerStandardId))
+        {
+            errors.Add("Barômetro digital padrão não foi selecionado.");
+        }
+        else
+        {
+            var std = _standards.FirstOrDefault(s => s.Id == _calibration.BarometerStandardId);
+            if (std == null)
+                errors.Add("Barômetro padrão selecionado não foi encontrado no cadastro de padrões.");
+            else if (!std.IsValid)
+                errors.Add($"Barômetro digital padrão ({std.LabTag}) inválido: certificado vencido ou status '{std.Status}'.");
+        }
+
+        // Monitoramento Ambiental (Termo-higrômetro ou Par Termômetro Amb + Higrômetro)
+        var hasThermoHygro = !string.IsNullOrWhiteSpace(_calibration.ThermoHygrometerStandardId);
+        var hasAmbTherm = !string.IsNullOrWhiteSpace(_calibration.AmbientThermometerStandardId);
+        var hasHygro = !string.IsNullOrWhiteSpace(_calibration.HygrometerStandardId);
+
+        if (!hasThermoHygro && (!hasAmbTherm || !hasHygro))
+        {
+            errors.Add("Padrões ambientais incompletos: selecione um Termo-higrômetro integrado OU selecione ambos Termômetro Ambiente e Higrômetro.");
+        }
+        else
+        {
+            if (hasThermoHygro)
+            {
+                var std = _standards.FirstOrDefault(s => s.Id == _calibration.ThermoHygrometerStandardId);
+                if (std != null && !std.IsValid)
+                    errors.Add($"Termo-higrômetro padrão ({std.LabTag}) inválido: certificado vencido ou status '{std.Status}'.");
+            }
+            if (hasAmbTherm)
+            {
+                var std = _standards.FirstOrDefault(s => s.Id == _calibration.AmbientThermometerStandardId);
+                if (std != null && !std.IsValid)
+                    errors.Add($"Termômetro de ambiente padrão ({std.LabTag}) inválido: certificado vencido ou status '{std.Status}'.");
+            }
+            if (hasHygro)
+            {
+                var std = _standards.FirstOrDefault(s => s.Id == _calibration.HygrometerStandardId);
+                if (std != null && !std.IsValid)
+                    errors.Add($"Higrômetro padrão ({std.LabTag}) inválido: certificado vencido ou status '{std.Status}'.");
+            }
+        }
+
+        // Picnômetro / Densímetro Digital
+        if (_calibration.RequiresPycnometer)
+        {
+            if (string.IsNullOrWhiteSpace(_calibration.PycnometerStandardId))
+            {
+                errors.Add("Densidade manual da água informada: é obrigatório selecionar um Picnômetro ou Densímetro Digital padrão.");
+            }
+            else
+            {
+                var pyc = _standards.FirstOrDefault(s => s.Id == _calibration.PycnometerStandardId);
+                if (pyc == null)
+                {
+                    errors.Add("Picnômetro padrão selecionado não foi encontrado.");
+                }
+                else if (!pyc.IsValid)
+                {
+                    errors.Add($"Picnômetro padrão ({pyc.LabTag}) inválido: certificado vencido ou status '{pyc.Status}'. É obrigatório selecionar um padrão com calibração válida para uso de densidade manual.");
+                }
+            }
+        }
+
+        return errors;
+    }
+
+    private async Task SaveDraft()
+    {
+        if (_isSubmitting) return;
+
+        try
+        {
+            _isSubmitting = true;
+            StateHasChanged();
+            await DataService.SaveCalibrationAsync(_calibration);
+            NotificationModal.ShowSuccess("Rascunho Salvo", "Os dados da calibração volumétrica foram salvos com sucesso no banco de dados.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Salvar Rascunho", ex.Message, ex.ToString());
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveAndGenerateCertificate()
+    {
+        if (_isSubmitting) return;
+
+        var errors = GetValidationErrors();
+        if (errors.Count > 0)
+        {
+            NotificationModal.ShowWarning("Validação Metrológica Pendente", string.Join("\n• ", errors));
+            return;
+        }
+
+        try
+        {
+            _isSubmitting = true;
+            StateHasChanged();
+
+            await DataService.SaveCalibrationAsync(_calibration);
+            var cert = await DataService.CreateCertificateFromCalibrationAsync(_calibration);
+
+            NotificationModal.ShowSuccess("Minuta Gerada com Sucesso", $"Calibração concluída! O certificado '{cert.CertificateNumber}' foi registrado e gerado.");
+            Navigation.NavigateTo($"/certificados/{cert.Id}");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Gerar Minuta de Certificado", ex.Message, ex.ToString());
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private static bool IsEquipmentCalibratable(EquipmentStatus status) =>
+        status == EquipmentStatus.Received || status == EquipmentStatus.Approved;
+
+    private static string GetEquipmentStatusLabel(EquipmentStatus status) => status switch
+    {
+        EquipmentStatus.Received => "Recebido",
+        EquipmentStatus.Approved => "Aprovado",
+        EquipmentStatus.InCalibration => "Em Calibração",
+        EquipmentStatus.Calibrated => "Calibrado",
+        EquipmentStatus.CertificateIssued => "Certificado Emitido",
+        EquipmentStatus.Returned => "Devolvido",
+        EquipmentStatus.NonConforming => "Não Conforme",
+        _ => status.ToString()
+    };
+
+    private static string GetEquipmentStatusBadgeClass(EquipmentStatus status) => status switch
+    {
+        EquipmentStatus.Received => "trac-badge-info",
+        EquipmentStatus.Approved => "trac-badge-success",
+        EquipmentStatus.InCalibration => "trac-badge-warning",
+        EquipmentStatus.Calibrated => "trac-badge-neutral",
+        EquipmentStatus.CertificateIssued => "trac-badge-neutral",
+        _ => "trac-badge-neutral"
+    };
+}

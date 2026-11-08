@@ -1,0 +1,967 @@
+/* ==========================================================================
+   TracLabs Design System - CSS Custom Properties Matrix
+   Supports: [data-theme="light|dark"] x [data-style="metrology-clean|precision-slate"]
+   Zero npm dependencies - Pure CSS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL INVARIANT TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+  --trac-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --trac-font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* Metrological Functional Palette */
+  --trac-success-50: #ECFDF5;
+  --trac-success-500: #10B981;
+  --trac-success-600: #059669;
+  --trac-success-700: #047857;
+
+  --trac-warning-50: #FFFBEB;
+  --trac-warning-500: #F59E0B;
+  --trac-warning-600: #D97706;
+  --trac-warning-700: #B45309;
+
+  --trac-danger-50: #FFF1F2;
+  --trac-danger-500: #F43F5E;
+  --trac-danger-600: #E11D48;
+  --trac-danger-700: #BE123C;
+
+  --trac-info-50: #F0F9FF;
+  --trac-info-500: #0EA5E9;
+  --trac-info-600: #0284C7;
+  --trac-info-700: #0369A1;
+
+  /* Shell Layout Dimensions */
+  --trac-header-height: 60px;
+  --trac-sidebar-width-expanded: 260px;
+  --trac-sidebar-width-collapsed: 68px;
+  --trac-transition-speed: 180ms;
+}
+
+/* --------------------------------------------------------------------------
+   2. THEME MODE: LIGHT (CANVAS: #FFFFFF)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  --trac-bg-base: #FFFFFF;
+  --trac-bg-surface: #F8FAFC;
+  --trac-bg-surface-elevated: #FFFFFF;
+  --trac-bg-surface-hover: #F1F5F9;
+  --trac-bg-surface-active: #E2E8F0;
+
+  --trac-text-primary: #0F172A;     /* Slate-900 (High contrast) */
+  --trac-text-secondary: #475569;   /* Slate-600 */
+  --trac-text-muted: #64748B;       /* Slate-500 */
+  --trac-text-inverse: #FFFFFF;
+
+  --trac-border-subtle: #F1F5F9;
+  --trac-border-default: #E2E8F0;   /* Slate-200 */
+  --trac-border-strong: #CBD5E1;    /* Slate-300 */
+
+  --trac-brand-primary: #2563EB;    /* Precision Blue */
+  --trac-brand-hover: #1D4ED8;
+  --trac-brand-subtle: #EFF6FF;
+  --trac-brand-text: #1E40AF;
+
+  --trac-status-conforming-bg: #ECFDF5;
+  --trac-status-conforming-text: #065F46;
+  --trac-status-conforming-border: #A7F3D0;
+
+  --trac-status-warning-bg: #FFFBEB;
+  --trac-status-warning-text: #92400E;
+  --trac-status-warning-border: #FDE68A;
+
+  --trac-status-danger-bg: #FFF1F2;
+  --trac-status-danger-text: #9F1239;
+  --trac-status-danger-border: #FECDD3;
+
+  --trac-status-info-bg: #F0F9FF;
+  --trac-status-info-text: #075985;
+  --trac-status-info-border: #BAE6FD;
+}
+
+/* --------------------------------------------------------------------------
+   3. THEME MODE: DARK (CANVAS: #09090B)
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --trac-bg-base: #09090B;          /* Obsidian Black */
+  --trac-bg-surface: #121215;       /* Elevated dark card surface */
+  --trac-bg-surface-elevated: #18181B; /* Zinc-900 */
+  --trac-bg-surface-hover: #27272A; /* Zinc-800 */
+  --trac-bg-surface-active: #3F3F46;
+
+  --trac-text-primary: #F8FAFC;     /* Slate-50 */
+  --trac-text-secondary: #94A3B8;   /* Slate-400 */
+  --trac-text-muted: #64748B;       /* Slate-500 */
+  --trac-text-inverse: #0F172A;
+
+  --trac-border-subtle: #1C1C21;
+  --trac-border-default: #27272A;   /* Zinc-800 */
+  --trac-border-strong: #3F3F46;    /* Zinc-700 */
+
+  --trac-brand-primary: #3B82F6;
+  --trac-brand-hover: #60A5FA;
+  --trac-brand-subtle: #1E293B;
+  --trac-brand-text: #93C5FD;
+
+  --trac-status-conforming-bg: rgba(16, 185, 129, 0.15);
+  --trac-status-conforming-text: #34D399;
+  --trac-status-conforming-border: rgba(16, 185, 129, 0.35);
+
+  --trac-status-warning-bg: rgba(245, 158, 11, 0.15);
+  --trac-status-warning-text: #FBBF24;
+  --trac-status-warning-border: rgba(245, 158, 11, 0.35);
+
+  --trac-status-danger-bg: rgba(244, 63, 94, 0.15);
+  --trac-status-danger-text: #FB7185;
+  --trac-status-danger-border: rgba(244, 63, 94, 0.35);
+
+  --trac-status-info-bg: rgba(14, 165, 233, 0.15);
+  --trac-status-info-text: #38BDF8;
+  --trac-status-info-border: rgba(14, 165, 233, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   4. VISUAL STYLE: PRECISION SLATE / TECHNICAL WORKSTATION (DEFAULT)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-style="precision-slate"] {
+  --trac-radius-sm: 0px;
+  --trac-radius-md: 2px;
+  --trac-radius-lg: 2px;
+  --trac-radius-xl: 4px;
+  --trac-badge-radius: 2px; /* Rectangular tag */
+
+  /* Strictly flat - no drop shadows */
+  --trac-shadow-sm: none;
+  --trac-shadow-md: none;
+  --trac-shadow-lg: none;
+
+  --trac-table-py: 0.375rem; /* 6px compact */
+  --trac-table-px: 0.625rem; /* 10px */
+  --trac-table-font-size: 0.8125rem; /* 13px */
+  --trac-input-height: 32px;
+
+  /* Monochromatic Slate Brand Accent with Cyan Highlights */
+  --trac-brand-primary: #0891B2;
+  --trac-brand-hover: #0E7490;
+  --trac-brand-subtle: #ECFEFF;
+  --trac-brand-text: #164E63;
+}
+
+:root[data-theme="dark"],
+:root[data-theme="dark"][data-style="precision-slate"] {
+  --trac-brand-primary: #22D3EE;
+  --trac-brand-hover: #67E8F9;
+  --trac-brand-subtle: #164E63;
+  --trac-brand-text: #CFFAFE;
+}
+
+/* --------------------------------------------------------------------------
+   6. GLOBAL BASE STYLES
+   -------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--trac-bg-base);
+  color: var(--trac-text-primary);
+  font-family: var(--trac-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background-color var(--trac-transition-speed) ease, color var(--trac-transition-speed) ease;
+  overflow-x: hidden;
+}
+
+/* Monospaced numeric alignment */
+.trac-mono,
+[data-style="precision-slate"] .trac-num {
+  font-family: var(--trac-font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.trac-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   7. LAYOUT SHELL STYLES
+   -------------------------------------------------------------------------- */
+.trac-app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: var(--trac-bg-base);
+}
+
+/* Sidebar */
+.trac-sidebar {
+  width: var(--trac-sidebar-width-expanded);
+  background-color: var(--trac-bg-surface);
+  border-right: 1px solid var(--trac-border-default);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--trac-transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  z-index: 100;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.trac-sidebar.collapsed {
+  width: var(--trac-sidebar-width-collapsed);
+}
+
+.trac-sidebar-brand {
+  height: var(--trac-header-height);
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--trac-border-default);
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--trac-text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.trac-sidebar-brand-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  background-color: var(--trac-brand-subtle);
+  color: var(--trac-brand-primary);
+  border-radius: var(--trac-radius-sm);
+  border: 1px solid var(--trac-border-default);
+}
+
+.trac-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem 0.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+}
+
+.trac-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  color: var(--trac-text-secondary);
+  text-decoration: none;
+  border-radius: var(--trac-radius-md);
+  font-weight: 500;
+  transition: all 120ms ease;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+
+.trac-nav-link:hover {
+  background-color: var(--trac-bg-surface-hover);
+  color: var(--trac-text-primary);
+}
+
+.trac-nav-link.active {
+  background-color: var(--trac-bg-surface-active);
+  color: var(--trac-brand-primary);
+  font-weight: 600;
+}
+
+.trac-nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
+  background-color: var(--trac-brand-primary);
+  border-radius: 0 2px 2px 0;
+}
+
+.trac-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.trac-sidebar-footer {
+  padding: 0.75rem;
+  border-top: 1px solid var(--trac-border-default);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Main Area */
+.trac-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Header */
+.trac-header {
+  height: var(--trac-header-height);
+  background-color: var(--trac-bg-surface-elevated);
+  border-bottom: 1px solid var(--trac-border-default);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  box-shadow: var(--trac-shadow-sm);
+}
+
+.trac-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.trac-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Breadcrumbs */
+.trac-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--trac-text-muted);
+}
+
+.trac-breadcrumb-sep {
+  color: var(--trac-border-strong);
+}
+
+.trac-breadcrumb-item.active {
+  color: var(--trac-text-primary);
+  font-weight: 600;
+}
+
+/* Content Container */
+.trac-content {
+  flex: 1;
+  padding: 1.5rem;
+  background-color: var(--trac-bg-base);
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   8. COMPONENT ATOMS: CARDS, BUTTONS, BADGES, TABLES, INPUTS
+   -------------------------------------------------------------------------- */
+
+/* Cards */
+.trac-card {
+  background-color: var(--trac-bg-surface);
+  border: 1px solid var(--trac-border-default);
+  border-radius: var(--trac-radius-lg);
+  box-shadow: var(--trac-shadow-sm);
+  transition: all var(--trac-transition-speed) ease;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.trac-card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--trac-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trac-card-body {
+  padding: 1.25rem;
+}
+
+.trac-card-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--trac-border-default);
+  background-color: var(--trac-bg-surface-hover);
+}
+
+/* Stat Cards */
+.trac-stat-card {
+  background-color: var(--trac-bg-surface);
+  border: 1px solid var(--trac-border-default);
+  border-radius: var(--trac-radius-lg);
+  box-shadow: var(--trac-shadow-sm);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.trac-stat-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--trac-text-muted);
+}
+
+.trac-stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  font-family: var(--trac-font-mono);
+  color: var(--trac-text-primary);
+  margin-top: 0.25rem;
+}
+
+.trac-stat-subtitle {
+  font-size: 0.8125rem;
+  color: var(--trac-text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Buttons */
+.trac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  height: var(--trac-input-height);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--trac-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.trac-btn-sm {
+  height: calc(var(--trac-input-height) - 6px);
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+}
+
+.trac-btn-icon {
+  width: var(--trac-input-height);
+  height: var(--trac-input-height);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--trac-radius-md);
+  background: transparent;
+  border: 1px solid var(--trac-border-default);
+  color: var(--trac-text-secondary);
+  cursor: pointer;
+}
+
+.trac-btn-icon:hover {
+  background-color: var(--trac-bg-surface-hover);
+  color: var(--trac-text-primary);
+}
+
+.trac-btn-primary {
+  background-color: var(--trac-brand-primary);
+  color: #FFFFFF !important;
+  box-shadow: var(--trac-shadow-sm);
+  border-color: var(--trac-brand-primary);
+}
+
+.trac-btn-primary:hover {
+  background-color: var(--trac-brand-hover);
+  border-color: var(--trac-brand-hover);
+}
+
+.trac-btn-secondary {
+  background-color: var(--trac-bg-surface-elevated);
+  border-color: var(--trac-border-default);
+  color: var(--trac-text-primary);
+}
+
+.trac-btn-secondary:hover {
+  background-color: var(--trac-bg-surface-hover);
+}
+
+.trac-btn-outline {
+  background-color: transparent;
+  border-color: var(--trac-border-strong);
+  color: var(--trac-text-secondary);
+}
+
+.trac-btn-outline:hover {
+  background-color: var(--trac-bg-surface-hover);
+  color: var(--trac-text-primary);
+}
+
+.trac-btn-success {
+  background-color: var(--trac-success-600);
+  color: #FFFFFF;
+  border-color: var(--trac-success-600);
+}
+
+.trac-btn-success:hover {
+  background-color: var(--trac-success-700);
+}
+
+.trac-btn-danger {
+  background-color: var(--trac-danger-600);
+  color: #FFFFFF;
+  border-color: var(--trac-danger-600);
+}
+
+.trac-btn-danger:hover {
+  background-color: var(--trac-danger-700);
+}
+
+/* Badges */
+.trac-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--trac-badge-radius);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.trac-badge-success {
+  background-color: var(--trac-status-conforming-bg);
+  color: var(--trac-status-conforming-text);
+  border-color: var(--trac-status-conforming-border);
+}
+
+.trac-badge-warning {
+  background-color: var(--trac-status-warning-bg);
+  color: var(--trac-status-warning-text);
+  border-color: var(--trac-status-warning-border);
+}
+
+.trac-badge-danger {
+  background-color: var(--trac-status-danger-bg);
+  color: var(--trac-status-danger-text);
+  border-color: var(--trac-status-danger-border);
+}
+
+.trac-badge-info {
+  background-color: var(--trac-status-info-bg);
+  color: var(--trac-status-info-text);
+  border-color: var(--trac-status-info-border);
+}
+
+.trac-badge-neutral {
+  background-color: var(--trac-bg-surface-active);
+  color: var(--trac-text-secondary);
+  border-color: var(--trac-border-default);
+}
+
+.trac-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Form Controls */
+.trac-form-group {
+  margin-bottom: 1rem;
+}
+
+.trac-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--trac-text-secondary);
+}
+
+.trac-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--trac-text-muted);
+  margin-top: 0.25rem;
+}
+
+.trac-input,
+.trac-select,
+.trac-textarea {
+  width: 100%;
+  height: var(--trac-input-height);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  background-color: var(--trac-bg-surface-elevated);
+  border: 1px solid var(--trac-border-default);
+  border-radius: var(--trac-radius-md);
+  color: var(--trac-text-primary);
+  transition: border-color 120ms ease;
+  box-sizing: border-box;
+}
+
+.trac-input:focus,
+.trac-select:focus,
+.trac-textarea:focus {
+  outline: none;
+  border-color: var(--trac-brand-primary);
+}
+
+.trac-textarea {
+  height: auto;
+  min-height: 80px;
+  padding: 0.5rem 0.75rem;
+}
+
+.trac-input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.trac-input-group .trac-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.trac-input-addon {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--trac-text-muted);
+  background-color: var(--trac-bg-surface-hover);
+  border: 1px solid var(--trac-border-default);
+  border-left: none;
+  border-top-right-radius: var(--trac-radius-md);
+  border-bottom-right-radius: var(--trac-radius-md);
+  font-family: var(--trac-font-mono);
+}
+
+/* Tables */
+.trac-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--trac-border-default);
+  border-radius: var(--trac-radius-lg);
+  background-color: var(--trac-bg-surface);
+}
+
+.trac-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--trac-table-font-size);
+}
+
+.trac-table th {
+  padding: var(--trac-table-py) var(--trac-table-px);
+  background-color: var(--trac-bg-surface-hover);
+  color: var(--trac-text-secondary);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--trac-border-default);
+  white-space: nowrap;
+}
+
+.trac-table td {
+  padding: var(--trac-table-py) var(--trac-table-px);
+  border-bottom: 1px solid var(--trac-border-subtle);
+  color: var(--trac-text-primary);
+  vertical-align: middle;
+}
+
+.trac-table tbody tr:hover {
+  background-color: var(--trac-bg-surface-hover);
+}
+
+.trac-table tfoot td {
+  border-top: 2px solid var(--trac-border-strong);
+  font-weight: 600;
+  background-color: var(--trac-bg-surface);
+}
+
+/* Style Selector Segmented Control */
+.trac-segment-group {
+  display: inline-flex;
+  background-color: var(--trac-bg-surface-active);
+  padding: 2px;
+  border-radius: var(--trac-radius-md);
+  border: 1px solid var(--trac-border-default);
+}
+
+.trac-segment-btn {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--trac-text-secondary);
+  border-radius: calc(var(--trac-radius-md) - 2px);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.trac-segment-btn.active {
+  background-color: var(--trac-bg-surface-elevated);
+  color: var(--trac-text-primary);
+  box-shadow: var(--trac-shadow-sm);
+}
+
+/* Tabs */
+.trac-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--trac-border-default);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.trac-tab-btn {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--trac-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.trac-tab-btn:hover {
+  color: var(--trac-text-primary);
+}
+
+.trac-tab-btn.active {
+  color: var(--trac-brand-primary);
+  border-bottom-color: var(--trac-brand-primary);
+}
+
+/* Modals */
+.trac-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.trac-modal {
+  background-color: var(--trac-bg-surface-elevated);
+  border: 1px solid var(--trac-border-default);
+  border-radius: var(--trac-radius-xl);
+  box-shadow: var(--trac-shadow-lg);
+  width: 90%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trac-modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--trac-border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trac-modal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--trac-text-primary);
+}
+
+.trac-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.trac-modal-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--trac-border-default);
+  background-color: var(--trac-bg-surface);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Layout Utilities (No Bootstrap dependency needed) */
+.d-flex { display: flex; }
+.d-none { display: none; }
+.flex-column { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-grow-1 { flex-grow: 1; }
+.align-items-center { align-items: center; }
+.align-items-start { align-items: flex-start; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+.justify-content-end { justify-content: flex-end; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+.gap-4 { gap: 1.5rem; }
+
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+
+.m-0 { margin: 0; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.me-2 { margin-right: 0.5rem; }
+.ms-auto { margin-left: auto; }
+
+.p-0 { padding: 0; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+
+.text-center { text-align: center; }
+.text-end { text-align: right; }
+.text-muted { color: var(--trac-text-muted); }
+.text-danger { color: var(--trac-danger-600); }
+.text-success { color: var(--trac-success-600); }
+.text-warning { color: var(--trac-warning-600); }
+.fw-bold { font-weight: 700; }
+.fw-semibold { font-weight: 600; }
+
+/* Responsive Grid */
+.trac-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.trac-grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.trac-grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.trac-grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -0.75rem;
+  margin-left: -0.75rem;
+}
+
+.row > * {
+  box-sizing: border-box;
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+.col-12 { flex: 0 0 100%; max-width: 100%; }
+.col-6 { flex: 0 0 50%; max-width: 50%; }
+.col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+.col-3 { flex: 0 0 25%; max-width: 25%; }
+.col-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+
+@media (min-width: 768px) {
+  .d-md-inline { display: inline !important; }
+  .d-md-flex { display: flex !important; }
+  .d-md-none { display: none !important; }
+  .col-md-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-md-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .col-md-3 { flex: 0 0 25%; max-width: 25%; }
+  .col-md-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+}
+
+@media (min-width: 1024px) {
+  .col-lg-3 { flex: 0 0 25%; max-width: 25%; }
+  .col-lg-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+  .col-lg-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-lg-8 { flex: 0 0 66.666667%; max-width: 66.666667%; }
+}
+
+/* Pulsing dot for online health indicator / critical alerts */
+.trac-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: tracPulse 2s infinite;
+}
+
+@keyframes tracPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Timbrado Certificate Official Page */
+.trac-certificate-page {
+  background-color: #FFFFFF;
+  color: #0F172A;
+  border: 1px solid var(--trac-border-strong);
+  border-radius: var(--trac-radius-lg);
+  padding: 2.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: var(--trac-shadow-lg);
+  position: relative;
+}
+
+:root[data-theme="dark"] .trac-certificate-page {
+  background-color: #121215;
+  color: #F8FAFC;
+}
+
+.trac-watermark-superseded {
+  position: absolute;
+  top: 40%;
+  left: 20%;
+  transform: rotate(-30deg);
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgba(225, 29, 72, 0.18);
+  border: 8px solid rgba(225, 29, 72, 0.25);
+  padding: 1rem 3rem;
+  pointer-events: none;
+  z-index: 50;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@media print {
+  body {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .trac-sidebar, .trac-header, .trac-no-print {
+    display: none !important;
+  }
+  .trac-main-area {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .trac-content {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .trac-certificate-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}

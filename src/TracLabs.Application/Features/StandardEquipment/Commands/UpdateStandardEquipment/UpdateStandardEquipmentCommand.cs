@@ -25,7 +25,8 @@ public record UpdateStandardEquipmentCommand(
     string? CurrentLocation = null,
     string? AcceptanceCriteria = null,
     string? MaintenancePlan = null,
-    string? ReferenceMaterialDocumentation = null) : IRequest<StandardEquipmentDto>;
+    string? ReferenceMaterialDocumentation = null,
+    StandardRole? Role = null) : IRequest<StandardEquipmentDto>;
 
 public class UpdateStandardEquipmentCommandValidator : AbstractValidator<UpdateStandardEquipmentCommand>
 {
@@ -37,10 +38,10 @@ public class UpdateStandardEquipmentCommandValidator : AbstractValidator<UpdateS
             .NotEmpty().WithMessage("A identificação/tag do padrão é obrigatória.")
             .MaximumLength(50);
 
-        RuleFor(s => s.Model).NotEmpty().MaximumLength(100);
-        RuleFor(s => s.Manufacturer).NotEmpty().MaximumLength(100);
-        RuleFor(s => s.SerialNumber).NotEmpty().MaximumLength(100);
-        RuleFor(s => s.InstrumentType).NotEmpty().MaximumLength(100);
+        RuleFor(s => s.Model).MaximumLength(100);
+        RuleFor(s => s.Manufacturer).MaximumLength(100);
+        RuleFor(s => s.SerialNumber).MaximumLength(100);
+        RuleFor(s => s.InstrumentType).MaximumLength(100);
 
         RuleFor(s => s.Resolution)
             .GreaterThanOrEqualTo(0)
@@ -98,7 +99,8 @@ public class UpdateStandardEquipmentCommandHandler : IRequestHandler<UpdateStand
             request.CurrentLocation,
             request.AcceptanceCriteria,
             request.MaintenancePlan,
-            request.ReferenceMaterialDocumentation);
+            request.ReferenceMaterialDocumentation,
+            request.Role);
 
         _standardRepository.Update(standard);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

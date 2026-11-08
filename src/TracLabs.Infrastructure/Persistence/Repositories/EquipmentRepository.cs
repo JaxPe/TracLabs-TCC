@@ -39,10 +39,13 @@ public class EquipmentRepository : BaseRepository<Equipment>, IEquipmentReposito
     public async Task<IReadOnlyList<Equipment>> SearchAsync(
         string? labTag, string? serialNumber, string? model,
         string? clientName, EquipmentStatus? status,
+        Guid? clientId = null,
         CancellationToken ct = default)
     {
-        // IQueryable permite compor filtros sem executar a query a cada passo
         var query = _dbSet.Include(e => e.Client).AsQueryable();
+
+        if (clientId.HasValue)
+            query = query.Where(e => e.ClientId == clientId.Value);
 
         if (!string.IsNullOrWhiteSpace(labTag))
             query = query.Where(e => e.LabTag.Contains(labTag));

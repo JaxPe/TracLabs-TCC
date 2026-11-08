@@ -1,3 +1,6 @@
+using TracLabs.Domain.Entities;
+using TracLabs.Domain.Enums;
+
 namespace TracLabs.Application.Interfaces.Repositories;
 
 /// <summary>
@@ -44,6 +47,20 @@ public interface ICertificateRepository : IRepository<Certificate>
     Task<IReadOnlyList<Certificate>> GetByDateRangeAsync(
         DateTime from,
         DateTime to,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns all certificates, optionally filtered by status.
+    /// </summary>
+    Task<IReadOnlyList<Certificate>> GetAllAsync(
+        CertificateStatus? status = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns count of issued certificates since a given date.
+    /// </summary>
+    Task<int> GetIssuedCountSinceAsync(
+        DateTime since,
         CancellationToken cancellationToken = default);
 
     /// <summary>

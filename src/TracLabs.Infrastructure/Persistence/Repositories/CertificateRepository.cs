@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TracLabs.Application.Interfaces.Repositories;
 using TracLabs.Domain.Entities;
+using TracLabs.Domain.Enums;
 
 namespace TracLabs.Infrastructure.Persistence.Repositories;
 
@@ -54,6 +55,27 @@ public class CertificateRepository : BaseRepository<Certificate>, ICertificateRe
             .Where(c => c.IssuedAt >= from && c.IssuedAt <= to)
             .OrderByDescending(c => c.IssuedAt)
             .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Certificate>> GetAllAsync(
+        CertificateStatus? status = null, CancellationToken ct = default)
+    {
+        var query = _dbSet
+            .Include(c => c.CalibrationRecord)
+                .ThenInclude(r => r!.Equipment)
+                    .ThenInclude(e => e!.Client)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(c => c.Status == status.Value);
+
+        return await query
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task<int> GetIssuedCountSinceAsync(
+        DateTime since, CancellationToken ct = default)
+        => await _dbSet.CountAsync(c => c.Status == CertificateStatus.Issued && c.IssuedAt >= since, ct);
 
     /// <summary>
     /// Gera e reserva de forma atômica o próximo número sequencial de certificado no formato CERT-YYYY-NNNNN.

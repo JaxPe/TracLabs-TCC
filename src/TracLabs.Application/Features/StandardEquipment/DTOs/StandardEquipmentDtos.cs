@@ -60,7 +60,8 @@ public record StandardEquipmentDto(
     decimal RangeMax = 0m,
     decimal? CalibrationRangeMin = null,
     decimal? CalibrationRangeMax = null,
-    IReadOnlyList<StandardCertificateDto>? Certificates = null);
+    IReadOnlyList<StandardCertificateDto>? Certificates = null,
+    StandardRole Role = StandardRole.Balance);
 
 public record MaintenanceRecordDto(
     Guid Id,

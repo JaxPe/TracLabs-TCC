@@ -10,7 +10,8 @@ public record SearchEquipmentQuery(
     string? SerialNumber = null,
     string? Model = null,
     string? ClientName = null,
-    EquipmentStatus? Status = null) : IRequest<IReadOnlyList<EquipmentSummaryDto>>;
+    EquipmentStatus? Status = null,
+    Guid? ClientId = null) : IRequest<IReadOnlyList<EquipmentSummaryDto>>;
 
 public class SearchEquipmentQueryHandler : IRequestHandler<SearchEquipmentQuery, IReadOnlyList<EquipmentSummaryDto>>
 {
@@ -29,6 +30,7 @@ public class SearchEquipmentQueryHandler : IRequestHandler<SearchEquipmentQuery,
             request.Model,
             request.ClientName,
             request.Status,
+            request.ClientId,
             cancellationToken);
 
         return list.Select(e => new EquipmentSummaryDto(
@@ -42,6 +44,8 @@ public class SearchEquipmentQueryHandler : IRequestHandler<SearchEquipmentQuery,
             e.Status,
             e.CurrentLocation,
             e.ClientId,
-            e.Client?.Name)).ToList();
+            e.Client?.Name,
+            e.NominalCapacity,
+            e.Unit)).ToList();
     }
 }

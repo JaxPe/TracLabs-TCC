@@ -1,3 +1,5 @@
+using TracLabs.Domain.Entities;
+
 namespace TracLabs.Application.Interfaces.Repositories;
 
 /// <summary>
@@ -40,5 +42,31 @@ public interface ICalibrationRepository : IRepository<CalibrationRecord>
     /// </summary>
     Task<CalibrationRecord?> GetWithDetailsAsync(
         Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retorna todas as calibrações onde o equipamento padrão informado foi utilizado.
+    /// </summary>
+    Task<IReadOnlyList<CalibrationRecord>> GetByStandardEquipmentIdAsync(
+        Guid standardId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retorna o total de calibrações ativas / em andamento (resultado pendente).
+    /// </summary>
+    Task<int> GetActiveCalibrationsCountAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retorna o total de calibrações com resultado Não-Conforme.
+    /// </summary>
+    Task<int> GetNonConformingCountAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retorna as calibrações mais recentes com detalhes de instrumento, cliente e certificado.
+    /// </summary>
+    Task<IReadOnlyList<CalibrationRecord>> GetRecentCalibrationsAsync(
+        int count = 10,
         CancellationToken cancellationToken = default);
 }

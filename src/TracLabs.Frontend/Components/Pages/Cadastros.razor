@@ -1,0 +1,1896 @@
+@page "/cadastros"
+@using TracLabs.Frontend.Models
+@using TracLabs.Frontend.Models.Enums
+@using TracLabs.Frontend.Services
+@using TracLabs.Frontend.Services.Auth
+@inject IMetrologyDataService DataService
+@inject IUserContextService UserContext
+@inject NavigationManager Navigation
+@inject INotificationModalService NotificationModal
+@implements IDisposable
+
+<div>
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--trac-text-primary); margin: 0;">
+                Cadastros Metrológicos
+            </h1>
+            <p style="font-size: 0.875rem; color: var(--trac-text-secondary); margin: 0.25rem 0 0 0;">
+                Gestão integrada de clientes, equipamentos e padrões de referência RBC (ISO/IEC 17025)
+            </p>
+        </div>
+
+        <div>
+            @if (_selectedClient != null || _selectedEquipment != null || _selectedStandard != null)
+            {
+                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="BackToList">
+                    &larr; Voltar para a Listagem
+                </button>
+            }
+            else if (_activeTab == "clients")
+            {
+                @if (IsSupervisor)
+                {
+                    <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="OpenNewClientModal">
+                        + Novo Cliente
+                    </button>
+                }
+                else
+                {
+                    <button class="trac-btn trac-btn-secondary trac-btn-sm" disabled title="Disponível apenas para perfil Supervisor" style="opacity: 0.6; cursor: not-allowed;">
+                        + Novo Cliente
+                    </button>
+                }
+            }
+            else if (_activeTab == "equipment")
+            {
+                <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="OpenNewEquipmentModal">
+                    + Novo Equipamento
+                </button>
+            }
+            else
+            {
+                @if (IsSupervisor)
+                {
+                    <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="OpenNewStandardModal">
+                        + Novo Padrão RBC (2 Etapas)
+                    </button>
+                }
+                else
+                {
+                    <button class="trac-btn trac-btn-secondary trac-btn-sm" disabled title="Disponível apenas para perfil Supervisor" style="opacity: 0.6; cursor: not-allowed;">
+                        + Novo Padrão RBC (2 Etapas)
+                    </button>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Active Entity Full Views (When an item is selected) -->
+    @if (_selectedClient != null)
+    {
+        <!-- ========================================================================= -->
+        <!-- Visualização Completa de Cliente (R4)                                     -->
+        <!-- ========================================================================= -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="BackToList">
+                    &larr; Voltar para Lista de Clientes
+                </button>
+                <span class="trac-badge trac-badge-info">Ficha Cadastral do Cliente</span>
+            </div>
+
+            <!-- Card com informações completas do cliente -->
+            <div class="trac-card mb-4">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--trac-text-primary); margin: 0;">
+                            @_selectedClient.Name
+                        </h2>
+                        <span class="trac-mono" style="font-size: 0.8125rem; color: var(--trac-text-muted);">
+                            CNPJ: @_selectedClient.TaxId
+                        </span>
+                    </div>
+                    <div>
+                        @if (_selectedClient.IsActive)
+                        {
+                            <span class="trac-badge trac-badge-success">Cliente Ativo</span>
+                        }
+                        else
+                        {
+                            <span class="trac-badge trac-badge-neutral">Inativo</span>
+                        }
+                    </div>
+                </div>
+                <div class="trac-card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">RAZÃO SOCIAL</div>
+                            <div style="font-weight: 600; color: var(--trac-text-primary);">@_selectedClient.Name</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">NOME FANTASIA</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedClient.Name</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">CNPJ / CADASTRO FISCAL</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedClient.TaxId</div>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">PESSOA DE CONTATO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedClient.ContactPerson</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">E-MAIL DE CONTATO</div>
+                            <div><a href="mailto:@_selectedClient.Email" style="color: var(--trac-brand-primary); text-decoration: none;">@_selectedClient.Email</a></div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TELEFONE / RAMAL</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedClient.Phone</div>
+                        </div>
+
+                        <div class="col-12 col-md-8">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">ENDEREÇO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedClient.Street, @_selectedClient.City - @_selectedClient.State, CEP @_selectedClient.PostalCode</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">SEGMENTO INDUSTRIAL</div>
+                            <div style="color: var(--trac-text-primary);">Indústria Química &bull; Farmacêutica &bull; Diagnósticos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela embarcada de equipamentos deste cliente com filtro interativo em tempo real -->
+            <div class="trac-card">
+                <div class="trac-card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                            Equipamentos Pertencentes ao Cliente
+                        </span>
+                        <span class="trac-badge trac-badge-info">@_filteredClientEquipments.Count equipamentos</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" style="max-width: 360px; width: 100%;">
+                        <input type="text" class="trac-input" placeholder="Filtrar por Tag, Fabricante ou Modelo..."
+                               @bind="_equipmentFilter" @bind:event="oninput" @bind:after="FilterCustomerEquipment" />
+                    </div>
+                </div>
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag Lab</th>
+                                    <th>Descrição do Equipamento</th>
+                                    <th>Fabricante / Modelo</th>
+                                    <th>Nº de Série</th>
+                                    <th>Capacidade</th>
+                                    <th>Tolerância (EMA)</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_filteredClientEquipments.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-center p-4 text-muted">
+                                            Nenhum equipamento encontrado com o filtro atual.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var eq in _filteredClientEquipments)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="trac-mono" style="color: var(--trac-brand-primary);">@eq.LabTag</strong>
+                                            </td>
+                                            <td style="font-weight: 600;">@eq.Description</td>
+                                            <td>@eq.Manufacturer @eq.Model</td>
+                                            <td class="trac-mono">@eq.SerialNumber</td>
+                                            <td class="trac-mono">@eq.NominalCapacity @eq.Unit</td>
+                                            <td class="trac-mono">&plusmn;@eq.MaxPermissibleError @eq.Unit</td>
+                                            <td>
+                                                @if (eq.Status == EquipmentStatus.InCalibration)
+                                                {
+                                                    <span class="trac-badge trac-badge-warning">Em Calibração</span>
+                                                }
+                                                else if (eq.Status == EquipmentStatus.Calibrated)
+                                                {
+                                                    <span class="trac-badge trac-badge-success">Calibrado</span>
+                                                }
+                                                else if (eq.Status == EquipmentStatus.Approved)
+                                                {
+                                                    <span class="trac-badge trac-badge-info">Aprovado</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="trac-badge trac-badge-neutral">@eq.Status</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" @onclick="@(() => ViewEquipmentDetails(eq))">
+                                                    Detalhes &rarr;
+                                                </button>
+                                                <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="@(() => CalibrateEquipment(eq.LabTag))">
+                                                    Calibrar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_selectedEquipment != null)
+    {
+        <!-- ========================================================================= -->
+        <!-- Visualização Completa de Equipamento de Cliente (R4)                      -->
+        <!-- ========================================================================= -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="BackToList">
+                    &larr; Voltar para Lista de Equipamentos
+                </button>
+                <span class="trac-badge trac-badge-info">Ficha do Equipamento</span>
+            </div>
+
+            <!-- Card com dados do equipamento -->
+            <div class="trac-card mb-4">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--trac-text-primary); margin: 0;">
+                            <span class="trac-mono" style="color: var(--trac-brand-primary);">@_selectedEquipment.LabTag</span> &bull; @_selectedEquipment.Description
+                        </h2>
+                        <div style="font-size: 0.8125rem; color: var(--trac-text-muted);">
+                            Proprietário: <strong>@_selectedEquipment.ClientName</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="@(() => CalibrateEquipment(_selectedEquipment.LabTag))">
+                            Iniciar Calibração &rarr;
+                        </button>
+                    </div>
+                </div>
+                <div class="trac-card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TAG DO LABORATÓRIO</div>
+                            <div class="trac-mono" style="font-weight: 700; color: var(--trac-brand-primary);">@_selectedEquipment.LabTag</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TIPO DE INSTRUMENTO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedEquipment.InstrumentType</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">FABRICANTE / MODELO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedEquipment.Manufacturer @_selectedEquipment.Model</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">Nº DE SÉRIE</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedEquipment.SerialNumber</div>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">CAPACIDADE NOMINAL</div>
+                            <div class="trac-mono" style="font-weight: 600; color: var(--trac-text-primary);">@_selectedEquipment.NominalCapacity @_selectedEquipment.Unit</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">CLASSE / RESOLUÇÃO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedEquipment.AccuracyClass</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TOLERÂNCIA EMA (&plusmn;)</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">&plusmn;@_selectedEquipment.MaxPermissibleError @_selectedEquipment.Unit</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">STATUS ATUAL</div>
+                            <div>
+                                @if (_selectedEquipment.Status == EquipmentStatus.InCalibration)
+                                {
+                                    <span class="trac-badge trac-badge-warning">Em Calibração</span>
+                                }
+                                else if (_selectedEquipment.Status == EquipmentStatus.Calibrated)
+                                {
+                                    <span class="trac-badge trac-badge-success">Calibrado</span>
+                                }
+                                else if (_selectedEquipment.Status == EquipmentStatus.Approved)
+                                {
+                                    <span class="trac-badge trac-badge-info">Aprovado</span>
+                                }
+                                else
+                                {
+                                    <span class="trac-badge trac-badge-neutral">@_selectedEquipment.Status</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">INTERVALO DE CALIBRAÇÃO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedEquipment.CalibrationIntervalMonths meses</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">ÚLTIMA CALIBRAÇÃO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@(_selectedEquipment.LastCalibrationDate?.ToString("dd/MM/yyyy") ?? "Não realizada")</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">PRÓXIMO VENCIMENTO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@(_selectedEquipment.NextCalibrationDue?.ToString("dd/MM/yyyy") ?? "-")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de todos os certificados emitidos para este equipamento -->
+            <div class="trac-card">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                        Certificados de Calibração Emitidos
+                    </span>
+                    <span class="trac-badge trac-badge-neutral">@_equipmentCertificates.Count certificados registrados</span>
+                </div>
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Nº Certificado</th>
+                                    <th>Data Ensaio</th>
+                                    <th>Data Emissão</th>
+                                    <th>Vol. Nominal</th>
+                                    <th>Erro Sistemático</th>
+                                    <th>Incerteza U (k=2)</th>
+                                    <th>Resultado</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_equipmentCertificates.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center p-4 text-muted">
+                                            Nenhum certificado metrológico emitido até o momento para este equipamento.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var cert in _equipmentCertificates)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="trac-mono" style="color: var(--trac-brand-primary);">@cert.CertificateNumber</strong>
+                                            </td>
+                                            <td class="trac-mono">@cert.CalibrationDate.ToString("dd/MM/yyyy")</td>
+                                            <td class="trac-mono">@cert.IssueDate.ToString("dd/MM/yyyy")</td>
+                                            <td class="trac-mono">@cert.NominalVolume mL</td>
+                                            <td class="trac-mono">@cert.SystematicError.ToString("+0.0000;-0.0000;0.0000") mL</td>
+                                            <td class="trac-mono">&plusmn;@cert.ExpandedUncertainty.ToString("0.0000") mL</td>
+                                            <td>
+                                                @if (cert.Result == CalibrationResult.Conforming)
+                                                {
+                                                    <span class="trac-badge trac-badge-success">Conforme</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="trac-badge trac-badge-danger">Não Conforme</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (cert.Status == CertificateStatus.Issued)
+                                                {
+                                                    <span class="trac-badge trac-badge-success">Emitido</span>
+                                                }
+                                                else if (cert.Status == CertificateStatus.Draft)
+                                                {
+                                                    <span class="trac-badge trac-badge-warning">Rascunho</span>
+                                                }
+                                                else if (cert.Status == CertificateStatus.Superseded)
+                                                {
+                                                    <span class="trac-badge trac-badge-neutral">Substituído</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="trac-badge trac-badge-neutral">@cert.Status</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="@(() => Navigation.NavigateTo($"/certificado?id={cert.Id}"))">
+                                                    Ver Certificado &rarr;
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_selectedStandard != null)
+    {
+        <!-- ========================================================================= -->
+        <!-- Visualização Completa de Padrão do Laboratório (R4, R5)                   -->
+        <!-- ========================================================================= -->
+        <div class="mb-4">
+            <!-- Barra Superior de Navegação e Ações RBAC -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+                <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="BackToList">
+                    &larr; Voltar para Lista de Padrões RBC
+                </button>
+
+                <div class="d-flex align-items-center gap-2">
+                    @if (IsSupervisor)
+                    {
+                        <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="OpenEditStandardModal">
+                            Editar Padrão
+                        </button>
+                        <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="OpenSendToCalibrationModal">
+                            Enviar para Calibração
+                        </button>
+                        <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="OpenRegisterCertModal">
+                            Novo Certificado
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="trac-btn trac-btn-secondary trac-btn-sm" disabled title="Disponível apenas para perfil Supervisor" style="opacity: 0.6; cursor: not-allowed;">
+                            Editar Padrão
+                        </button>
+                        <button class="trac-btn trac-btn-secondary trac-btn-sm" disabled title="Disponível apenas para perfil Supervisor" style="opacity: 0.6; cursor: not-allowed;">
+                            Enviar para Calibração
+                        </button>
+                        <button class="trac-btn trac-btn-primary trac-btn-sm" disabled title="Disponível apenas para perfil Supervisor" style="opacity: 0.6; cursor: not-allowed;">
+                            Novo Certificado
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Banner Informativo RBAC quando Técnico -->
+            @if (!IsSupervisor)
+            {
+                <div class="p-3 mb-3 d-flex align-items-center gap-2" style="background-color: var(--trac-status-warning-bg); border: 1px solid var(--trac-status-warning-border); border-radius: var(--trac-radius-md); color: var(--trac-status-warning-text);">
+                    <svg style="width: 18px; height: 18px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span style="font-size: 0.875rem;">
+                        <strong>Perfil Técnico:</strong> Visualização habilitada para consulta técnica e rastreabilidade metrológica. As ações de edição, envio para calibração externa e cadastro de novos certificados são restritas ao perfil <strong>Supervisor</strong>.
+                    </span>
+                </div>
+            }
+
+            <!-- 1. Especificações Técnicas do Padrão -->
+            <div class="trac-card mb-4">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--trac-text-primary); margin: 0;">
+                            <span class="trac-mono" style="color: var(--trac-brand-primary);">@_selectedStandard.LabTag</span> &bull; @_selectedStandard.Name
+                        </h2>
+                        <div style="font-size: 0.8125rem; color: var(--trac-text-muted);">
+                            Papel Metrológico: <span class="trac-badge trac-badge-neutral">@GetStandardRoleDisplayName(_selectedStandard.Role)</span>
+                        </div>
+                    </div>
+                    <div>
+                        @if (_selectedStandard.Status == StandardEquipmentStatus.InCalibration)
+                        {
+                            <span class="trac-badge trac-badge-warning">Em Calibração Externa</span>
+                        }
+                        else if (_selectedStandard.DaysUntilExpiry <= 7)
+                        {
+                            <span class="trac-badge trac-badge-danger">Crítico (@_selectedStandard.DaysUntilExpiry d)</span>
+                        }
+                        else if (_selectedStandard.DaysUntilExpiry <= 30)
+                        {
+                            <span class="trac-badge trac-badge-warning">Alerta (@_selectedStandard.DaysUntilExpiry d)</span>
+                        }
+                        else
+                        {
+                            <span class="trac-badge trac-badge-success">Calibrado / Vigente</span>
+                        }
+                    </div>
+                </div>
+                <div class="trac-card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TAG LAB</div>
+                            <div class="trac-mono" style="font-weight: 700; color: var(--trac-brand-primary);">@_selectedStandard.LabTag</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TIPO DE INSTRUMENTO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedStandard.InstrumentType</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">FABRICANTE / MODELO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedStandard.Manufacturer @_selectedStandard.Model</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">Nº DE SÉRIE</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedStandard.SerialNumber</div>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">FAIXA DE MEDIÇÃO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedStandard.RangeMin a @_selectedStandard.RangeMax</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">RESOLUÇÃO / DIVISÃO (d)</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedStandard.Resolution</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">INCERTEZA EXPANDIDA U (k=@_selectedStandard.CoverageFactor)</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">&plusmn;@_selectedStandard.ExpandedUncertainty</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">ERRO / CORREÇÃO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">Erro: @_selectedStandard.Error | Corr: @_selectedStandard.Correction</div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">LOCALIZAÇÃO FÍSICA NO LABORATÓRIO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedStandard.CurrentLocation</div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">LABORATÓRIO CALIBRADOR ACREDITADO</div>
+                            <div style="color: var(--trac-text-primary);">@_selectedStandard.CalibratingLaboratory</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Certificado Vigente Card -->
+            <div class="trac-card mb-4" style="border-left: 4px solid var(--trac-brand-primary);">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                        Certificado RBC Vigente (ISO/IEC 17025 item 6.4.13)
+                    </span>
+                    <div>
+                        @if (_selectedStandard.DaysUntilExpiry <= 7)
+                        {
+                            <span class="trac-badge trac-badge-danger">Vencimento Crítico (@_selectedStandard.DaysUntilExpiry dias restantes)</span>
+                        }
+                        else if (_selectedStandard.DaysUntilExpiry <= 30)
+                        {
+                            <span class="trac-badge trac-badge-warning">Alerta de Vencimento (@_selectedStandard.DaysUntilExpiry dias restantes)</span>
+                        }
+                        else
+                        {
+                            <span class="trac-badge trac-badge-success">Certificado Vigente (@_selectedStandard.DaysUntilExpiry dias restantes)</span>
+                        }
+                    </div>
+                </div>
+                <div class="trac-card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">Nº CERTIFICADO RBC</div>
+                            <div class="trac-mono" style="font-size: 1.125rem; font-weight: 700; color: var(--trac-brand-primary);">
+                                @_selectedStandard.CalibrationCertificateNumber
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">LABORATÓRIO EMISSOR ACREDITADO</div>
+                            <div style="font-weight: 600; color: var(--trac-text-primary);">@_selectedStandard.CalibratingLaboratory</div>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">DATA DA CALIBRAÇÃO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">@_selectedStandard.LastCalibrationDate.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">VÁLIDO ATÉ</div>
+                            <div class="trac-mono" style="font-weight: 700; color: @(_selectedStandard.DaysUntilExpiry <= 30 ? "var(--trac-warning-600)" : "var(--trac-text-primary)");">
+                                @_selectedStandard.CalibrationDueDate.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Histórico de Certificados de Calibração -->
+            <div class="trac-card mb-4">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                        Histórico de Certificados do Padrão
+                    </span>
+                    <span class="trac-badge trac-badge-neutral">@_standardCertificates.Count certificados registrados</span>
+                </div>
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Nº Certificado RBC</th>
+                                    <th>Laboratório Calibrador</th>
+                                    <th>Data Calibração</th>
+                                    <th>Vencimento</th>
+                                    <th>Faixa Acreditada</th>
+                                    <th>Incerteza U (k=2)</th>
+                                    <th>Erro / Correção</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_standardCertificates.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="8" class="text-center p-4 text-muted">
+                                            Nenhum certificado registrado no histórico deste padrão.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var c in _standardCertificates)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="trac-mono" style="color: var(--trac-brand-primary);">@c.CertificateNumber</strong>
+                                            </td>
+                                            <td>@c.CalibratingLaboratory</td>
+                                            <td class="trac-mono">@c.CalibrationDate.ToString("dd/MM/yyyy")</td>
+                                            <td class="trac-mono">@c.CalibrationDueDate.ToString("dd/MM/yyyy")</td>
+                                            <td class="trac-mono">@c.CalibrationRangeMin a @c.CalibrationRangeMax</td>
+                                            <td class="trac-mono">&plusmn;@c.ExpandedUncertainty</td>
+                                            <td class="trac-mono">@c.Error / @c.Correction</td>
+                                            <td>
+                                                @if (c.IsActive)
+                                                {
+                                                    @if (c.DaysUntilExpiry <= 7)
+                                                    {
+                                                        <span class="trac-badge trac-badge-danger">Vigente (Crítico)</span>
+                                                    }
+                                                    else if (c.DaysUntilExpiry <= 30)
+                                                    {
+                                                        <span class="trac-badge trac-badge-warning">Vigente (Alerta)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="trac-badge trac-badge-success">Vigente</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="trac-badge trac-badge-neutral">Substituído</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Histórico de Calibrações Utilizadas -->
+            <div class="trac-card">
+                <div class="trac-card-header d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
+                        Histórico de Calibrações Utilizadas (Rastreabilidade em Clientes)
+                    </span>
+                    <span class="trac-badge trac-badge-info">@_standardUsages.Count ensaios realizados</span>
+                </div>
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Data do Ensaio</th>
+                                    <th>Nº Certificado</th>
+                                    <th>Cliente</th>
+                                    <th>Instrumento Calibrado</th>
+                                    <th>Volume Nominal</th>
+                                    <th>Técnico Responsável</th>
+                                    <th>Status Certificado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_standardUsages.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center p-4 text-muted">
+                                            Nenhum ensaio registrado com este instrumento padrão até o momento.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var u in _standardUsages)
+                                    {
+                                        <tr>
+                                            <td class="trac-mono">@u.CalibrationDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                            <td>
+                                                <strong class="trac-mono" style="color: var(--trac-brand-primary);">@u.CertificateNumberIssued</strong>
+                                            </td>
+                                            <td style="font-weight: 600;">@u.CustomerName</td>
+                                            <td>
+                                                <span class="trac-mono">@u.EquipmentTag</span> - @u.EquipmentDescription
+                                            </td>
+                                            <td class="trac-mono">@u.NominalVolume @u.Unit</td>
+                                            <td>@u.TechnicianName</td>
+                                            <td>
+                                                <span class="trac-badge trac-badge-success">@u.CertificateStatus</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Tabs Navigation -->
+        <div class="trac-tabs">
+            <button class="trac-tab-btn @(_activeTab == "clients" ? "active" : "")" @onclick="@(() => SetTab("clients"))">
+                Clientes (@_clients.Count)
+            </button>
+            <button class="trac-tab-btn @(_activeTab == "equipment" ? "active" : "")" @onclick="@(() => SetTab("equipment"))">
+                Equipamentos dos Clientes (@_equipments.Count)
+            </button>
+            <button class="trac-tab-btn @(_activeTab == "standards" ? "active" : "")" @onclick="@(() => SetTab("standards"))">
+                Instrumentos Padrão RBC (@_standards.Count)
+            </button>
+        </div>
+
+        <!-- Tab 1: Clientes -->
+        @if (_activeTab == "clients")
+        {
+            <div class="trac-card">
+                <div class="trac-card-header">
+                    <div class="d-flex align-items-center gap-2" style="max-width: 400px; width: 100%;">
+                        <input type="text" class="trac-input" placeholder="Buscar por Razão Social, CNPJ ou Cidade..." 
+                               @bind="_searchClient" @bind:event="oninput" @bind:after="FilterClients" />
+                    </div>
+                    <span class="trac-badge trac-badge-neutral">@_filteredClients.Count clientes encontrados</span>
+                </div>
+
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Razão Social</th>
+                                    <th>CNPJ</th>
+                                    <th>Localidade</th>
+                                    <th>Contato / Responsável</th>
+                                    <th>E-mail</th>
+                                    <th>Telefone</th>
+                                    <th class="text-center">Ativos</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var cli in _filteredClients)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong style="color: var(--trac-text-primary); cursor: pointer;" @onclick="@(() => ViewClientDetails(cli))">@cli.Name</strong>
+                                        </td>
+                                        <td class="trac-mono">@cli.TaxId</td>
+                                        <td>@cli.City - @cli.State</td>
+                                        <td>@cli.ContactPerson</td>
+                                        <td><a href="mailto:@cli.Email" style="color: var(--trac-brand-primary); text-decoration: none;">@cli.Email</a></td>
+                                        <td class="trac-mono">@cli.Phone</td>
+                                        <td class="text-center">
+                                            <span class="trac-badge trac-badge-info">@cli.ActiveEquipmentCount itens</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" @onclick="@(() => ViewClientDetails(cli))">
+                                                Ficha &rarr;
+                                            </button>
+                                            <button class="trac-btn trac-btn-outline trac-btn-sm" @onclick="@(() => ViewClientEquipment(cli.Id))">
+                                                Equipamentos
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Tab 2: Equipamentos dos Clientes -->
+        @if (_activeTab == "equipment")
+        {
+            <div class="trac-card">
+                <div class="trac-card-header">
+                    <div class="d-flex align-items-center gap-2" style="max-width: 400px; width: 100%;">
+                        <input type="text" class="trac-input" placeholder="Buscar por Tag, Descrição ou Cliente..." 
+                               @bind="_searchEquipment" @bind:event="oninput" @bind:after="FilterEquipment" />
+                    </div>
+                    <span class="trac-badge trac-badge-neutral">@_filteredEquipments.Count equipamentos</span>
+                </div>
+
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag Lab</th>
+                                    <th>Descrição do Equipamento</th>
+                                    <th>Proprietário (Cliente)</th>
+                                    <th>Capacidade</th>
+                                    <th>Classe / Tolerância (EMA)</th>
+                                    <th>Status Atual</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var eq in _filteredEquipments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong class="trac-mono" style="color: var(--trac-brand-primary); cursor: pointer;" @onclick="@(() => ViewEquipmentDetails(eq))">@eq.LabTag</strong>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 600; cursor: pointer;" @onclick="@(() => ViewEquipmentDetails(eq))">@eq.Description</div>
+                                            <div style="font-size: 0.75rem; color: var(--trac-text-muted);">@eq.Manufacturer @eq.Model (S/N: @eq.SerialNumber)</div>
+                                        </td>
+                                        <td>@eq.ClientName</td>
+                                        <td class="trac-mono">@eq.NominalCapacity @eq.Unit</td>
+                                        <td>
+                                            <div>@eq.AccuracyClass</div>
+                                            <div class="trac-mono" style="font-size: 0.75rem; color: var(--trac-text-muted);">EMA: &plusmn;@eq.MaxPermissibleError @eq.Unit</div>
+                                        </td>
+                                        <td>
+                                            @if (eq.Status == EquipmentStatus.InCalibration)
+                                            {
+                                                <span class="trac-badge trac-badge-warning">Em Calibração</span>
+                                            }
+                                            else if (eq.Status == EquipmentStatus.Calibrated)
+                                            {
+                                                <span class="trac-badge trac-badge-success">Calibrado</span>
+                                            }
+                                            else if (eq.Status == EquipmentStatus.Approved)
+                                            {
+                                                <span class="trac-badge trac-badge-info">Aprovado p/ Ensaio</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="trac-badge trac-badge-neutral">@eq.Status</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" @onclick="@(() => ViewEquipmentDetails(eq))">
+                                                Detalhes &rarr;
+                                            </button>
+                                            <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="@(() => CalibrateEquipment(eq.LabTag))">
+                                                Calibrar &rarr;
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Tab 3: Instrumentos Padrão do Laboratório (ISO 17025 6.4.13) -->
+        @if (_activeTab == "standards")
+        {
+            <div class="trac-card">
+                <div class="trac-card-header">
+                    <div class="d-flex align-items-center gap-2" style="max-width: 400px; width: 100%;">
+                        <input type="text" class="trac-input" placeholder="Buscar padrão por Tag, Nome ou Certificado..." 
+                               @bind="_searchStandard" @bind:event="oninput" @bind:after="FilterStandards" />
+                    </div>
+                    <span class="trac-badge trac-badge-neutral">@_filteredStandards.Count padrões RBC</span>
+                </div>
+
+                <div class="trac-card-body p-0">
+                    <div class="trac-table-container" style="border: none; border-radius: 0;">
+                        <table class="trac-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag Lab</th>
+                                    <th>Instrumento Padrão</th>
+                                    <th>Papel</th>
+                                    <th>Resolução</th>
+                                    <th>Certificado RBC</th>
+                                    <th>Laboratório Emissor</th>
+                                    <th>Vencimento</th>
+                                    <th>Incerteza U (k=2)</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var std in _filteredStandards)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong class="trac-mono" style="color: var(--trac-brand-primary); cursor: pointer;" @onclick="@(() => ViewStandardDetails(std))">@std.LabTag</strong>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 600; cursor: pointer;" @onclick="@(() => ViewStandardDetails(std))">@std.Name</div>
+                                            <div style="font-size: 0.75rem; color: var(--trac-text-muted);">@std.Manufacturer @std.Model (S/N: @std.SerialNumber)</div>
+                                        </td>
+                                        <td>
+                                            <span class="trac-badge trac-badge-neutral">@GetStandardRoleDisplayName(std.Role)</span>
+                                        </td>
+                                        <td class="trac-mono">@std.Resolution</td>
+                                        <td class="trac-mono">@std.CalibrationCertificateNumber</td>
+                                        <td>@std.CalibratingLaboratory</td>
+                                        <td class="trac-mono">@std.CalibrationDueDate.ToString("dd/MM/yyyy")</td>
+                                        <td class="trac-mono">&plusmn;@std.ExpandedUncertainty</td>
+                                        <td>
+                                            @if (std.DaysUntilExpiry <= 7)
+                                            {
+                                                <span class="trac-badge trac-badge-danger">Crítico (@std.DaysUntilExpiry d)</span>
+                                            }
+                                            else if (std.DaysUntilExpiry <= 30)
+                                            {
+                                                <span class="trac-badge trac-badge-warning">Alerta (@std.DaysUntilExpiry d)</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="trac-badge trac-badge-success">Calibrado</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="@(() => ViewStandardDetails(std))">
+                                                Ver Padrão &rarr;
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- ========================================================================= -->
+<!-- Modais de Cadastro (List View)                                            -->
+<!-- ========================================================================= -->
+
+<!-- Modal 1: Novo Cliente -->
+@if (_showClientModal)
+{
+    <div class="trac-modal-overlay" @onclick="CloseClientModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Cadastrar Novo Cliente</h3>
+                <button class="trac-btn-icon" @onclick="CloseClientModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                <form @onsubmit="SaveClient">
+                    <div class="trac-form-group">
+                        <label class="trac-label">Razão Social *</label>
+                        <input type="text" class="trac-input" @bind="_newClient.Name" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">CNPJ *</label>
+                            <input type="text" class="trac-input trac-mono" placeholder="00.000.000/0000-00" @bind="_newClient.TaxId" required />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Pessoa de Contato</label>
+                            <input type="text" class="trac-input" @bind="_newClient.ContactPerson" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">E-mail</label>
+                            <input type="email" class="trac-input" @bind="_newClient.Email" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Telefone</label>
+                            <input type="text" class="trac-input trac-mono" @bind="_newClient.Phone" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-8 mb-2">
+                            <label class="trac-label">Endereço</label>
+                            <input type="text" class="trac-input" @bind="_newClient.Street" />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Cidade / UF</label>
+                            <input type="text" class="trac-input" placeholder="São Paulo / SP" @bind="_newClient.City" />
+                        </div>
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseClientModal">Cancelar</button>
+                        <button type="submit" class="trac-btn trac-btn-primary">Salvar Cliente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal 2: Novo Equipamento -->
+@if (_showEquipmentModal)
+{
+    <div class="trac-modal-overlay" @onclick="CloseEquipmentModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Cadastrar Equipamento do Cliente</h3>
+                <button class="trac-btn-icon" @onclick="CloseEquipmentModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                <form @onsubmit="SaveEquipment">
+                    <div class="trac-form-group">
+                        <label class="trac-label">Cliente Proprietário *</label>
+                        <select class="trac-select" @bind="_newEquipment.ClientId" required>
+                            <option value="">Selecione um cliente...</option>
+                            @foreach (var c in _clients)
+                            {
+                                <option value="@c.Id">@c.Name (@c.TaxId)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Tag do Laboratório *</label>
+                            <input type="text" class="trac-input trac-mono" placeholder="BAL-CLI-005" @bind="_newEquipment.LabTag" required />
+                        </div>
+                        <div class="col-12 col-md-8 mb-2">
+                            <label class="trac-label">Descrição do Equipamento *</label>
+                            <input type="text" class="trac-input" placeholder="Balão Volumétrico 100 mL" @bind="_newEquipment.Description" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Fabricante</label>
+                            <input type="text" class="trac-input" @bind="_newEquipment.Manufacturer" />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Modelo</label>
+                            <input type="text" class="trac-input" @bind="_newEquipment.Model" />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Nº de Série</label>
+                            <input type="text" class="trac-input trac-mono" @bind="_newEquipment.SerialNumber" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Capacidade Nominal *</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_newEquipment.NominalCapacity" required />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Unidade</label>
+                            <select class="trac-select" @bind="_newEquipment.Unit">
+                                <option value="mL">mL</option>
+                                <option value="µL">µL</option>
+                                <option value="L">L</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Tolerância EMA (&plusmn;)</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_newEquipment.MaxPermissibleError" required />
+                        </div>
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseEquipmentModal">Cancelar</button>
+                        <button type="submit" class="trac-btn trac-btn-primary">Salvar Equipamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal 3: Novo Padrão RBC (2 Etapas) -->
+@if (_showStandardModal)
+{
+    <div class="trac-modal-overlay" @onclick="CloseStandardModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <div>
+                    <h3 class="trac-modal-title">Cadastrar Instrumento Padrão RBC (ISO 17025 6.4.13)</h3>
+                    <div style="font-size: 0.75rem; color: var(--trac-text-muted);">
+                        @(_standardStep == 1 ? "Etapa 1 de 2: Ativo Físico e Dados Metrológicos" : "Etapa 2 de 2: Certificado RBC e Rastreabilidade")
+                    </div>
+                </div>
+                <button class="trac-btn-icon" @onclick="CloseStandardModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                @if (_standardStep == 1)
+                {
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Tag do Laboratório *</label>
+                            <input type="text" class="trac-input trac-mono" placeholder="PAD-BAL-02" @bind="_newStandard.LabTag" required />
+                        </div>
+                        <div class="col-12 col-md-8 mb-2">
+                            <label class="trac-label">Nome do Instrumento *</label>
+                            <input type="text" class="trac-input" placeholder="Balança Analítica 220g" @bind="_newStandard.Name" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Papel Metrológico *</label>
+                            <select class="trac-select" @bind="_newStandard.Role">
+                                <option value="@StandardRole.Balance">Balança Analítica</option>
+                                <option value="@StandardRole.LiquidThermometer">Termômetro de Imersão (Água)</option>
+                                <option value="@StandardRole.Barometer">Barômetro</option>
+                                <option value="@StandardRole.ThermoHygrometer">Termo-Higrômetro</option>
+                                <option value="@StandardRole.ReferenceWeights">Pesos Padrão</option>
+                                <option value="@StandardRole.Pycnometer">Picnômetro</option>
+                                <option value="@StandardRole.AmbientThermometer">Termômetro Ambiente</option>
+                                <option value="@StandardRole.Hygrometer">Higrômetro</option>
+                                <option value="@StandardRole.Other">Densímetro Digital / Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Resolução / Divisão (d)</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_newStandard.Resolution" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Fabricante</label>
+                            <input type="text" class="trac-input" @bind="_newStandard.Manufacturer" />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Modelo</label>
+                            <input type="text" class="trac-input" @bind="_newStandard.Model" />
+                        </div>
+                        <div class="col-12 col-md-4 mb-2">
+                            <label class="trac-label">Nº de Série</label>
+                            <input type="text" class="trac-input trac-mono" @bind="_newStandard.SerialNumber" />
+                        </div>
+                    </div>
+                    <div class="trac-form-group">
+                        <label class="trac-label">Localização Física no Laboratório</label>
+                        <input type="text" class="trac-input" placeholder="Sala de Calibração - Bancada 01" @bind="_newStandard.CurrentLocation" />
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseStandardModal">Cancelar</button>
+                        <button type="button" class="trac-btn trac-btn-primary" @onclick="@(() => _standardStep = 2)">
+                            Avançar para Certificado RBC &rarr;
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Nº Certificado RBC *</label>
+                            <input type="text" class="trac-input trac-mono" placeholder="CAL-RBC-2026-9901" @bind="_newStandard.CalibrationCertificateNumber" required />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Laboratório Calibrador Acreditado *</label>
+                            <input type="text" class="trac-input" placeholder="IPT / Ipem-SP / DIMCI" @bind="_newStandard.CalibratingLaboratory" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Data da Calibração *</label>
+                            <input type="date" class="trac-input" @bind="_newStandard.LastCalibrationDate" required />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Data de Vencimento *</label>
+                            <input type="date" class="trac-input" @bind="_newStandard.CalibrationDueDate" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Incerteza Expandida U</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_newStandard.ExpandedUncertainty" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Fator de Abrangência k</label>
+                            <input type="number" step="0.01" class="trac-input trac-mono" @bind="_newStandard.CoverageFactor" />
+                        </div>
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="@(() => _standardStep = 1)">&larr; Voltar</button>
+                        <button type="button" class="trac-btn trac-btn-primary" @onclick="SaveStandard">Salvar Padrão RBC</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ========================================================================= -->
+<!-- Modais de Ações de Padrão (Full View: Editar, Enviar, Novo Certificado)   -->
+<!-- ========================================================================= -->
+
+<!-- Modal: Editar Padrão -->
+@if (_showEditStandardModal && _selectedStandard != null)
+{
+    <div class="trac-modal-overlay" @onclick="CloseEditStandardModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Editar Padrão: @_selectedStandard.LabTag</h3>
+                <button class="trac-btn-icon" @onclick="CloseEditStandardModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                @if (!string.IsNullOrEmpty(_standardErrorMessage))
+                {
+                    <div class="alert alert-danger py-2 mb-3" role="alert" style="font-size: 0.85rem;">
+                        @_standardErrorMessage
+                    </div>
+                }
+                <form @onsubmit="SaveEditStandard">
+                    <div class="trac-form-group">
+                        <label class="trac-label">Nome do Instrumento *</label>
+                        <input type="text" class="trac-input" @bind="_selectedStandard.Name" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Função / Papel Metrológico *</label>
+                            <select class="trac-select" @bind="_selectedStandard.Role">
+                                <option value="@StandardRole.Balance">Balança Analítica</option>
+                                <option value="@StandardRole.LiquidThermometer">Termômetro de Imersão (Água)</option>
+                                <option value="@StandardRole.Barometer">Barômetro</option>
+                                <option value="@StandardRole.ThermoHygrometer">Termo-Higrômetro</option>
+                                <option value="@StandardRole.AmbientThermometer">Termômetro Ambiente</option>
+                                <option value="@StandardRole.Hygrometer">Higrômetro</option>
+                                <option value="@StandardRole.Pycnometer">Picnômetro</option>
+                                <option value="@StandardRole.ReferenceWeights">Pesos Padrão</option>
+                                <option value="@StandardRole.Other">Densímetro Digital / Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Tipo de Instrumento</label>
+                            <input type="text" class="trac-input" @bind="_selectedStandard.InstrumentType" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Fabricante</label>
+                            <input type="text" class="trac-input" @bind="_selectedStandard.Manufacturer" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Modelo</label>
+                            <input type="text" class="trac-input" @bind="_selectedStandard.Model" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Nº de Série</label>
+                            <input type="text" class="trac-input trac-mono" @bind="_selectedStandard.SerialNumber" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Resolução / Divisão (d)</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_selectedStandard.Resolution" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Mínima</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_selectedStandard.RangeMin" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Máxima</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_selectedStandard.RangeMax" />
+                        </div>
+                    </div>
+                    <div class="trac-form-group">
+                        <label class="trac-label">Localização Física no Laboratório</label>
+                        <input type="text" class="trac-input" @bind="_selectedStandard.CurrentLocation" />
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseEditStandardModal">Cancelar</button>
+                        <button type="submit" class="trac-btn trac-btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Enviar para Calibração Externa -->
+@if (_showSendToCalibrationModal && _selectedStandard != null)
+{
+    <div class="trac-modal-overlay" @onclick="CloseSendToCalibrationModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Enviar Padrão para Calibração Externa</h3>
+                <button class="trac-btn-icon" @onclick="CloseSendToCalibrationModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                <form @onsubmit="ConfirmSendToCalibration">
+                    <p style="font-size: 0.875rem; color: var(--trac-text-secondary);">
+                        Registrar envio do padrão <strong class="trac-mono">@_selectedStandard.LabTag</strong> (@_selectedStandard.Name) para calibração acreditada RBC/Inmetro. O status do padrão será atualizado para <strong>Em Calibração</strong>.
+                    </p>
+                    <div class="trac-form-group">
+                        <label class="trac-label">Laboratório Acreditado Executor *</label>
+                        <input type="text" class="trac-input" placeholder="ex: IPT - Divisão de Térmica (RBC CAL-001)" @bind="_sendCalibLab" required />
+                    </div>
+                    <div class="trac-form-group">
+                        <label class="trac-label">Data Prevista de Retorno *</label>
+                        <input type="date" class="trac-input" @bind="_sendCalibReturnDate" required />
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseSendToCalibrationModal">Cancelar</button>
+                        <button type="submit" class="trac-btn trac-btn-warning">Confirmar Envio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Novo Certificado RBC para o Padrão -->
+@if (_showRegisterCertModal && _selectedStandard != null)
+{
+    <div class="trac-modal-overlay" @onclick="CloseRegisterCertModal">
+        <div class="trac-modal" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Registrar Novo Certificado RBC</h3>
+                <button class="trac-btn-icon" @onclick="CloseRegisterCertModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                <form @onsubmit="SaveNewStandardCertificate">
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Nº do Certificado RBC *</label>
+                            <input type="text" class="trac-input trac-mono" placeholder="CAL-RBC-2026-9901" @bind="_newStandardCert.CertificateNumber" required />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Laboratório Calibrador Acreditado *</label>
+                            <input type="text" class="trac-input" placeholder="IPT / Ipem-SP / DIMCI" @bind="_newStandardCert.CalibratingLaboratory" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Data da Calibração *</label>
+                            <input type="date" class="trac-input" @bind="_newStandardCert.CalibrationDate" required />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Data de Vencimento *</label>
+                            <input type="date" class="trac-input" @bind="_newStandardCert.CalibrationDueDate" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Mínima Acreditada</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_newStandardCert.CalibrationRangeMin" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Máxima Acreditada</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" @bind="_newStandardCert.CalibrationRangeMax" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Incerteza Expandida U</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_newStandardCert.ExpandedUncertainty" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Fator de Abrangência k</label>
+                            <input type="number" step="0.01" class="trac-input trac-mono" @bind="_newStandardCert.CoverageFactor" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Erro Sistemático</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_newStandardCert.Error" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Correção Metrológica</label>
+                            <input type="number" step="0.000001" class="trac-input trac-mono" @bind="_newStandardCert.Correction" />
+                        </div>
+                    </div>
+                    <div class="form-check mt-2 mb-3">
+                        <input class="form-check-input" type="checkbox" id="chkActive" @bind="_newStandardCert.IsActive" />
+                        <label class="form-check-label trac-label" for="chkActive">
+                            Definir este certificado como vigente para o instrumento padrão
+                        </label>
+                    </div>
+                    <div class="trac-modal-footer mt-3">
+                        <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseRegisterCertModal">Cancelar</button>
+                        <button type="submit" class="trac-btn trac-btn-primary">Salvar e Ativar Certificado</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? QueryTab { get; set; }
+
+    [SupplyParameterFromQuery(Name = "id")]
+    public string? QueryId { get; set; }
+
+    private string _activeTab = "clients";
+    private List<ClientDto> _clients = new();
+    private List<ClientDto> _filteredClients = new();
+    private List<ClientEquipmentDto> _equipments = new();
+    private List<ClientEquipmentDto> _filteredEquipments = new();
+    private List<StandardEquipmentDto> _standards = new();
+    private List<StandardEquipmentDto> _filteredStandards = new();
+
+    private string _searchClient = "";
+    private string _searchEquipment = "";
+    private string _searchStandard = "";
+
+    // Selected items for Full Views (R4)
+    private ClientDto? _selectedClient;
+    private ClientEquipmentDto? _selectedEquipment;
+    private StandardEquipmentDto? _selectedStandard;
+
+    // Full View Data
+    private List<ClientEquipmentDto> _selectedClientEquipments = new();
+    private List<ClientEquipmentDto> _filteredClientEquipments = new();
+    private string _equipmentFilter = string.Empty;
+
+    private List<CertificateDto> _equipmentCertificates = new();
+    private List<StandardCertificateDto> _standardCertificates = new();
+    private List<StandardCalibrationUsageDto> _standardUsages = new();
+
+    // Standard Action Modals (R3, R4)
+    private bool _showEditStandardModal = false;
+    private bool _showSendToCalibrationModal = false;
+    private string _sendCalibLab = string.Empty;
+    private DateTime _sendCalibReturnDate = DateTime.UtcNow.AddDays(30);
+
+    private bool _showRegisterCertModal = false;
+    private StandardCertificateDto _newStandardCert = new();
+
+    // Creation Modals state
+    private bool _showClientModal = false;
+    private ClientDto _newClient = new();
+
+    private bool _showEquipmentModal = false;
+    private ClientEquipmentDto _newEquipment = new();
+
+    private bool _showStandardModal = false;
+    private int _standardStep = 1;
+    private StandardEquipmentDto _newStandard = new()
+    {
+        LastCalibrationDate = DateTime.UtcNow,
+        CalibrationDueDate = DateTime.UtcNow.AddYears(1)
+    };
+
+    private bool IsSupervisor => UserContext.CurrentUser.Role == UserRole.Supervisor;
+    private bool IsTecnico => UserContext.CurrentUser.Role == UserRole.Tecnico;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserContext.OnUserChanged += OnUserChanged;
+        await LoadDataAsync();
+    }
+
+    private void OnUserChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        UserContext.OnUserChanged -= OnUserChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(QueryTab))
+        {
+            _activeTab = QueryTab.ToLowerInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(QueryId))
+        {
+            await HandleQueryIdAsync(QueryId);
+        }
+    }
+
+    private async Task HandleQueryIdAsync(string queryId)
+    {
+        if (_activeTab == "standards")
+        {
+            var std = _standards.FirstOrDefault(s =>
+                s.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+                s.LabTag.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+            if (std != null)
+            {
+                await ViewStandardDetails(std);
+                return;
+            }
+        }
+        else if (_activeTab == "equipment")
+        {
+            var eq = _equipments.FirstOrDefault(e =>
+                e.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+                e.LabTag.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+            if (eq != null)
+            {
+                await ViewEquipmentDetails(eq);
+                return;
+            }
+        }
+        else if (_activeTab == "clients")
+        {
+            var cli = _clients.FirstOrDefault(c =>
+                c.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+                c.TaxId.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+            if (cli != null)
+            {
+                ViewClientDetails(cli);
+                return;
+            }
+        }
+
+        // Fallback global search
+        var stdFallback = _standards.FirstOrDefault(s =>
+            s.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+            s.LabTag.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+        if (stdFallback != null)
+        {
+            await ViewStandardDetails(stdFallback);
+            return;
+        }
+
+        var eqFallback = _equipments.FirstOrDefault(e =>
+            e.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+            e.LabTag.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+        if (eqFallback != null)
+        {
+            await ViewEquipmentDetails(eqFallback);
+            return;
+        }
+
+        var cliFallback = _clients.FirstOrDefault(c =>
+            c.Id.Equals(queryId, StringComparison.OrdinalIgnoreCase) ||
+            c.TaxId.Equals(queryId, StringComparison.OrdinalIgnoreCase));
+        if (cliFallback != null)
+        {
+            ViewClientDetails(cliFallback);
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _clients = await DataService.GetClientsAsync();
+        _filteredClients = _clients;
+
+        _equipments = await DataService.GetClientEquipmentAsync();
+        _filteredEquipments = _equipments;
+
+        _standards = await DataService.GetStandardEquipmentAsync();
+        _filteredStandards = _standards;
+
+        if (_selectedClient != null)
+        {
+            _selectedClientEquipments = _equipments.Where(e => e.ClientId == _selectedClient.Id).ToList();
+            FilterCustomerEquipment();
+        }
+    }
+
+    private void SetTab(string tab)
+    {
+        _activeTab = tab;
+        _selectedClient = null;
+        _selectedEquipment = null;
+        _selectedStandard = null;
+    }
+
+    private void FilterClients()
+    {
+        if (string.IsNullOrWhiteSpace(_searchClient))
+        {
+            _filteredClients = _clients;
+            return;
+        }
+        _filteredClients = _clients.Where(c => c.Name.Contains(_searchClient, StringComparison.OrdinalIgnoreCase) ||
+                                               c.TaxId.Contains(_searchClient, StringComparison.OrdinalIgnoreCase) ||
+                                               c.City.Contains(_searchClient, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void FilterEquipment()
+    {
+        if (string.IsNullOrWhiteSpace(_searchEquipment))
+        {
+            _filteredEquipments = _equipments;
+            return;
+        }
+        _filteredEquipments = _equipments.Where(e => e.LabTag.Contains(_searchEquipment, StringComparison.OrdinalIgnoreCase) ||
+                                                     e.Description.Contains(_searchEquipment, StringComparison.OrdinalIgnoreCase) ||
+                                                     e.ClientName.Contains(_searchEquipment, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void FilterStandards()
+    {
+        if (string.IsNullOrWhiteSpace(_searchStandard))
+        {
+            _filteredStandards = _standards;
+            return;
+        }
+        _filteredStandards = _standards.Where(s => s.LabTag.Contains(_searchStandard, StringComparison.OrdinalIgnoreCase) ||
+                                                   s.Name.Contains(_searchStandard, StringComparison.OrdinalIgnoreCase) ||
+                                                   s.CalibrationCertificateNumber.Contains(_searchStandard, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void ViewClientDetails(ClientDto client)
+    {
+        _selectedClient = client;
+        _selectedEquipment = null;
+        _selectedStandard = null;
+        _activeTab = "clients";
+        _selectedClientEquipments = _equipments.Where(e => e.ClientId == client.Id).ToList();
+        _filteredClientEquipments = _selectedClientEquipments;
+        _equipmentFilter = string.Empty;
+    }
+
+    private void FilterCustomerEquipment()
+    {
+        if (string.IsNullOrWhiteSpace(_equipmentFilter))
+        {
+            _filteredClientEquipments = _selectedClientEquipments;
+            return;
+        }
+
+        _filteredClientEquipments = _selectedClientEquipments.Where(e =>
+            e.LabTag.Contains(_equipmentFilter, StringComparison.OrdinalIgnoreCase) ||
+            e.Description.Contains(_equipmentFilter, StringComparison.OrdinalIgnoreCase) ||
+            e.Manufacturer.Contains(_equipmentFilter, StringComparison.OrdinalIgnoreCase) ||
+            e.Model.Contains(_equipmentFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private async Task ViewEquipmentDetails(ClientEquipmentDto equipment)
+    {
+        _selectedEquipment = equipment;
+        _selectedClient = null;
+        _selectedStandard = null;
+        _activeTab = "equipment";
+        var allCerts = await DataService.GetCertificatesAsync();
+        _equipmentCertificates = allCerts.Where(c =>
+            c.EquipmentTag.Equals(equipment.LabTag, StringComparison.OrdinalIgnoreCase) ||
+            c.EquipmentDescription.Equals(equipment.Description, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private async Task ViewStandardDetails(StandardEquipmentDto standard)
+    {
+        _selectedStandard = standard;
+        _selectedClient = null;
+        _selectedEquipment = null;
+        _activeTab = "standards";
+        var guid = GetStandardGuid(standard);
+        _standardCertificates = await DataService.GetStandardCertificatesAsync(guid);
+        _standardUsages = await DataService.GetStandardCalibrationsUsedAsync(guid);
+    }
+
+    private void BackToList()
+    {
+        _selectedClient = null;
+        _selectedEquipment = null;
+        _selectedStandard = null;
+    }
+
+    private Guid GetStandardGuid(StandardEquipmentDto standard)
+    {
+        if (Guid.TryParse(standard.Id, out var g)) return g;
+        return standard.LabTag switch
+        {
+            "PAD-BAL-01" => MockMetrologyDataService.StandardBalanceId,
+            "PAD-TERM-01" => MockMetrologyDataService.StandardThermometerId,
+            "PAD-BAR-01" => MockMetrologyDataService.StandardBarometerId,
+            "PAD-HIG-01" => MockMetrologyDataService.StandardHygrometerId,
+            "PAD-PES-01" => MockMetrologyDataService.StandardWeightsId,
+            "PAD-TERAMB-01" => MockMetrologyDataService.StandardAmbientThermometerId,
+            "PAD-HIG-02" => MockMetrologyDataService.StandardStandHygrometerId,
+            "PAD-PIC-01" => MockMetrologyDataService.StandardPycnometerId,
+            "PAD-PIC-02" => MockMetrologyDataService.StandardPycnometerExpiredId,
+            _ => standard.Id switch
+            {
+                "pad-bal-01" => MockMetrologyDataService.StandardBalanceId,
+                "pad-term-01" => MockMetrologyDataService.StandardThermometerId,
+                "pad-bar-01" => MockMetrologyDataService.StandardBarometerId,
+                "pad-hig-01" => MockMetrologyDataService.StandardHygrometerId,
+                "pad-pes-01" => MockMetrologyDataService.StandardWeightsId,
+                "pad-teramb-01" => MockMetrologyDataService.StandardAmbientThermometerId,
+                "pad-hig-02" => MockMetrologyDataService.StandardStandHygrometerId,
+                "pad-pic-01" => MockMetrologyDataService.StandardPycnometerId,
+                "pad-pic-02" => MockMetrologyDataService.StandardPycnometerExpiredId,
+                _ => Guid.NewGuid()
+            }
+        };
+    }
+
+    private void ViewClientEquipment(string clientId)
+    {
+        _activeTab = "equipment";
+        _selectedClient = null;
+        _selectedEquipment = null;
+        _selectedStandard = null;
+        _filteredEquipments = _equipments.Where(e => e.ClientId == clientId).ToList();
+    }
+
+    private void CalibrateEquipment(string labTag)
+    {
+        Navigation.NavigateTo($"/calibracao?tag={labTag}");
+    }
+
+    // Modal Helpers (List View)
+    private void OpenNewClientModal()
+    {
+        if (!IsSupervisor) return;
+        _newClient = new ClientDto();
+        _showClientModal = true;
+    }
+    private void CloseClientModal() => _showClientModal = false;
+    private async Task SaveClient()
+    {
+        if (!IsSupervisor) return;
+        try
+        {
+            await DataService.SaveClientAsync(_newClient);
+            _showClientModal = false;
+            await LoadDataAsync();
+            NotificationModal.ShowSuccess("Cliente Cadastrado", $"O cliente '{_newClient.Name}' foi cadastrado com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Salvar Cliente", ex.Message, ex.ToString());
+        }
+    }
+
+    private void OpenNewEquipmentModal()
+    {
+        _newEquipment = new ClientEquipmentDto();
+        _showEquipmentModal = true;
+    }
+    private void CloseEquipmentModal() => _showEquipmentModal = false;
+    private async Task SaveEquipment()
+    {
+        try
+        {
+            var client = _clients.FirstOrDefault(c => c.Id == _newEquipment.ClientId);
+            if (client != null) _newEquipment.ClientName = client.Name;
+            await DataService.SaveClientEquipmentAsync(_newEquipment);
+            _showEquipmentModal = false;
+            await LoadDataAsync();
+            NotificationModal.ShowSuccess("Equipamento Cadastrado", $"O equipamento '{_newEquipment.LabTag}' foi cadastrado com sucesso e está pronto para ensaios.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Salvar Equipamento", ex.Message, ex.ToString());
+        }
+    }
+
+    private void OpenNewStandardModal()
+    {
+        if (!IsSupervisor) return;
+        _newStandard = new StandardEquipmentDto
+        {
+            LastCalibrationDate = DateTime.UtcNow,
+            CalibrationDueDate = DateTime.UtcNow.AddYears(1)
+        };
+        _standardStep = 1;
+        _showStandardModal = true;
+    }
+    private void CloseStandardModal() => _showStandardModal = false;
+    private async Task SaveStandard()
+    {
+        if (!IsSupervisor) return;
+        try
+        {
+            await DataService.SaveStandardEquipmentAsync(_newStandard);
+            _showStandardModal = false;
+            await LoadDataAsync();
+            NotificationModal.ShowSuccess("Padrão Cadastrado", $"O padrão metrológico '{_newStandard.LabTag}' foi registrado com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Salvar Padrão", ex.Message, ex.ToString());
+        }
+    }
+
+    // Standard Actions Modals (Full View)
+    private string? _standardErrorMessage;
+
+    private void OpenEditStandardModal()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        _standardErrorMessage = null;
+        _showEditStandardModal = true;
+    }
+    private void CloseEditStandardModal()
+    {
+        _standardErrorMessage = null;
+        _showEditStandardModal = false;
+    }
+    private async Task SaveEditStandard()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        try
+        {
+            _standardErrorMessage = null;
+            await DataService.UpdateStandardAsync(_selectedStandard);
+            _showEditStandardModal = false;
+            await LoadDataAsync();
+            var reloaded = _standards.FirstOrDefault(s => s.Id == _selectedStandard.Id || s.LabTag == _selectedStandard.LabTag);
+            if (reloaded != null) _selectedStandard = reloaded;
+        }
+        catch (Exception ex)
+        {
+            _standardErrorMessage = $"Erro ao salvar alterações: {ex.Message}";
+        }
+    }
+
+    private void OpenSendToCalibrationModal()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        _sendCalibLab = _selectedStandard.CalibratingLaboratory;
+        _sendCalibReturnDate = DateTime.UtcNow.AddDays(30);
+        _showSendToCalibrationModal = true;
+    }
+    private void CloseSendToCalibrationModal() => _showSendToCalibrationModal = false;
+    private async Task ConfirmSendToCalibration()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        var guid = GetStandardGuid(_selectedStandard);
+        await DataService.SendStandardToCalibrationAsync(guid, _sendCalibLab, _sendCalibReturnDate);
+        _selectedStandard.Status = StandardEquipmentStatus.InCalibration;
+        _selectedStandard.CalibratingLaboratory = _sendCalibLab;
+        _showSendToCalibrationModal = false;
+        await LoadDataAsync();
+        var reloaded = _standards.FirstOrDefault(s => s.Id == _selectedStandard.Id || s.LabTag == _selectedStandard.LabTag);
+        if (reloaded != null) _selectedStandard = reloaded;
+    }
+
+    private void OpenRegisterCertModal()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        _newStandardCert = new StandardCertificateDto
+        {
+            StandardEquipmentId = GetStandardGuid(_selectedStandard),
+            CalibratingLaboratory = _selectedStandard.CalibratingLaboratory,
+            CalibrationDate = DateTime.UtcNow,
+            CalibrationDueDate = DateTime.UtcNow.AddYears(1),
+            CalibrationRangeMin = _selectedStandard.RangeMin,
+            CalibrationRangeMax = _selectedStandard.RangeMax,
+            CoverageFactor = _selectedStandard.CoverageFactor > 0 ? _selectedStandard.CoverageFactor : 2.0m,
+            ExpandedUncertainty = _selectedStandard.ExpandedUncertainty,
+            Error = _selectedStandard.Error,
+            Correction = _selectedStandard.Correction,
+            IsActive = true
+        };
+        _showRegisterCertModal = true;
+    }
+    private void CloseRegisterCertModal() => _showRegisterCertModal = false;
+    private async Task SaveNewStandardCertificate()
+    {
+        if (!IsSupervisor || _selectedStandard == null) return;
+        var guid = GetStandardGuid(_selectedStandard);
+        await DataService.RegisterStandardCertificateAsync(guid, _newStandardCert);
+        _standardCertificates = await DataService.GetStandardCertificatesAsync(guid);
+        _showRegisterCertModal = false;
+        await LoadDataAsync();
+        var reloaded = _standards.FirstOrDefault(s => s.Id == _selectedStandard.Id || s.LabTag == _selectedStandard.LabTag);
+        if (reloaded != null) _selectedStandard = reloaded;
+    }
+
+    private static string GetStandardRoleDisplayName(StandardRole role) => role switch
+    {
+        StandardRole.Balance => "Balança Analítica",
+        StandardRole.LiquidThermometer => "Termômetro de Imersão (Água)",
+        StandardRole.Barometer => "Barômetro",
+        StandardRole.ThermoHygrometer => "Termo-Higrômetro",
+        StandardRole.AmbientThermometer => "Termômetro Ambiente",
+        StandardRole.Hygrometer => "Higrômetro",
+        StandardRole.Pycnometer => "Picnômetro",
+        StandardRole.ReferenceWeights => "Pesos Padrão",
+        StandardRole.Other => "Densímetro Digital / Outro",
+        _ => role.ToString()
+    };
+}

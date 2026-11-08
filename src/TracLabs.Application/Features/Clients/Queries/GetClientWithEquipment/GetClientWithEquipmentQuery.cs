@@ -34,7 +34,7 @@ public class GetClientWithEquipmentQueryHandler : IRequestHandler<GetClientWithE
                 e.Status,
                 e.CurrentLocation,
                 client.Id,
-                client.Name))
+                client.Name, e.NominalCapacity, e.Unit))
             .ToList();
 
         return new ClientWithEquipmentDto(

@@ -32,6 +32,9 @@ public class StandardEquipment : BaseEntity
     /// <summary>Instrument type/category (e.g. "Balança Analítica", "Termômetro", "Barômetro").</summary>
     public string InstrumentType { get; private set; } = string.Empty;
 
+    /// <summary>Função ou papel metrológico do padrão no laboratório (Balança, Termômetro, Barômetro, Picnômetro, etc.).</summary>
+    public StandardRole Role { get; private set; } = StandardRole.Balance;
+
     /// <summary>
     /// Versão do software embarcado ou de integração (opcional).
     /// </summary>
@@ -199,7 +202,8 @@ public class StandardEquipment : BaseEntity
         decimal rangeMin = 0m,
         decimal rangeMax = 0m,
         decimal? calibrationRangeMin = null,
-        decimal? calibrationRangeMax = null)
+        decimal? calibrationRangeMax = null,
+        StandardRole role = StandardRole.Balance)
     {
         if (coverageFactor <= 0)
             throw new ArgumentException("Coverage factor must be positive.", nameof(coverageFactor));
@@ -239,6 +243,7 @@ public class StandardEquipment : BaseEntity
         RangeMax = rangeMax;
         CalibrationRangeMin = calibrationRangeMin;
         CalibrationRangeMax = calibrationRangeMax;
+        Role = role;
     }
 
     /// <summary>
@@ -259,7 +264,8 @@ public class StandardEquipment : BaseEntity
         string? currentLocation = null,
         string? acceptanceCriteria = null,
         int calibrationIntervalMonths = 12,
-        string? maintenancePlan = null)
+        string? maintenancePlan = null,
+        StandardRole role = StandardRole.Balance)
     {
         if (string.IsNullOrWhiteSpace(labTag))
             throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
@@ -279,6 +285,7 @@ public class StandardEquipment : BaseEntity
         RangeMax = rangeMax;
         CalibrationRangeMin = calibrationRangeMin;
         CalibrationRangeMax = calibrationRangeMax;
+        Role = role;
         CurrentLocation = string.IsNullOrWhiteSpace(currentLocation) ? "Laboratório de Calibração" : currentLocation;
         AcceptanceCriteria = acceptanceCriteria;
         CalibrationIntervalMonths = calibrationIntervalMonths;
@@ -363,7 +370,8 @@ public class StandardEquipment : BaseEntity
         string? currentLocation,
         string? acceptanceCriteria,
         string? maintenancePlan,
-        string? referenceMaterialDocumentation)
+        string? referenceMaterialDocumentation,
+        StandardRole? role = null)
     {
         if (string.IsNullOrWhiteSpace(labTag))
             throw new ArgumentException("Lab tag cannot be empty.", nameof(labTag));
@@ -390,7 +398,15 @@ public class StandardEquipment : BaseEntity
         AcceptanceCriteria = acceptanceCriteria;
         MaintenancePlan = maintenancePlan;
         ReferenceMaterialDocumentation = referenceMaterialDocumentation;
+        if (role.HasValue) Role = role.Value;
 
+        MarkAsUpdated();
+    }
+
+    /// <summary>Atualiza a função ou papel metrológico do padrão no laboratório.</summary>
+    public void UpdateRole(StandardRole role)
+    {
+        Role = role;
         MarkAsUpdated();
     }
 

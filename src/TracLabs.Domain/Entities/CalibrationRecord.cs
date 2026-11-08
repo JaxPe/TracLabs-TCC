@@ -150,8 +150,12 @@ public class CalibrationRecord : BaseEntity
         StandardEquipmentId = standardEquipmentId;
         TechnicianId = technicianId;
         TechnicianName = technicianName;
-        CalibrationDate = calibrationDate;
-        NextCalibrationDue = nextCalibrationDue;
+        CalibrationDate = calibrationDate.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(calibrationDate, DateTimeKind.Utc)
+            : calibrationDate.ToUniversalTime();
+        NextCalibrationDue = nextCalibrationDue.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(nextCalibrationDue, DateTimeKind.Utc)
+            : nextCalibrationDue.ToUniversalTime();
         TemperatureCelsius = temperatureCelsius;
         HumidityPercent = humidityPercent;
         Result = CalibrationResult.Pending;

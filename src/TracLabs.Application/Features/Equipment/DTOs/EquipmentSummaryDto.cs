@@ -13,4 +13,6 @@ public record EquipmentSummaryDto(
     EquipmentStatus Status,
     string CurrentLocation,
     Guid ClientId,
-    string? ClientName);
+    string? ClientName,
+    decimal? NominalCapacity = null,
+    string? Unit = null);

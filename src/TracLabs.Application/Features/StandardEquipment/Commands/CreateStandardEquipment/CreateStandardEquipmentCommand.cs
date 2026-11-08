@@ -34,7 +34,8 @@ public record CreateStandardEquipmentCommand(
     decimal RangeMin = 0m,
     decimal RangeMax = 0m,
     decimal? CalibrationRangeMin = null,
-    decimal? CalibrationRangeMax = null) : IRequest<StandardEquipmentDto>;
+    decimal? CalibrationRangeMax = null,
+    StandardRole Role = StandardRole.Balance) : IRequest<StandardEquipmentDto>;
 
 public class CreateStandardEquipmentCommandValidator : AbstractValidator<CreateStandardEquipmentCommand>
 {
@@ -131,7 +132,8 @@ public class CreateStandardEquipmentCommandHandler : IRequestHandler<CreateStand
             rangeMin: request.RangeMin,
             rangeMax: request.RangeMax,
             calibrationRangeMin: request.CalibrationRangeMin,
-            calibrationRangeMax: request.CalibrationRangeMax);
+            calibrationRangeMax: request.CalibrationRangeMax,
+            role: request.Role);
 
         await _standardRepository.AddAsync(standard, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -197,6 +199,7 @@ public class CreateStandardEquipmentCommandHandler : IRequestHandler<CreateStand
             s.RangeMax,
             s.CalibrationRangeMin,
             s.CalibrationRangeMax,
-            certsDto);
+            certsDto,
+            s.Role);
     }
 }

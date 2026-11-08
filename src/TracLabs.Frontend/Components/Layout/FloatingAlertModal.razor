@@ -1,0 +1,244 @@
+@using TracLabs.Frontend.Services.Notification
+@inject INotificationModalService NotificationModal
+@implements IDisposable
+
+@if (NotificationModal.CurrentNotification.IsVisible)
+{
+    <div class="trac-modal-backdrop" @onclick="HandleBackdropClick" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="trac-modal-card @GetSeverityClass()" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="trac-modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="trac-modal-icon">@GetSeverityIcon()</span>
+                    <h5 class="trac-modal-title mb-0">@NotificationModal.CurrentNotification.Title</h5>
+                </div>
+                <button type="button" class="trac-modal-close" @onclick="Close" aria-label="Fechar">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="trac-modal-body">
+                <p class="trac-modal-message mb-3">
+                    @NotificationModal.CurrentNotification.Message
+                </p>
+
+                @if (!string.IsNullOrWhiteSpace(NotificationModal.CurrentNotification.TechnicalDetails))
+                {
+                    <div class="trac-technical-details-wrapper mt-3">
+                        <button type="button" class="trac-btn-toggle-details" @onclick="ToggleDetails">
+                            <span>@(_showDetails ? "▼ Ocultar detalhes técnicos" : "▶ Ver detalhes técnicos")</span>
+                        </button>
+
+                        @if (_showDetails)
+                        {
+                            <pre class="trac-technical-details-content mt-2">@NotificationModal.CurrentNotification.TechnicalDetails</pre>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="trac-modal-footer">
+                <button type="button" class="trac-btn @GetConfirmButtonClass()" @onclick="Close">
+                    @NotificationModal.CurrentNotification.ConfirmButtonText
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .trac-modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: tracFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .trac-modal-card {
+            background-color: var(--trac-bg-surface, #ffffff);
+            border-radius: var(--trac-radius-lg, 12px);
+            border: 1px solid var(--trac-border-default, #e2e8f0);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: tracSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .trac-modal-card.trac-severity-error {
+            border-top: 4px solid var(--trac-danger-500, #ef4444);
+        }
+
+        .trac-modal-card.trac-severity-warning {
+            border-top: 4px solid var(--trac-warning-500, #f59e0b);
+        }
+
+        .trac-modal-card.trac-severity-success {
+            border-top: 4px solid var(--trac-success-500, #10b981);
+        }
+
+        .trac-modal-card.trac-severity-info {
+            border-top: 4px solid var(--trac-brand-primary, #3b82f6);
+        }
+
+        .trac-modal-header {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--trac-border-default, #e2e8f0);
+            background-color: var(--trac-bg-surface-elevated, #f8fafc);
+        }
+
+        .trac-modal-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--trac-text-primary, #0f172a);
+        }
+
+        .trac-modal-icon {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+
+        .trac-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            color: var(--trac-text-secondary, #64748b);
+            cursor: pointer;
+            padding: 0 0.25rem;
+            transition: color 0.15s ease;
+        }
+
+        .trac-modal-close:hover {
+            color: var(--trac-text-primary, #0f172a);
+        }
+
+        .trac-modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            color: var(--trac-text-secondary, #334155);
+            font-size: 0.925rem;
+            line-height: 1.5;
+        }
+
+        .trac-modal-message {
+            white-space: pre-line;
+            color: var(--trac-text-primary, #0f172a);
+            font-weight: 500;
+        }
+
+        .trac-btn-toggle-details {
+            background: none;
+            border: none;
+            padding: 0;
+            color: var(--trac-brand-primary, #3b82f6);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .trac-technical-details-content {
+            background: var(--trac-bg-surface-elevated, #f1f5f9);
+            border: 1px solid var(--trac-border-default, #e2e8f0);
+            border-radius: var(--trac-radius-sm, 6px);
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-family: var(--trac-font-mono, monospace);
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--trac-text-secondary, #475569);
+        }
+
+        .trac-modal-footer {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            background-color: var(--trac-bg-surface-elevated, #f8fafc);
+            border-top: 1px solid var(--trac-border-default, #e2e8f0);
+        }
+
+        @@keyframes tracFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @@keyframes tracSlideUp {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+}
+
+@code {
+    private bool _showDetails = false;
+
+    protected override void OnInitialized()
+    {
+        NotificationModal.OnChange += StateHasChanged;
+    }
+
+    private void HandleBackdropClick()
+    {
+        Close();
+    }
+
+    private void Close()
+    {
+        _showDetails = false;
+        NotificationModal.Close();
+    }
+
+    private void ToggleDetails()
+    {
+        _showDetails = !_showDetails;
+    }
+
+    private string GetSeverityClass() => NotificationModal.CurrentNotification.Severity switch
+    {
+        NotificationSeverity.Error => "trac-severity-error",
+        NotificationSeverity.Warning => "trac-severity-warning",
+        NotificationSeverity.Success => "trac-severity-success",
+        _ => "trac-severity-info"
+    };
+
+    private string GetSeverityIcon() => NotificationModal.CurrentNotification.Severity switch
+    {
+        NotificationSeverity.Error => "❌",
+        NotificationSeverity.Warning => "⚠️",
+        NotificationSeverity.Success => "✔️",
+        _ => "ℹ️"
+    };
+
+    private string GetConfirmButtonClass() => NotificationModal.CurrentNotification.Severity switch
+    {
+        NotificationSeverity.Error => "trac-btn-danger",
+        NotificationSeverity.Warning => "trac-btn-warning",
+        NotificationSeverity.Success => "trac-btn-success",
+        _ => "trac-btn-primary"
+    };
+
+    public void Dispose()
+    {
+        NotificationModal.OnChange -= StateHasChanged;
+    }
+}

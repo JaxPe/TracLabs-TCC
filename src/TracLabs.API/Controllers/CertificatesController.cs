@@ -9,9 +9,11 @@ using TracLabs.Application.Features.Certificates.DTOs;
 using TracLabs.Application.Features.Certificates.Queries.DownloadCertificatePdf;
 using TracLabs.Application.Features.Certificates.Queries.GetCertificateById;
 using TracLabs.Application.Features.Certificates.Queries.GetCertificateByNumber;
+using TracLabs.Application.Features.Certificates.Queries.GetCertificates;
 using TracLabs.Application.Features.Certificates.Queries.GetCertificatesByClient;
 using TracLabs.Application.Features.Certificates.Queries.GetCertificatesByEquipment;
 using TracLabs.Application.Features.Certificates.Queries.PreviewCertificatePdf;
+using TracLabs.Domain.Enums;
 
 namespace TracLabs.API.Controllers;
 
@@ -25,6 +27,17 @@ public class CertificatesController : ControllerBase
     public CertificatesController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    /// <summary>
+    /// Lista todos os certificados de calibração, opcionalmente filtrados por status metrológico.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
+    public async Task<ActionResult<IReadOnlyList<CertificateSummaryDto>>> GetAll([FromQuery] CertificateStatus? status = null)
+    {
+        var result = await _mediator.Send(new GetCertificatesQuery(status));
+        return Ok(result);
     }
 
     /// <summary>

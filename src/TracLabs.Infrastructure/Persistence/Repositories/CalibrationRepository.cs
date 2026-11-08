@@ -1,8 +1,7 @@
-// src/TracLabs.Infrastructure/Persistence/Repositories/CalibrationRepository.cs
-
 using Microsoft.EntityFrameworkCore;
 using TracLabs.Application.Interfaces.Repositories;
 using TracLabs.Domain.Entities;
+using TracLabs.Domain.Enums;
 
 namespace TracLabs.Infrastructure.Persistence.Repositories;
 
@@ -47,4 +46,30 @@ public class CalibrationRepository
             .Include(c => c.Certificate)
             .Include(c => c.StandardsUsed)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
+
+    public async Task<IReadOnlyList<CalibrationRecord>> GetByStandardEquipmentIdAsync(
+        Guid standardId, CancellationToken ct = default)
+        => await _dbSet
+            .Include(c => c.Equipment)
+                .ThenInclude(e => e!.Client)
+            .Include(c => c.Certificate)
+            .Include(c => c.StandardsUsed)
+            .Where(c => c.StandardEquipmentId == standardId || c.StandardsUsed.Any(su => su.StandardEquipmentId == standardId))
+            .OrderByDescending(c => c.CalibrationDate)
+            .ToListAsync(ct);
+
+    public async Task<int> GetActiveCalibrationsCountAsync(CancellationToken ct = default)
+        => await _dbSet.CountAsync(c => c.Result == CalibrationResult.Pending, ct);
+
+    public async Task<int> GetNonConformingCountAsync(CancellationToken ct = default)
+        => await _dbSet.CountAsync(c => c.Result == CalibrationResult.NonConforming, ct);
+
+    public async Task<IReadOnlyList<CalibrationRecord>> GetRecentCalibrationsAsync(int count = 10, CancellationToken ct = default)
+        => await _dbSet
+            .Include(c => c.Equipment)
+                .ThenInclude(e => e!.Client)
+            .Include(c => c.Certificate)
+            .OrderByDescending(c => c.CalibrationDate)
+            .Take(count)
+            .ToListAsync(ct);
 }

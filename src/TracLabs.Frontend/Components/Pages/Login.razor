@@ -1,0 +1,145 @@
+@page "/login"
+@layout Layout.AuthLayout
+@inject IUserContextService UserContext
+@inject NavigationManager Navigation
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 120px);">
+    <div style="max-width: 480px; width: 100%;">
+        <!-- Header / Logo -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center p-3 mb-2" style="background-color: var(--trac-brand-subtle); border-radius: var(--trac-radius-lg); border: 1px solid var(--trac-border-default);">
+                <svg style="width: 36px; height: 36px; color: var(--trac-brand-primary);" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+            </div>
+            <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--trac-text-primary);">TracLabs Metrology</h1>
+            <p style="font-size: 0.875rem; color: var(--trac-text-secondary); margin-top: 0.25rem;">
+                Plataforma Integrada de Gestão Metrológica &bull; ABNT NBR ISO/IEC 17025
+            </p>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="trac-card mb-4">
+            <div class="trac-card-header">
+                <span style="font-weight: 600; font-size: 0.875rem;">Autenticação no Sistema</span>
+                <span class="trac-badge trac-badge-info">Acesso Seguro</span>
+            </div>
+            <div class="trac-card-body">
+                <form @onsubmit="HandleLogin">
+                    <div class="trac-form-group">
+                        <label class="trac-label" for="login-email">E-mail Corporativo</label>
+                        <input id="login-email" type="email" class="trac-input" placeholder="seu.email@traclabs.com" @bind="_email" required />
+                    </div>
+
+                    <div class="trac-form-group">
+                        <label class="trac-label" for="login-password">Senha de Acesso</label>
+                        <div class="trac-input-group">
+                            <input id="login-password" type="@(_showPassword ? "text" : "password")" class="trac-input" placeholder="••••••••" @bind="_password" required />
+                            <button type="button" class="trac-btn trac-btn-secondary" style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none;" @onclick="TogglePasswordVisibility">
+                                @if (_showPassword)
+                                {
+                                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                }
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="trac-badge trac-badge-danger w-100 p-2 mb-3" style="border-radius: var(--trac-radius-md); font-size: 0.8125rem;">
+                            @_errorMessage
+                        </div>
+                    }
+
+                    <button type="submit" class="trac-btn trac-btn-primary w-100" disabled="@_isLoading">
+                        @if (_isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Autenticando...</span>
+                        }
+                        else
+                        {
+                            <span>Entrar no TracLabs</span>
+                        }
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Credentials Info Box -->
+        <div class="p-3" style="border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md); background-color: var(--trac-bg-surface); font-size: 0.8125rem;">
+            <div style="font-weight: 700; color: var(--trac-text-primary); margin-bottom: 0.25rem;">Contas de Acesso Padrão:</div>
+            <div class="d-flex flex-column gap-1" style="color: var(--trac-text-secondary); font-size: 0.75rem;">
+                <div>&bull; <strong>Supervisor:</strong> <code>supervisor@traclabs.com</code> &bull; Senha: <code>Password123!</code></div>
+                <div>&bull; <strong>Técnico:</strong> <code>tecnico@traclabs.com</code> &bull; Senha: <code>Password123!</code></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _email = "supervisor@traclabs.com";
+    private string _password = "Password123!";
+    private bool _showPassword = false;
+    private bool _isLoading = false;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (UserContext.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UserContext.InitializeAsync();
+            if (UserContext.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/dashboard");
+            }
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "Por favor, preencha o e-mail e a senha.";
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = null;
+
+        var success = await UserContext.LoginAsync(_email, _password);
+        _isLoading = false;
+
+        if (success)
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            _errorMessage = "Credenciais inválidas ou serviço temporariamente indisponível. Verifique os dados e tente novamente.";
+        }
+    }
+}

@@ -3,10 +3,12 @@
     <Project Path="src/TracLabs.API/TracLabs.API.csproj" />
     <Project Path="src/TracLabs.Application/TracLabs.Application.csproj" />
     <Project Path="src/TracLabs.Domain/TracLabs.Domain.csproj" />
+    <Project Path="src/TracLabs.Frontend/TracLabs.Frontend.csproj" />
     <Project Path="src/TracLabs.Infrastructure/TracLabs.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TracLabs.Application.Tests/TracLabs.Application.Tests.csproj" />
     <Project Path="tests/TracLabs.Domain.Tests/TracLabs.Domain.Tests.csproj" />
+    <Project Path="tests/TracLabs.Frontend.Tests/TracLabs.Frontend.Tests.csproj" />
   </Folder>
 </Solution>

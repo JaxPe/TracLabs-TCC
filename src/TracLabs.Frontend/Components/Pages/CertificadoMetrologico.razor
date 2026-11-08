@@ -1,0 +1,589 @@
+@page "/certificados"
+@page "/certificados/{Id}"
+@inject IMetrologyDataService DataService
+@inject IUserContextService UserContext
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject INotificationModalService NotificationModal
+
+<div>
+    <!-- Top Bar: Selector & Lifecycle Actions -->
+    <div class="trac-no-print d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-weight: 700; color: var(--trac-text-primary); font-size: 0.9375rem;">Selecionar Certificado:</span>
+            <select class="trac-select" style="max-width: 320px;" value="@_currentCert?.Id" @onchange="OnCertificateSelected">
+                @foreach (var c in _allCertificates)
+                {
+                    <option value="@c.Id">@c.CertificateNumber — @c.EquipmentTag (@c.Status)</option>
+                }
+            </select>
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <!-- Role-specific lifecycle actions -->
+            @if (UserContext.CurrentUser.Role == UserRole.Tecnico)
+            {
+                @if (_currentCert?.Status == CertificateStatus.Draft)
+                {
+                    <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="SubmitForApproval">
+                        Submeter para Aprovação Técnica &rarr;
+                    </button>
+                }
+                else
+                {
+                    <span class="trac-badge trac-badge-neutral" style="font-size: 0.75rem;">
+                        Apenas Supervisor pode alterar status (@_currentCert?.Status)
+                    </span>
+                }
+            }
+            else if (UserContext.CurrentUser.Role == UserRole.Supervisor)
+            {
+                @if (_currentCert?.Status == CertificateStatus.Draft)
+                {
+                    <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="RejectDraft">
+                        Solicitar Correção
+                    </button>
+                    <button class="trac-btn trac-btn-success trac-btn-sm" @onclick="ApproveCertificate">
+                        &check; Aprovar e Emitir Oficialmente
+                    </button>
+                }
+                else if (_currentCert?.Status == CertificateStatus.Issued)
+                {
+                    <button class="trac-btn trac-btn-danger trac-btn-sm" @onclick="OpenCancelModal">
+                        Cancelar / Substituir
+                    </button>
+                }
+            }
+
+            <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="ViewPdfInNewTabAsync" disabled="@(_isViewingPdf || _currentCert == null)" title="Abrir em nova aba do navegador">
+                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Nova Aba
+            </button>
+
+            <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="PrintCertificate" title="Imprimir laudo">
+                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Imprimir
+            </button>
+
+            <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="DownloadPdfAsync" disabled="@(_isDownloadingPdf || _currentCert == null)" title="Baixar arquivo PDF oficial">
+                @if (_isDownloadingPdf)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style="width: 12px; height: 12px; border-width: 2px;"></span>
+                    <span>Baixando...</span>
+                }
+                else
+                {
+                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Baixar PDF Oficial</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_pdfErrorMessage))
+    {
+        <div class="trac-no-print p-3 mb-4 d-flex justify-content-between align-items-center"
+             style="background-color: var(--trac-status-danger-bg); border: 1px solid var(--trac-status-danger-border); border-radius: var(--trac-radius-md); color: var(--trac-danger-700); font-size: 0.875rem;">
+            <div class="d-flex align-items-center gap-2">
+                <svg style="width: 18px; height: 18px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>@_pdfErrorMessage</span>
+            </div>
+            <button type="button" class="trac-btn-icon" style="color: var(--trac-danger-700);" @onclick="() => _pdfErrorMessage = null" aria-label="Fechar alerta">&times;</button>
+        </div>
+    }
+
+    @if (_currentCert == null)
+    {
+        <div class="trac-card p-5 text-center text-muted">
+            <div style="font-size: 1.125rem; font-weight: 600;">Nenhum certificado disponível</div>
+            <p style="font-size: 0.875rem; margin-top: 0.5rem;">Cadastre e finalize uma calibração volumétrica para gerar o certificado oficial.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Resumo Executivo e Metadados Metrológicos -->
+        <div class="trac-card mb-4 trac-no-print">
+            <div class="trac-card-body p-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-12 col-md-3">
+                        <div style="font-size: 0.75rem; color: var(--trac-text-secondary); text-transform: uppercase; font-weight: 700;">Documento Oficial</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--trac-brand-primary);">
+                            @_currentCert.CertificateNumber
+                        </div>
+                        <div class="mt-1">
+                            @if (_currentCert.Status == CertificateStatus.Issued)
+                            {
+                                <span class="trac-badge trac-badge-success">&check; Emitido Oficialmente</span>
+                            }
+                            else if (_currentCert.Status == CertificateStatus.Draft)
+                            {
+                                <span class="trac-badge trac-badge-warning">&bull; Minuta / Rascunho</span>
+                            }
+                            else if (_currentCert.Status == CertificateStatus.Superseded)
+                            {
+                                <span class="trac-badge trac-badge-danger">&cross; Cancelado / Substituído</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <div style="font-size: 0.75rem; color: var(--trac-text-secondary); text-transform: uppercase; font-weight: 700;">Instrumento Calibrado</div>
+                        <div style="font-weight: 700; color: var(--trac-text-primary);">@_currentCert.EquipmentTag</div>
+                        <div style="font-size: 0.8125rem; color: var(--trac-text-secondary);">@_currentCert.EquipmentDescription</div>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <div style="font-size: 0.75rem; color: var(--trac-text-secondary); text-transform: uppercase; font-weight: 700;">Cliente Requerente</div>
+                        <div style="font-weight: 700; color: var(--trac-text-primary);">@_currentCert.ClientName</div>
+                        <div style="font-size: 0.8125rem; color: var(--trac-text-secondary);">Data: @_currentCert.CalibrationDate.ToString("dd/MM/yyyy")</div>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <div style="font-size: 0.75rem; color: var(--trac-text-secondary); text-transform: uppercase; font-weight: 700;">Resultados Globais</div>
+                        <div class="trac-mono" style="font-size: 0.8125rem;">
+                            V<sub>20</sub>: <strong>@_currentCert.MeanVolumeV20.ToString("F4") mL</strong>
+                        </div>
+                        <div class="trac-mono" style="font-size: 0.8125rem;">
+                            Es: <strong>@(_currentCert.SystematicError >= 0 ? "+" : "")@_currentCert.SystematicError.ToString("F4") mL</strong> | U: <strong>&plusmn;@_currentCert.ExpandedUncertainty.ToString("F4") mL</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizador Oficial do PDF Gerado pela API (QuestPDF) -->
+        <div class="trac-card p-0 mb-4" style="overflow: hidden; border-radius: var(--trac-radius-lg); box-shadow: var(--trac-shadow-md);">
+            <div class="p-2 px-3 d-flex justify-content-between align-items-center" style="background-color: var(--trac-bg-surface-elevated); border-bottom: 1px solid var(--trac-border-default);">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="trac-badge trac-badge-success" style="font-size: 0.75rem;">
+                        &check; PDF Oficial Emitido pela API (QuestPDF Engine)
+                    </span>
+                    <span class="trac-mono" style="font-size: 0.8125rem; color: var(--trac-text-secondary);">
+                        @($"{_currentCert.CertificateNumber}.pdf")
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="LoadPdfDirectlyAsync" title="Atualizar documento da API">
+                        <svg style="width: 12px; height: 12px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Recarregar PDF
+                    </button>
+                    <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="ViewPdfInNewTabAsync" title="Visualizar em tela inteira">
+                        Tela Inteira &nearr;
+                    </button>
+                </div>
+            </div>
+
+            @if (_isLoadingPdf)
+            {
+                <div class="p-5 text-center" style="min-height: 600px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: var(--trac-bg-surface);">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <div style="font-weight: 700; font-size: 1.125rem; color: var(--trac-text-primary);">
+                        Carregando laudo oficial emitido pela API...
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--trac-text-secondary); margin-top: 0.25rem;">
+                        Renderizando PDF metrológico persistido com QuestPDF
+                    </div>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(_pdfDataUrl))
+            {
+                <iframe src="@_pdfDataUrl" 
+                        class="w-100" 
+                        style="height: 920px; border: none; display: block;" 
+                        title="Certificado Oficial de Calibração">
+                </iframe>
+            }
+            else
+            {
+                <div class="p-5 text-center" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="mb-2" style="font-size: 1.125rem; font-weight: 700; color: var(--trac-text-primary);">
+                        Não foi possível carregar o documento PDF.
+                    </div>
+                    <button class="trac-btn trac-btn-primary" @onclick="LoadPdfDirectlyAsync">
+                        Tentar Carregar Novamente
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Modal Cancelamento / Substituição (ISO 17025) -->
+    @if (_showCancelModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default);">
+                    <div class="modal-header">
+                        <h5 class="modal-title" style="color: var(--trac-danger-600); font-weight: 700;">
+                            Cancelar / Substituir Certificado Oficial
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CloseCancelModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="font-size: 0.875rem; color: var(--trac-text-secondary);">
+                            Conforme o item 7.8.8.2 da ISO/IEC 17025:2017, qualquer alteração ou cancelamento de um certificado emitido exige identificação única e justificativa formal de rastreabilidade.
+                        </p>
+                        <div class="mb-3">
+                            <label class="trac-label">Justificativa Formal do Cancelamento <span class="text-danger">*</span></label>
+                            <textarea class="trac-input" rows="4" @bind="_cancelReason" placeholder="Descreva os motivos técnicos do cancelamento..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="trac-btn trac-btn-secondary" @onclick="CloseCancelModal">Abortar</button>
+                        <button class="trac-btn trac-btn-danger" @onclick="ConfirmCancelCertificate" disabled="@string.IsNullOrWhiteSpace(_cancelReason)">
+                            Confirmar Cancelamento Oficial
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal Viewer Secundário para Testes Unitários de Modal -->
+    @if (_showPdfModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.6);">
+            <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">
+                <div class="modal-content h-100" style="background-color: var(--trac-bg-surface);">
+                    <div class="modal-header py-2">
+                        <h5 class="modal-title" style="font-size: 0.9375rem; font-weight: 700;">Visualizador de Laudo Oficial</h5>
+                        <button type="button" class="btn-close" @onclick="ClosePdfModal"></button>
+                    </div>
+                    <div class="modal-body p-0 h-100">
+                        @if (!string.IsNullOrEmpty(_pdfDataUrl))
+                        {
+                            <iframe src="@_pdfDataUrl" class="w-100 h-100" style="border: none;" title="PDF Modal"></iframe>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    private List<CertificateDto> _allCertificates = new();
+    private CertificateDto? _currentCert;
+    private bool _showCancelModal;
+    private string _cancelReason = "";
+
+    // PDF Management State
+    private bool _isLoadingPdf = false;
+    private bool _isDownloadingPdf = false;
+    private bool _isViewingPdf = false;
+    private bool _showPdfModal = false;
+    private string? _pdfErrorMessage;
+    private string? _pdfDataUrl;
+    private byte[]? _cachedPdfBytes;
+    private string? _cachedPdfCertId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCertificatesAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCertificatesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("eval", "if (typeof window.pdfViewer === 'undefined') { window.pdfViewer = window.traclabsPdf || { downloadFileFromBase64: window.downloadFileFromBase64, viewPdfFromBase64: window.viewPdfFromBase64 }; }");
+            }
+            catch
+            {
+                // In headless test environments, ignore
+            }
+        }
+    }
+
+    private async Task LoadCertificatesAsync(bool autoLoadPdf = true)
+    {
+        _allCertificates = await DataService.GetCertificatesAsync();
+
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            _currentCert = _allCertificates.FirstOrDefault(c => c.Id == Id || c.CertificateNumber == Id);
+        }
+
+        _currentCert ??= _allCertificates.FirstOrDefault();
+
+        if (_cachedPdfCertId != _currentCert?.Id)
+        {
+            InvalidatePdfCache();
+            if (autoLoadPdf && _currentCert != null && !(DataService is MockMetrologyDataService))
+            {
+                await LoadPdfDirectlyAsync();
+            }
+        }
+    }
+    private void InvalidatePdfCache()
+    {
+        _cachedPdfBytes = null;
+        _cachedPdfCertId = null;
+        _pdfDataUrl = null;
+    }
+
+    private async Task LoadPdfDirectlyAsync()
+    {
+        if (_currentCert == null) return;
+
+        _isLoadingPdf = true;
+        _pdfErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = await GetOrLoadPdfBytesAsync();
+            if (bytes != null && bytes.Length > 0)
+            {
+                var base64 = Convert.ToBase64String(bytes);
+                _pdfDataUrl = $"data:application/pdf;base64,{base64}";
+            }
+            else
+            {
+                _pdfErrorMessage = "O documento PDF do certificado ainda não está disponível ou não pôde ser gerado pela API.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _pdfErrorMessage = $"Erro ao carregar o PDF oficial: {ex.Message}";
+        }
+        finally
+        {
+            _isLoadingPdf = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnCertificateSelected(ChangeEventArgs e)
+    {
+        var selectedId = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(selectedId))
+        {
+            Navigation.NavigateTo($"/certificados/{selectedId}");
+        }
+    }
+
+    private async Task SubmitForApproval()
+    {
+        if (_currentCert == null) return;
+        _currentCert = await DataService.UpdateCertificateStatusAsync(_currentCert.Id, CertificateStatus.Draft);
+        InvalidatePdfCache();
+        await LoadCertificatesAsync(autoLoadPdf: false);
+    }
+
+    private async Task ApproveCertificate()
+    {
+        if (_currentCert == null) return;
+        try
+        {
+            _currentCert = await DataService.UpdateCertificateStatusAsync(_currentCert.Id, CertificateStatus.Issued);
+            InvalidatePdfCache();
+            await LoadCertificatesAsync(autoLoadPdf: false);
+            NotificationModal.ShowSuccess("Certificado Emitido", $"O certificado oficial '{_currentCert.CertificateNumber}' foi formalmente emitido.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Emitir Certificado", ex.Message, ex.ToString());
+        }
+    }
+
+    private async Task RejectDraft()
+    {
+        if (_currentCert == null) return;
+        _currentCert = await DataService.UpdateCertificateStatusAsync(_currentCert.Id, CertificateStatus.Draft);
+        InvalidatePdfCache();
+        await LoadCertificatesAsync(autoLoadPdf: false);
+    }
+
+    private void OpenCancelModal()
+    {
+        _cancelReason = "";
+        _showCancelModal = true;
+    }
+
+    private void CloseCancelModal() => _showCancelModal = false;
+
+    private async Task ConfirmCancelCertificate()
+    {
+        if (_currentCert == null || string.IsNullOrWhiteSpace(_cancelReason)) return;
+        try
+        {
+            _currentCert = await DataService.UpdateCertificateStatusAsync(_currentCert.Id, CertificateStatus.Superseded, _cancelReason);
+            _showCancelModal = false;
+            InvalidatePdfCache();
+            await LoadCertificatesAsync(autoLoadPdf: false);
+            NotificationModal.ShowWarning("Certificado Substituído", $"O laudo '{_currentCert.CertificateNumber}' foi marcado como substituído/cancelado conforme item 7.8.8.2 da ISO/IEC 17025.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Cancelar Certificado", ex.Message, ex.ToString());
+        }
+    }
+
+    private async Task PrintCertificate()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private void ClosePdfModal()
+    {
+        _showPdfModal = false;
+    }
+
+    private async Task<byte[]?> GetOrLoadPdfBytesAsync()
+    {
+        if (_currentCert == null) return null;
+
+        if (_cachedPdfBytes != null && _cachedPdfCertId == _currentCert.Id)
+        {
+            return _cachedPdfBytes;
+        }
+
+        var bytes = await DataService.GetCertificatePdfAsync(_currentCert.Id);
+        if (bytes != null && bytes.Length > 0)
+        {
+            _cachedPdfBytes = bytes;
+            _cachedPdfCertId = _currentCert.Id;
+        }
+
+        return bytes;
+    }
+
+    public async Task OpenPdfViewerModalAsync()
+    {
+        if (_currentCert == null || _isViewingPdf) return;
+
+        _isViewingPdf = true;
+        _pdfErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = await GetOrLoadPdfBytesAsync();
+            if (bytes == null || bytes.Length == 0)
+            {
+                _pdfErrorMessage = "O laudo em PDF não pôde ser gerado pelo serviço metrológico.";
+                return;
+            }
+
+            var base64 = Convert.ToBase64String(bytes);
+            _pdfDataUrl = $"data:application/pdf;base64,{base64}";
+            _showPdfModal = true;
+        }
+        catch (Exception ex)
+        {
+            _pdfErrorMessage = $"Erro ao carregar o certificado PDF: {ex.Message}";
+        }
+        finally
+        {
+            _isViewingPdf = false;
+            StateHasChanged();
+        }
+    }
+
+    public async Task ViewPdfInNewTabAsync()
+    {
+        if (_currentCert == null) return;
+        _pdfErrorMessage = null;
+
+        try
+        {
+            var bytes = await GetOrLoadPdfBytesAsync();
+            if (bytes == null || bytes.Length == 0)
+            {
+                _pdfErrorMessage = "O laudo em PDF não pôde ser gerado pelo serviço metrológico.";
+                return;
+            }
+
+            var base64 = Convert.ToBase64String(bytes);
+
+            try
+            {
+                await JS.InvokeVoidAsync("pdfViewer.viewPdfFromBase64", base64, "application/pdf");
+            }
+            catch
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("traclabsPdf.viewPdfFromBase64", base64, "application/pdf");
+                }
+                catch
+                {
+                    await JS.InvokeVoidAsync("viewPdfFromBase64", base64, "application/pdf");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _pdfErrorMessage = $"Erro ao abrir visualizador do PDF: {ex.Message}";
+        }
+    }
+
+    public async Task DownloadPdfAsync()
+    {
+        if (_currentCert == null || _isDownloadingPdf) return;
+
+        _isDownloadingPdf = true;
+        _pdfErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = await GetOrLoadPdfBytesAsync();
+            if (bytes == null || bytes.Length == 0)
+            {
+                _pdfErrorMessage = "O laudo em PDF não pôde ser gerado pelo serviço metrológico.";
+                return;
+            }
+
+            var safeCertNum = _currentCert.CertificateNumber.Replace('/', '-').Replace('\\', '-');
+            var fileName = $"Certificado_{safeCertNum}.pdf";
+            var base64 = Convert.ToBase64String(bytes);
+
+            try
+            {
+                await JS.InvokeVoidAsync("pdfViewer.downloadFileFromBase64", fileName, base64, "application/pdf");
+            }
+            catch
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("traclabsPdf.downloadFileFromBase64", fileName, base64, "application/pdf");
+                }
+                catch
+                {
+                    await JS.InvokeVoidAsync("downloadFileFromBase64", fileName, base64, "application/pdf");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _pdfErrorMessage = $"Erro ao baixar o certificado PDF: {ex.Message}";
+        }
+        finally
+        {
+            _isDownloadingPdf = false;
+            StateHasChanged();
+        }
+    }
+}
