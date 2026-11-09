@@ -170,8 +170,13 @@ public class CertificateUseCasesTests
         var cert = CreateTestCertificateWithGraph(attachPdf: true);
         _certificateRepo.GetWithDetailsAsync(cert.Id, Arg.Any<CancellationToken>()).Returns(cert);
         _currentUserService.UserId.Returns("supervisor-42");
+        _pdfGenerator.GenerateVolumeCertificatePdfAsync(
+            Arg.Any<CertificateReportDto>(),
+            Arg.Any<CertificateCustomizationOptions>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(Task.FromResult(new byte[] { 1, 2, 3 }));
 
-        var handler = new IssueCertificateCommandHandler(_certificateRepo, _equipmentRepo, _currentUserService, _unitOfWork);
+        var handler = new IssueCertificateCommandHandler(_certificateRepo, _equipmentRepo, _pdfGenerator, _currentUserService, _unitOfWork);
         var command = new IssueCertificateCommand(cert.Id);
 
         // Act
@@ -193,7 +198,7 @@ public class CertificateUseCasesTests
         _certificateRepo.GetWithDetailsAsync(cert.Id, Arg.Any<CancellationToken>()).Returns(cert);
         _currentUserService.UserId.Returns("supervisor-42");
 
-        var handler = new IssueCertificateCommandHandler(_certificateRepo, _equipmentRepo, _currentUserService, _unitOfWork);
+        var handler = new IssueCertificateCommandHandler(_certificateRepo, _equipmentRepo, _pdfGenerator, _currentUserService, _unitOfWork);
         var command = new IssueCertificateCommand(cert.Id);
 
         // Act
@@ -211,7 +216,13 @@ public class CertificateUseCasesTests
         var cert = CreateTestCertificateWithGraph(attachPdf: true, status: CertificateStatus.Issued);
         _certificateRepo.GetWithDetailsAsync(cert.Id, Arg.Any<CancellationToken>()).Returns(cert);
 
-        var handler = new SupersedeCertificateCommandHandler(_certificateRepo, _unitOfWork);
+        _pdfGenerator.GenerateVolumeCertificatePdfAsync(
+            Arg.Any<CertificateReportDto>(),
+            Arg.Any<CertificateCustomizationOptions>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(Task.FromResult(new byte[] { 99, 88, 77 }));
+
+        var handler = new SupersedeCertificateCommandHandler(_certificateRepo, _pdfGenerator, _unitOfWork);
         var command = new SupersedeCertificateCommand(cert.Id, "Erro de digitação no número de série");
 
         // Act

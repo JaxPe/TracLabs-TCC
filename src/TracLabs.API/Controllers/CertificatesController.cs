@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using TracLabs.Application.Constants;
 using TracLabs.Application.Features.Certificates.Commands.GenerateCertificatePdf;
 using TracLabs.Application.Features.Certificates.Commands.IssueCertificate;
@@ -95,7 +96,7 @@ public class CertificatesController : ControllerBase
     /// Não persiste alterações no banco de dados.
     /// </summary>
     [HttpPost("{id:guid}/preview-pdf")]
-    public async Task<IActionResult> PreviewPdf(Guid id, [FromBody] CertificateCustomizationOptions? customization)
+    public async Task<IActionResult> PreviewPdf(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CertificateCustomizationOptions? customization = null)
     {
         var (content, fileName) = await _mediator.Send(new PreviewCertificatePdfQuery(id, customization));
         return File(content, "application/pdf", fileName);
@@ -120,9 +121,9 @@ public class CertificatesController : ControllerBase
     /// </summary>
     [HttpPost("{id:guid}/issue")]
     [Authorize(Roles = Roles.Supervisor)]
-    public async Task<ActionResult<CertificateDetailDto>> Issue(Guid id)
+    public async Task<ActionResult<CertificateDetailDto>> Issue(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CertificateCustomizationOptions? customization = null)
     {
-        var result = await _mediator.Send(new IssueCertificateCommand(id));
+        var result = await _mediator.Send(new IssueCertificateCommand(id, customization));
         return Ok(result);
     }
 

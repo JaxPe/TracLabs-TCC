@@ -271,6 +271,23 @@ public class HttpMetrologyDataService : IMetrologyDataService
         };
     }
 
+    public async Task<ClientEquipmentDto> UpdateEquipmentStatusAsync(string equipmentId, EquipmentStatus newStatus)
+    {
+        if (!Guid.TryParse(equipmentId, out var guid))
+            throw new ArgumentException("ID de equipamento inválido", nameof(equipmentId));
+
+        var command = new { Status = newStatus, NewStatus = newStatus };
+        using var request = new HttpRequestMessage(HttpMethod.Patch, $"api/v1/equipment/{guid}/status")
+        {
+            Content = JsonContent.Create(command, options: _jsonOptions)
+        };
+        var response = await SendWithAuthAsync(request);
+        await EnsureSuccessWithDetailsAsync(response);
+
+        var updated = await GetClientEquipmentByIdAsync(equipmentId);
+        return updated ?? new ClientEquipmentDto { Id = equipmentId, Status = newStatus };
+    }
+
     public async Task<ClientEquipmentDto> SaveClientEquipmentAsync(ClientEquipmentDto equipment)
     {
         var isExisting = Guid.TryParse(equipment.Id, out var existingId) && existingId != Guid.Empty;
@@ -292,7 +309,8 @@ public class HttpMetrologyDataService : IMetrologyDataService
             NominalCapacity = (decimal?)equipment.NominalCapacity,
             ClientId = clientGuid,
             CurrentLocation = "Bancada de Recepção",
-            AcceptanceCriteria = "Conforme ISO 4787 / ISO 8655"
+            AcceptanceCriteria = "Conforme ISO 4787 / ISO 8655",
+            Status = equipment.Status
         };
 
         HttpResponseMessage response;
@@ -670,14 +688,17 @@ public class HttpMetrologyDataService : IMetrologyDataService
         };
     }
 
-    public async Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration)
+    public async Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration, bool showDetailedPoints = false)
     {
         var certs = await GetCertificatesAsync();
         var existing = certs.FirstOrDefault(c => c.CalibrationRecordId == calibration.Id);
 
         if (existing != null && Guid.TryParse(existing.Id, out var certGuid))
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/generate-pdf");
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/generate-pdf")
+            {
+                Content = JsonContent.Create(new { ShowDetailedPoints = showDetailedPoints }, options: _jsonOptions)
+            };
             var genRes = await SendWithAuthAsync(req);
             await EnsureSuccessWithDetailsAsync(genRes);
             return (await GetCertificateByIdAsync(existing.Id)) ?? existing;
@@ -700,7 +721,10 @@ public class HttpMetrologyDataService : IMetrologyDataService
         HttpResponseMessage response;
         if (newStatus == CertificateStatus.Issued)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/issue");
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/issue")
+            {
+                Content = JsonContent.Create(new { ShowDetailedPoints = false }, options: _jsonOptions)
+            };
             response = await SendWithAuthAsync(req);
         }
         else if (newStatus == CertificateStatus.Superseded)
@@ -721,11 +745,14 @@ public class HttpMetrologyDataService : IMetrologyDataService
         return (await GetCertificateByIdAsync(id)) ?? new CertificateDto { Id = id, Status = newStatus };
     }
 
-    public async Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId)
+    public async Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId, bool showDetailedPoints = false)
     {
         if (!Guid.TryParse(certificateId, out var certGuid)) return null;
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/generate-pdf");
+        using var req = new HttpRequestMessage(HttpMethod.Post, $"api/v1/certificates/{certGuid}/generate-pdf")
+        {
+            Content = JsonContent.Create(new { ShowDetailedPoints = showDetailedPoints }, options: _jsonOptions)
+        };
         var response = await SendWithAuthAsync(req);
         if (!response.IsSuccessStatusCode) return null;
 

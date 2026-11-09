@@ -1,3 +1,4 @@
+using TracLabs.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using TracLabs.Application.Features.Equipment.Commands.CreateEquipment;
@@ -26,7 +27,8 @@ public record UpdateEquipmentCommand(
     string? CurrentLocation = null,
     string? AcceptanceCriteria = null,
     string? MaintenancePlan = null,
-    string? InitialConditionNotes = null) : IRequest<EquipmentDetailDto>;
+    string? InitialConditionNotes = null,
+    EquipmentStatus? Status = null) : IRequest<EquipmentDetailDto>;
 
 public class UpdateEquipmentCommandValidator : AbstractValidator<UpdateEquipmentCommand>
 {
@@ -115,6 +117,11 @@ public class UpdateEquipmentCommandHandler : IRequestHandler<UpdateEquipmentComm
             request.AcceptanceCriteria,
             request.MaintenancePlan,
             request.InitialConditionNotes);
+
+                if (request.Status.HasValue)
+        {
+            equipment.UpdateStatus(request.Status.Value);
+        }
 
         _equipmentRepository.Update(equipment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

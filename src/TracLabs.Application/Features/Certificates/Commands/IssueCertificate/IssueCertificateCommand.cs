@@ -1,30 +1,36 @@
 using MediatR;
+using TracLabs.Application.Features.Certificates.Common;
 using TracLabs.Application.Features.Certificates.DTOs;
 using TracLabs.Application.Interfaces;
 using TracLabs.Application.Interfaces.Repositories;
+using TracLabs.Application.Interfaces.Services;
 using TracLabs.Domain.Enums;
 
 namespace TracLabs.Application.Features.Certificates.Commands.IssueCertificate;
 
 public record IssueCertificateCommand(
-    Guid CertificateId
+    Guid CertificateId,
+    CertificateCustomizationOptions? Customization = null
 ) : IRequest<CertificateDetailDto>;
 
 public class IssueCertificateCommandHandler : IRequestHandler<IssueCertificateCommand, CertificateDetailDto>
 {
     private readonly ICertificateRepository _certificateRepository;
     private readonly IEquipmentRepository _equipmentRepository;
+    private readonly ICertificatePdfGenerator _pdfGenerator;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
 
     public IssueCertificateCommandHandler(
         ICertificateRepository certificateRepository,
         IEquipmentRepository equipmentRepository,
+        ICertificatePdfGenerator pdfGenerator,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
     {
         _certificateRepository = certificateRepository;
         _equipmentRepository = equipmentRepository;
+        _pdfGenerator = pdfGenerator;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
     }
@@ -39,10 +45,16 @@ public class IssueCertificateCommandHandler : IRequestHandler<IssueCertificateCo
         if (string.IsNullOrWhiteSpace(userId))
             throw new UnauthorizedAccessException("Usuário supervisor não identificado.");
 
-        // 1. Emite o certificado (valida se o PDF está anexado e se o status é Draft)
+        // 1. Emite o certificado (valida se o status é Draft)
         cert.Issue(userId);
 
-        // 2. Atualiza o ciclo de status do equipamento do cliente para CertificateIssued
+        // 2. Regenera o PDF oficial com o status 'Issued', data formal e sem marcação de rascunho
+        var reportDto = CertificateReportBuilder.Build(cert);
+        var options = request.Customization ?? new CertificateCustomizationOptions(ShowDetailedPoints: false);
+        var pdfBytes = await _pdfGenerator.GenerateVolumeCertificatePdfAsync(reportDto, options, cancellationToken);
+        cert.AttachPdf(pdfBytes, $"{cert.CertificateNumber}.pdf");
+
+        // 3. Atualiza o ciclo de status do equipamento do cliente para CertificateIssued
         var record = cert.CalibrationRecord
             ?? throw new InvalidOperationException("Registro de calibração não associado ao certificado.");
 

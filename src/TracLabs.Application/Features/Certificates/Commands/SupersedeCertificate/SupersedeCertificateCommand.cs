@@ -1,7 +1,9 @@
 using MediatR;
+using TracLabs.Application.Features.Certificates.Common;
 using TracLabs.Application.Features.Certificates.DTOs;
 using TracLabs.Application.Interfaces;
 using TracLabs.Application.Interfaces.Repositories;
+using TracLabs.Application.Interfaces.Services;
 using TracLabs.Domain.Enums;
 
 namespace TracLabs.Application.Features.Certificates.Commands.SupersedeCertificate;
@@ -14,13 +16,16 @@ public record SupersedeCertificateCommand(
 public class SupersedeCertificateCommandHandler : IRequestHandler<SupersedeCertificateCommand, CertificateDetailDto>
 {
     private readonly ICertificateRepository _certificateRepository;
+    private readonly ICertificatePdfGenerator _pdfGenerator;
     private readonly IUnitOfWork _unitOfWork;
 
     public SupersedeCertificateCommandHandler(
         ICertificateRepository certificateRepository,
+        ICertificatePdfGenerator pdfGenerator,
         IUnitOfWork unitOfWork)
     {
         _certificateRepository = certificateRepository;
+        _pdfGenerator = pdfGenerator;
         _unitOfWork = unitOfWork;
     }
 
@@ -34,6 +39,13 @@ public class SupersedeCertificateCommandHandler : IRequestHandler<SupersedeCerti
             throw new KeyNotFoundException($"Certificado com ID '{request.CertificateId}' não encontrado.");
 
         cert.Supersede();
+
+        // Regenera o laudo com o status 'Superseded' e o carimbo oficial [SUBSTITUÍDO / CANCELADO] (ISO 17025 7.8.8.2)
+        var reportDto = CertificateReportBuilder.Build(cert);
+        var options = new CertificateCustomizationOptions(ShowDetailedPoints: false);
+        var pdfBytes = await _pdfGenerator.GenerateVolumeCertificatePdfAsync(reportDto, options, cancellationToken);
+        cert.AttachPdf(pdfBytes, $"{cert.CertificateNumber}_CANCELADO.pdf");
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var record = cert.CalibrationRecord;

@@ -7,6 +7,7 @@ using TracLabs.Application.Features.Equipment.Commands.CreateEquipment;
 using TracLabs.Application.Features.Equipment.Commands.ReportOccurrence;
 using TracLabs.Application.Features.Equipment.Commands.UpdateEquipment;
 using TracLabs.Application.Features.Equipment.Commands.UpdateLocation;
+using TracLabs.Application.Features.Equipment.Commands.UpdateEquipmentStatus;
 using TracLabs.Application.Features.Equipment.DTOs;
 using TracLabs.Application.Features.Equipment.Queries.GetEquipmentById;
 using TracLabs.Application.Features.Equipment.Queries.GetEquipmentHistory;
@@ -82,6 +83,16 @@ public class EquipmentController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Atualiza o status operacional/metrológico do equipamento de cliente (ISO 17025 6.4.13 e).</summary>
+    [HttpPatch("{id:guid}/status")]
+    [HttpPut("{id:guid}/status")]
+    [Authorize(Roles = $"{Roles.Tecnico},{Roles.Supervisor}")]
+    public async Task<ActionResult<EquipmentDetailDto>> UpdateStatus(Guid id, [FromBody] UpdateEquipmentStatusRequest request)
+    {
+        var result = await _mediator.Send(new UpdateEquipmentStatusCommand(id, request.Value));
+        return Ok(result);
+    }
+
     /// <summary>Atualiza a localização física atual do equipamento no laboratório (ISO 17025 6.4.13 d).</summary>
     [HttpPatch("{id:guid}/location")]
     [HttpPut("{id:guid}/location")]
@@ -118,3 +129,4 @@ public class EquipmentController : ControllerBase
 }
 
 public record UpdateLocationRequest(string NewLocation);
+

@@ -983,6 +983,20 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
         }
     }
 
+    public Task<ClientEquipmentDto> UpdateEquipmentStatusAsync(string equipmentId, EquipmentStatus newStatus)
+    {
+        lock (_lock)
+        {
+            var eq = _equipment.FirstOrDefault(e => e.Id == equipmentId || e.LabTag == equipmentId);
+            if (eq != null)
+            {
+                eq.Status = newStatus;
+                return Task.FromResult(eq);
+            }
+            throw new KeyNotFoundException($"Equipamento {equipmentId} não encontrado no mock.");
+        }
+    }
+
     public Task<ClientEquipmentDto> SaveClientEquipmentAsync(ClientEquipmentDto equipment)
     {
         lock (_lock)
@@ -1178,7 +1192,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
         }
     }
 
-    public Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration)
+    public Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration, bool showDetailedPoints = false)
     {
         lock (_lock)
         {
@@ -1250,7 +1264,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
         }
     }
 
-    public Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId)
+    public Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId, bool showDetailedPoints = false)
     {
         lock (_lock)
         {

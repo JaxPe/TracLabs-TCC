@@ -13,6 +13,7 @@ public interface IMetrologyDataService
     Task<List<ClientEquipmentDto>> GetClientEquipmentAsync(string? search = null, string? clientId = null);
     Task<ClientEquipmentDto?> GetClientEquipmentByIdAsync(string id);
     Task<ClientEquipmentDto> SaveClientEquipmentAsync(ClientEquipmentDto equipment);
+    Task<ClientEquipmentDto> UpdateEquipmentStatusAsync(string equipmentId, EquipmentStatus newStatus);
 
     // Padrões do Laboratório
     Task<List<StandardEquipmentDto>> GetStandardEquipmentAsync(string? search = null, StandardRole? role = null);
@@ -29,9 +30,9 @@ public interface IMetrologyDataService
     Task<CalibrationRecordDto?> GetCalibrationByIdAsync(string id);
     Task<List<CertificateDto>> GetCertificatesAsync(CertificateStatus? status = null);
     Task<CertificateDto?> GetCertificateByIdAsync(string id);
-    Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration);
+    Task<CertificateDto> CreateCertificateFromCalibrationAsync(CalibrationRecordDto calibration, bool showDetailedPoints = false);
     Task<CertificateDto> UpdateCertificateStatusAsync(string id, CertificateStatus newStatus, string? reason = null);
-    Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId);
+    Task<CertificateDto?> GenerateCertificatePdfAsync(string certificateId, bool showDetailedPoints = false);
 
     // Emissão e Download de PDF
     Task<byte[]?> GetCertificatePdfAsync(Guid certificateId);

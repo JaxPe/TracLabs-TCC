@@ -329,6 +329,15 @@ public class Equipment : BaseEntity
         Status = EquipmentStatus.CertificateIssued;
         MarkAsUpdated();
     }
+
+    /// <summary>
+    /// Permite a alteração explícita do status do equipamento (ex: devolver para 'Recebido' para nova calibração, 'Aprovado', 'Não Conforme', etc.).
+    /// </summary>
+    public void UpdateStatus(EquipmentStatus newStatus)
+    {
+        Status = newStatus;
+        MarkAsUpdated();
+    }
     
     /// <summary>Returns the most recent calibration record, or null if never calibrated.</summary>
     public CalibrationRecord? GetLatestCalibration() =>

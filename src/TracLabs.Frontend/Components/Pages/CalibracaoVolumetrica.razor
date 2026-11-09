@@ -23,7 +23,11 @@
             </p>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center flex-wrap gap-3">
+            <label class="form-check-label d-flex align-items-center gap-2 mb-0" style="font-size: 0.8125rem; color: var(--trac-text-secondary); cursor: pointer; user-select: none;">
+                <input type="checkbox" class="form-check-input mt-0" @bind="_showDetailedPoints" />
+                <span>Incluir corridas de medição no PDF</span>
+            </label>
             <button class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="PrefillBenchmarkData" title="Carregar 11 repetições oficiais da planilha de referência">
                 <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -71,8 +75,21 @@
                         </select>
                         @if (!IsEquipmentCalibratable(_selectedEquipment.Status))
                         {
-                            <div class="mt-2 p-2" style="background-color: var(--trac-warning-50); border: 1px solid var(--trac-warning-200); border-radius: var(--trac-radius-sm); font-size: 0.75rem; color: var(--trac-warning-800);">
-                                ⚠️ Instrumento no status <strong>@GetEquipmentStatusLabel(_selectedEquipment.Status)</strong>. Apenas instrumentos com status <em>Recebido</em> ou <em>Aprovado</em> podem ser calibrados.
+                            <div class="mt-2 p-2 d-flex align-items-center justify-content-between flex-wrap gap-2" style="background-color: var(--trac-warning-50); border: 1px solid var(--trac-warning-200); border-radius: var(--trac-radius-sm); font-size: 0.75rem; color: var(--trac-warning-800);">
+                                <div>
+                                    ⚠️ Instrumento no status <strong>@GetEquipmentStatusLabel(_selectedEquipment.Status)</strong>. Apenas instrumentos com status <em>Recebido</em> ou <em>Aprovado</em> podem ser calibrados.
+                                </div>
+                                <button type="button" class="trac-btn trac-btn-secondary trac-btn-sm" @onclick="QuickSetReceivedForRecalibration" disabled="@_isQuickUpdatingStatus">
+                                    @if (_isQuickUpdatingStatus)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        <span>Alterando...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Definir como "Recebido" para Recalibrar</span>
+                                    }
+                                </button>
                             </div>
                         }
                     </div>
@@ -593,7 +610,11 @@
                 Série verificada com os parâmetros oficiais da planilha benchmark (planilha volume 11-08-25.xlsx).
             </span>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <label class="form-check-label d-flex align-items-center gap-2 mb-0" style="font-size: 0.8125rem; color: var(--trac-text-secondary); cursor: pointer; user-select: none;">
+                    <input type="checkbox" class="form-check-input mt-0" @bind="_showDetailedPoints" />
+                    <span>Incluir corridas de medição no PDF</span>
+                </label>
                 <button class="trac-btn trac-btn-secondary" @onclick="SaveDraft" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
@@ -625,6 +646,8 @@
     [SupplyParameterFromQuery]
     public string? Tag { get; set; }
 
+    private bool _showDetailedPoints = false;
+    private bool _isQuickUpdatingStatus = false;
     private List<ClientEquipmentDto> _availableEquipment = new();
     private ClientEquipmentDto _selectedEquipment = new();
     private List<StandardEquipmentDto> _standards = new();
@@ -1128,7 +1151,7 @@
             StateHasChanged();
 
             await DataService.SaveCalibrationAsync(_calibration);
-            var cert = await DataService.CreateCertificateFromCalibrationAsync(_calibration);
+            var cert = await DataService.CreateCertificateFromCalibrationAsync(_calibration, _showDetailedPoints);
 
             NotificationModal.ShowSuccess("Minuta Gerada com Sucesso", $"Calibração concluída! O certificado '{cert.CertificateNumber}' foi registrado e gerado.");
             Navigation.NavigateTo($"/certificados/{cert.Id}");
@@ -1140,6 +1163,30 @@
         finally
         {
             _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task QuickSetReceivedForRecalibration()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedEquipment.Id)) return;
+        try
+        {
+            _isQuickUpdatingStatus = true;
+            StateHasChanged();
+            var updated = await DataService.UpdateEquipmentStatusAsync(_selectedEquipment.Id, EquipmentStatus.Received);
+            _selectedEquipment.Status = updated.Status;
+            var inList = _availableEquipment.FirstOrDefault(e => e.Id == updated.Id || e.LabTag == updated.LabTag);
+            if (inList != null) inList.Status = updated.Status;
+            NotificationModal.ShowSuccess("Status Atualizado", $"O status do equipamento {_selectedEquipment.LabTag} foi definido como 'Recebido' e está apto para recalibração.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Atualizar Status", ex.Message, ex.ToString());
+        }
+        finally
+        {
+            _isQuickUpdatingStatus = false;
             StateHasChanged();
         }
     }
@@ -1164,8 +1211,10 @@
         EquipmentStatus.Received => "trac-badge-info",
         EquipmentStatus.Approved => "trac-badge-success",
         EquipmentStatus.InCalibration => "trac-badge-warning",
-        EquipmentStatus.Calibrated => "trac-badge-neutral",
-        EquipmentStatus.CertificateIssued => "trac-badge-neutral",
+        EquipmentStatus.Calibrated => "trac-badge-success",
+        EquipmentStatus.CertificateIssued => "trac-badge-success",
+        EquipmentStatus.Returned => "trac-badge-neutral",
+        EquipmentStatus.NonConforming => "trac-badge-danger",
         _ => "trac-badge-neutral"
     };
 }

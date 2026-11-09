@@ -195,24 +195,14 @@
                                             <td class="trac-mono">@eq.NominalCapacity @eq.Unit</td>
                                             <td class="trac-mono">&plusmn;@eq.MaxPermissibleError @eq.Unit</td>
                                             <td>
-                                                @if (eq.Status == EquipmentStatus.InCalibration)
-                                                {
-                                                    <span class="trac-badge trac-badge-warning">Em Calibração</span>
-                                                }
-                                                else if (eq.Status == EquipmentStatus.Calibrated)
-                                                {
-                                                    <span class="trac-badge trac-badge-success">Calibrado</span>
-                                                }
-                                                else if (eq.Status == EquipmentStatus.Approved)
-                                                {
-                                                    <span class="trac-badge trac-badge-info">Aprovado</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="trac-badge trac-badge-neutral">@eq.Status</span>
-                                                }
+                                                <span class="trac-badge @GetEquipmentStatusBadgeClass(eq.Status)">
+                                                    @GetEquipmentStatusLabel(eq.Status)
+                                                </span>
                                             </td>
                                             <td class="text-end">
+                                                <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" title="Alterar Status" @onclick="@(() => OpenChangeEquipmentStatusModal(eq))">
+                                                    Status
+                                                </button>
                                                 <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" @onclick="@(() => ViewEquipmentDetails(eq))">
                                                     Detalhes &rarr;
                                                 </button>
@@ -255,6 +245,9 @@
                         </div>
                     </div>
                     <div>
+                        <button class="trac-btn trac-btn-secondary trac-btn-sm me-2" @onclick="@(() => OpenChangeEquipmentStatusModal(_selectedEquipment))">
+                            Alterar Status
+                        </button>
                         <button class="trac-btn trac-btn-primary trac-btn-sm" @onclick="@(() => CalibrateEquipment(_selectedEquipment.LabTag))">
                             Iniciar Calibração &rarr;
                         </button>
@@ -293,23 +286,10 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">STATUS ATUAL</div>
-                            <div>
-                                @if (_selectedEquipment.Status == EquipmentStatus.InCalibration)
-                                {
-                                    <span class="trac-badge trac-badge-warning">Em Calibração</span>
-                                }
-                                else if (_selectedEquipment.Status == EquipmentStatus.Calibrated)
-                                {
-                                    <span class="trac-badge trac-badge-success">Calibrado</span>
-                                }
-                                else if (_selectedEquipment.Status == EquipmentStatus.Approved)
-                                {
-                                    <span class="trac-badge trac-badge-info">Aprovado</span>
-                                }
-                                else
-                                {
-                                    <span class="trac-badge trac-badge-neutral">@_selectedEquipment.Status</span>
-                                }
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="trac-badge @GetEquipmentStatusBadgeClass(_selectedEquipment.Status)">
+                                    @GetEquipmentStatusLabel(_selectedEquipment.Status)
+                                </span>
                             </div>
                         </div>
 
@@ -849,24 +829,14 @@
                                             <div class="trac-mono" style="font-size: 0.75rem; color: var(--trac-text-muted);">EMA: &plusmn;@eq.MaxPermissibleError @eq.Unit</div>
                                         </td>
                                         <td>
-                                            @if (eq.Status == EquipmentStatus.InCalibration)
-                                            {
-                                                <span class="trac-badge trac-badge-warning">Em Calibração</span>
-                                            }
-                                            else if (eq.Status == EquipmentStatus.Calibrated)
-                                            {
-                                                <span class="trac-badge trac-badge-success">Calibrado</span>
-                                            }
-                                            else if (eq.Status == EquipmentStatus.Approved)
-                                            {
-                                                <span class="trac-badge trac-badge-info">Aprovado p/ Ensaio</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="trac-badge trac-badge-neutral">@eq.Status</span>
-                                            }
+                                            <span class="trac-badge @GetEquipmentStatusBadgeClass(eq.Status)">
+                                                @GetEquipmentStatusLabel(eq.Status)
+                                            </span>
                                         </td>
                                         <td class="text-end">
+                                            <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" title="Alterar Status" @onclick="@(() => OpenChangeEquipmentStatusModal(eq))">
+                                                Status
+                                            </button>
                                             <button class="trac-btn trac-btn-secondary trac-btn-sm me-1" @onclick="@(() => ViewEquipmentDetails(eq))">
                                                 Detalhes &rarr;
                                             </button>
@@ -1088,6 +1058,50 @@
                         <button type="submit" class="trac-btn trac-btn-primary">Salvar Equipamento</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal: Alterar Status do Equipamento -->
+@if (_showEquipmentStatusModal && _equipmentToChangeStatus != null)
+{
+    <div class="trac-modal-overlay" @onclick="CloseEquipmentStatusModal">
+        <div class="trac-modal" style="max-width: 480px;" @onclick:stopPropagation="true">
+            <div class="trac-modal-header">
+                <h3 class="trac-modal-title">Alterar Status do Equipamento</h3>
+                <button type="button" class="trac-btn-icon" @onclick="CloseEquipmentStatusModal">&times;</button>
+            </div>
+            <div class="trac-modal-body">
+                <p style="font-size: 0.875rem; color: var(--trac-text-secondary); margin-bottom: 1rem;">
+                    Atualize a situação cadastral e operacional do equipamento <strong class="trac-mono">@_equipmentToChangeStatus.LabTag</strong> (@_equipmentToChangeStatus.Description).
+                </p>
+                <div class="trac-form-group mb-3">
+                    <label class="trac-label">Status do Equipamento</label>
+                    <select class="trac-select" @bind="_newEquipmentStatus">
+                        @foreach (EquipmentStatus st in Enum.GetValues<EquipmentStatus>())
+                        {
+                            <option value="@st">@GetEquipmentStatusLabel(st)</option>
+                        }
+                    </select>
+                    <div style="font-size: 0.75rem; color: var(--trac-text-muted); margin-top: 0.35rem;">
+                        Instrumentos nos status <em>Recebido</em> ou <em>Aprovado</em> estão aptos para calibração volumétrica.
+                    </div>
+                </div>
+                <div class="trac-modal-footer mt-4">
+                    <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseEquipmentStatusModal">Cancelar</button>
+                    <button type="button" class="trac-btn trac-btn-primary" @onclick="SaveEquipmentStatusChangeAsync" disabled="@_isSavingEquipmentStatus">
+                        @if (_isSavingEquipmentStatus)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            <span>Salvando...</span>
+                        }
+                        else
+                        {
+                            <span>Salvar Status</span>
+                        }
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1448,6 +1462,11 @@
     private StandardCertificateDto _newStandardCert = new();
 
     // Creation Modals state
+    private bool _showEquipmentStatusModal = false;
+    private ClientEquipmentDto? _equipmentToChangeStatus = null;
+    private EquipmentStatus _newEquipmentStatus = EquipmentStatus.Received;
+    private bool _isSavingEquipmentStatus = false;
+
     private bool _showClientModal = false;
     private ClientDto _newClient = new();
 
@@ -1892,5 +1911,77 @@
         StandardRole.ReferenceWeights => "Pesos Padrão",
         StandardRole.Other => "Densímetro Digital / Outro",
         _ => role.ToString()
+    };
+
+    private void OpenChangeEquipmentStatusModal(ClientEquipmentDto eq)
+    {
+        _equipmentToChangeStatus = eq;
+        _newEquipmentStatus = eq.Status;
+        _showEquipmentStatusModal = true;
+    }
+
+    private void CloseEquipmentStatusModal()
+    {
+        _showEquipmentStatusModal = false;
+        _equipmentToChangeStatus = null;
+    }
+
+    private async Task SaveEquipmentStatusChangeAsync()
+    {
+        if (_equipmentToChangeStatus == null || string.IsNullOrWhiteSpace(_equipmentToChangeStatus.Id)) return;
+        try
+        {
+            _isSavingEquipmentStatus = true;
+            StateHasChanged();
+            var updated = await DataService.UpdateEquipmentStatusAsync(_equipmentToChangeStatus.Id, _newEquipmentStatus);
+            _equipmentToChangeStatus.Status = updated.Status;
+            if (_selectedEquipment != null && _selectedEquipment.Id == updated.Id)
+            {
+                _selectedEquipment.Status = updated.Status;
+            }
+            var inList = _equipments.FirstOrDefault(e => e.Id == updated.Id);
+            if (inList != null) inList.Status = updated.Status;
+            var inFiltered = _filteredEquipments.FirstOrDefault(e => e.Id == updated.Id);
+            if (inFiltered != null) inFiltered.Status = updated.Status;
+            var inClientEq = _selectedClientEquipments.FirstOrDefault(e => e.Id == updated.Id);
+            if (inClientEq != null) inClientEq.Status = updated.Status;
+            var inClientFilt = _filteredClientEquipments.FirstOrDefault(e => e.Id == updated.Id);
+            if (inClientFilt != null) inClientFilt.Status = updated.Status;
+            _showEquipmentStatusModal = false;
+            NotificationModal.ShowSuccess("Status Atualizado", $"Status do equipamento '{_equipmentToChangeStatus.LabTag}' alterado com sucesso para '{GetEquipmentStatusLabel(updated.Status)}'.");
+        }
+        catch (Exception ex)
+        {
+            NotificationModal.ShowError("Erro ao Atualizar Status", ex.Message, ex.ToString());
+        }
+        finally
+        {
+            _isSavingEquipmentStatus = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string GetEquipmentStatusLabel(EquipmentStatus status) => status switch
+    {
+        EquipmentStatus.Received => "Recebido",
+        EquipmentStatus.Approved => "Aprovado",
+        EquipmentStatus.InCalibration => "Em Calibração",
+        EquipmentStatus.Calibrated => "Calibrado",
+        EquipmentStatus.CertificateIssued => "Certificado Emitido",
+        EquipmentStatus.Returned => "Devolvido",
+        EquipmentStatus.NonConforming => "Não Conforme",
+        _ => status.ToString()
+    };
+
+    private static string GetEquipmentStatusBadgeClass(EquipmentStatus status) => status switch
+    {
+        EquipmentStatus.Received => "trac-badge-info",
+        EquipmentStatus.Approved => "trac-badge-success",
+        EquipmentStatus.InCalibration => "trac-badge-warning",
+        EquipmentStatus.Calibrated => "trac-badge-success",
+        EquipmentStatus.CertificateIssued => "trac-badge-success",
+        EquipmentStatus.Returned => "trac-badge-neutral",
+        EquipmentStatus.NonConforming => "trac-badge-danger",
+        _ => "trac-badge-neutral"
     };
 }

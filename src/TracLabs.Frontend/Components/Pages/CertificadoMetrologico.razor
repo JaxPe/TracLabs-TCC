@@ -14,7 +14,7 @@
             <select class="trac-select" style="max-width: 320px;" value="@_currentCert?.Id" @onchange="OnCertificateSelected">
                 @foreach (var c in _allCertificates)
                 {
-                    <option value="@c.Id">@c.CertificateNumber — @c.EquipmentTag (@c.Status)</option>
+                    <option value="@c.Id">@c.CertificateNumber — @c.EquipmentTag (@GetCertificateStatusLabel(c.Status))</option>
                 }
             </select>
         </div>
@@ -52,6 +52,12 @@
                     <button class="trac-btn trac-btn-danger trac-btn-sm" @onclick="OpenCancelModal">
                         Cancelar / Substituir
                     </button>
+                }
+                else if (_currentCert?.Status == CertificateStatus.Superseded)
+                {
+                    <span class="trac-badge trac-badge-danger" style="font-size: 0.75rem;">
+                        Certificado Substituído (ISO 17025 7.8.8.2)
+                    </span>
                 }
             }
 
@@ -220,30 +226,36 @@
     <!-- Modal Cancelamento / Substituição (ISO 17025) -->
     @if (_showCancelModal)
     {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="background-color: var(--trac-bg-surface); border: 1px solid var(--trac-border-default);">
-                    <div class="modal-header">
-                        <h5 class="modal-title" style="color: var(--trac-danger-600); font-weight: 700;">
-                            Cancelar / Substituir Certificado Oficial
-                        </h5>
-                        <button type="button" class="btn-close" @onclick="CloseCancelModal"></button>
+        <div class="trac-modal-overlay" @onclick="CloseCancelModal">
+            <div class="trac-modal" style="max-width: 520px;" @onclick:stopPropagation="true">
+                <div class="trac-modal-header">
+                    <h3 class="trac-modal-title" style="color: var(--trac-danger-600); font-weight: 700;">
+                        Cancelar / Substituir Certificado Oficial
+                    </h3>
+                    <button type="button" class="trac-btn-icon" @onclick="CloseCancelModal">&times;</button>
+                </div>
+                <div class="trac-modal-body">
+                    <p style="font-size: 0.875rem; color: var(--trac-text-secondary); margin-bottom: 1rem;">
+                        Conforme o item 7.8.8.2 da ISO/IEC 17025:2017, qualquer alteração ou cancelamento de um certificado emitido exige identificação única e justificativa formal de rastreabilidade.
+                    </p>
+                    <div class="trac-form-group mb-3">
+                        <label class="trac-label">Justificativa Formal do Cancelamento <span class="text-danger">*</span></label>
+                        <textarea class="trac-input" rows="4" @bind="_cancelReason" @bind:event="oninput" placeholder="Descreva os motivos técnicos do cancelamento..."></textarea>
                     </div>
-                    <div class="modal-body">
-                        <p style="font-size: 0.875rem; color: var(--trac-text-secondary);">
-                            Conforme o item 7.8.8.2 da ISO/IEC 17025:2017, qualquer alteração ou cancelamento de um certificado emitido exige identificação única e justificativa formal de rastreabilidade.
-                        </p>
-                        <div class="mb-3">
-                            <label class="trac-label">Justificativa Formal do Cancelamento <span class="text-danger">*</span></label>
-                            <textarea class="trac-input" rows="4" @bind="_cancelReason" placeholder="Descreva os motivos técnicos do cancelamento..."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="trac-btn trac-btn-secondary" @onclick="CloseCancelModal">Abortar</button>
-                        <button class="trac-btn trac-btn-danger" @onclick="ConfirmCancelCertificate" disabled="@string.IsNullOrWhiteSpace(_cancelReason)">
-                            Confirmar Cancelamento Oficial
-                        </button>
-                    </div>
+                </div>
+                <div class="trac-modal-footer">
+                    <button type="button" class="trac-btn trac-btn-secondary" @onclick="CloseCancelModal">Abortar</button>
+                    <button type="button" class="trac-btn trac-btn-danger" @onclick="ConfirmCancelCertificate" disabled="@(string.IsNullOrWhiteSpace(_cancelReason) || _isCancelling)">
+                        @if (_isCancelling)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            <span>Cancelando...</span>
+                        }
+                        else
+                        {
+                            <span>Confirmar Cancelamento Oficial</span>
+                        }
+                    </button>
                 </div>
             </div>
         </div>
@@ -252,19 +264,17 @@
     <!-- Modal Viewer Secundário para Testes Unitários de Modal -->
     @if (_showPdfModal)
     {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.6);">
-            <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">
-                <div class="modal-content h-100" style="background-color: var(--trac-bg-surface);">
-                    <div class="modal-header py-2">
-                        <h5 class="modal-title" style="font-size: 0.9375rem; font-weight: 700;">Visualizador de Laudo Oficial</h5>
-                        <button type="button" class="btn-close" @onclick="ClosePdfModal"></button>
-                    </div>
-                    <div class="modal-body p-0 h-100">
-                        @if (!string.IsNullOrEmpty(_pdfDataUrl))
-                        {
-                            <iframe src="@_pdfDataUrl" class="w-100 h-100" style="border: none;" title="PDF Modal"></iframe>
-                        }
-                    </div>
+        <div class="trac-modal-overlay" @onclick="ClosePdfModal">
+            <div class="trac-modal" style="max-width: 90vw; height: 90vh;" @onclick:stopPropagation="true">
+                <div class="trac-modal-header py-2">
+                    <h3 class="trac-modal-title" style="font-size: 0.9375rem; font-weight: 700;">Visualizador de Laudo Oficial</h3>
+                    <button type="button" class="trac-btn-icon" @onclick="ClosePdfModal">&times;</button>
+                </div>
+                <div class="trac-modal-body p-0" style="height: calc(100% - 55px);">
+                    @if (!string.IsNullOrEmpty(_pdfDataUrl))
+                    {
+                        <iframe src="@_pdfDataUrl" class="w-100 h-100" style="border: none;" title="PDF Modal"></iframe>
+                    }
                 </div>
             </div>
         </div>
@@ -423,22 +433,40 @@
 
     private void CloseCancelModal() => _showCancelModal = false;
 
+    private bool _isCancelling = false;
+
     private async Task ConfirmCancelCertificate()
     {
-        if (_currentCert == null || string.IsNullOrWhiteSpace(_cancelReason)) return;
+        if (_currentCert == null || string.IsNullOrWhiteSpace(_cancelReason) || _isCancelling) return;
         try
         {
+            _isCancelling = true;
+            StateHasChanged();
+
             _currentCert = await DataService.UpdateCertificateStatusAsync(_currentCert.Id, CertificateStatus.Superseded, _cancelReason);
             _showCancelModal = false;
             InvalidatePdfCache();
-            await LoadCertificatesAsync(autoLoadPdf: false);
+            await LoadCertificatesAsync(autoLoadPdf: true);
             NotificationModal.ShowWarning("Certificado Substituído", $"O laudo '{_currentCert.CertificateNumber}' foi marcado como substituído/cancelado conforme item 7.8.8.2 da ISO/IEC 17025.");
         }
         catch (Exception ex)
         {
             NotificationModal.ShowError("Erro ao Cancelar Certificado", ex.Message, ex.ToString());
         }
+        finally
+        {
+            _isCancelling = false;
+            StateHasChanged();
+        }
     }
+
+    private static string GetCertificateStatusLabel(CertificateStatus status) => status switch
+    {
+        CertificateStatus.Draft => "Minuta / Rascunho",
+        CertificateStatus.Issued => "Emitido Oficialmente",
+        CertificateStatus.Superseded => "Cancelado / Substituído",
+        _ => status.ToString()
+    };
 
     private async Task PrintCertificate()
     {
