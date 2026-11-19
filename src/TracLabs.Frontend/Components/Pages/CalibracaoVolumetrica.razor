@@ -203,7 +203,7 @@
                             @if (_isManualDensity)
                             {
                                 <span class="trac-badge trac-badge-warning" style="font-size: 0.75rem;">
-                                    Modo Picnometria Ativo
+                                    Modo Densidade Manual Ativo (Picnômetro / Densímetro)
                                 </span>
                             }
                         </div>
@@ -222,7 +222,7 @@
                                 <div class="col-12 col-md-7">
                                     <div class="p-2" style="background-color: var(--trac-bg-surface); border-left: 3px solid @(HasValidPycnometerSelected ? "var(--trac-success-500)" : "var(--trac-danger-500)"); border-radius: var(--trac-radius-sm); font-size: 0.8125rem;">
                                         <div style="font-weight: 600; color: @(HasValidPycnometerSelected ? "var(--trac-success-600)" : "var(--trac-danger-600)");">
-                                            @(HasValidPycnometerSelected ? "✔ Padrão Picnômetro Válido Selecionado" : "⚠ Seleção de Picnômetro Obrigatória")
+                                            @(HasValidPycnometerSelected ? "✔ Padrão de Densidade Válido Selecionado" : "⚠ Seleção de Picnômetro ou Densímetro Obrigatória")
                                         </div>
                                         <div style="color: var(--trac-text-secondary); font-size: 0.75rem;">
                                             Obrigatório selecionar picnômetro ou densímetro digital padrão com certificado válido. O fator Z utilizará este valor.
@@ -237,7 +237,7 @@
                     <div class="d-flex flex-wrap gap-2 p-2 mt-2 mb-3" style="background-color: var(--trac-bg-surface-elevated); border: 1px solid var(--trac-border-default); border-radius: var(--trac-radius-md); font-size: 0.75rem;">
                         @if (_calibration.IsManualWaterDensity)
                         {
-                            <div>&bull; &rho;<sub>água</sub> (Manual/Picnômetro): <strong class="trac-mono text-warning">@_calibration.CalculatedWaterDensity.ToString("F6") g/cm³</strong></div>
+                            <div>&bull; &rho;<sub>água</sub> (Manual / Picnômetro / Densímetro): <strong class="trac-mono text-warning">@_calibration.CalculatedWaterDensity.ToString("F6") g/cm³</strong></div>
                         }
                         else
                         {
@@ -342,14 +342,16 @@
                                     @if (_calibration.RequiresPycnometer)
                                     {
                                         <span class="trac-badge @(HasValidPycnometerSelected ? "trac-badge-success" : "trac-badge-danger")" style="font-size: 0.7rem;">
-                                            @(HasValidPycnometerSelected ? "✔ Picnômetro Válido" : "⚠ Picnômetro Obrigatório / Inválido")
+                                            @(HasValidPycnometerSelected ? "✔ Padrão Válido" : "⚠ Padrão Obrigatório / Inválido")
                                         </span>
                                     }
                                 </div>
                                 <select class="trac-select" @bind="_calibration.PycnometerStandardId" @bind:after="Recalculate" 
                                         style="@(_calibration.RequiresPycnometer && !HasValidPycnometerSelected ? "border-color: var(--trac-danger-500); background-color: var(--trac-status-danger-bg);" : "")">
-                                    <option value="">-- @(_calibration.RequiresPycnometer ? "Selecione o Picnômetro Obrigatório..." : "Não aplicável (cálculo de densidade via Tanaka)") --</option>
-                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Pycnometer))
+                                    <option value="">-- @(_calibration.RequiresPycnometer ? "Selecione o Picnômetro ou Densímetro Digital Obrigatório..." : "Não aplicável (cálculo de densidade via Tanaka)") --</option>
+                                    @foreach (var std in _standards.Where(s => s.Role == StandardRole.Pycnometer || 
+                                                                              s.Role == StandardRole.Densimeter || 
+                                                                              (s.Role == StandardRole.Other && (s.InstrumentType.Contains("densim", StringComparison.OrdinalIgnoreCase) || s.Name.Contains("densim", StringComparison.OrdinalIgnoreCase)))))
                                     {
                                         <option value="@std.Id">@std.LabTag — @std.Name (@std.CalibrationCertificateNumber) @(std.IsValid ? "✔ Válido" : "⚠ INVÁLIDO / FORA DE CALIBRAÇÃO")</option>
                                     }
@@ -1100,11 +1102,11 @@
                 var pyc = _standards.FirstOrDefault(s => s.Id == _calibration.PycnometerStandardId);
                 if (pyc == null)
                 {
-                    errors.Add("Picnômetro padrão selecionado não foi encontrado.");
+                    errors.Add("Padrão de densidade (picnômetro ou densímetro) selecionado não foi encontrado.");
                 }
                 else if (!pyc.IsValid)
                 {
-                    errors.Add($"Picnômetro padrão ({pyc.LabTag}) inválido: certificado vencido ou status '{pyc.Status}'. É obrigatório selecionar um padrão com calibração válida para uso de densidade manual.");
+                    errors.Add($"Padrão de densidade ({pyc.LabTag}) inválido: certificado vencido ou status '{pyc.Status}'. É obrigatório selecionar um padrão com calibração válida para uso de densidade manual.");
                 }
             }
         }

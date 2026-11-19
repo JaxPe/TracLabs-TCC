@@ -188,10 +188,13 @@ internal class VolumeCalibrationDocument : IDocument
             col.Item().PaddingTop(6).Border(0.5f).BorderColor(Colors.Grey.Lighten1).Padding(5).Column(c =>
             {
                 c.Item().Text("3. MÉTODO DE MEDIÇÃO E CONDIÇÕES AMBIENTAIS").Bold().FontSize(8.5f).FontColor(_primaryColor);
-                var hasPycnometer = _data.StandardsUsed.Any(s => s.Role.Contains("Picnômetro", StringComparison.OrdinalIgnoreCase));
-                var waterDensityDesc = hasPycnometer
-                    ? "Massa específica da água determinada experimentalmente por picnometria"
-                    : "Massa específica da água calculada pela equação de Tanaka";
+                var hasDensimeter = _data.StandardsUsed.Any(s => s.Role.Contains("Densímetro", StringComparison.OrdinalIgnoreCase) || s.Role.Contains("Densimeter", StringComparison.OrdinalIgnoreCase));
+                var hasPycnometer = _data.StandardsUsed.Any(s => s.Role.Contains("Picnômetro", StringComparison.OrdinalIgnoreCase) || s.Role.Contains("Pycnometer", StringComparison.OrdinalIgnoreCase));
+                var waterDensityDesc = hasDensimeter
+                    ? "Massa específica da água determinada experimentalmente por densímetro digital padrão"
+                    : (hasPycnometer
+                        ? "Massa específica da água determinada experimentalmente por picnometria"
+                        : "Massa específica da água calculada pela equação de Tanaka");
 
                 c.Item().Text($"Calibração por gravimetria conforme norma ABNT NBR ISO 4787:2013 e Orientação DOC-CGCRE-027. {waterDensityDesc} e massa específica do ar determinada pela equação de Spieweck.").FontSize(7.8f);
 

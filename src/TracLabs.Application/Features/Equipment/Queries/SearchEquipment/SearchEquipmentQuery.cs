@@ -46,6 +46,8 @@ public class SearchEquipmentQueryHandler : IRequestHandler<SearchEquipmentQuery,
             e.ClientId,
             e.Client?.Name,
             e.NominalCapacity,
-            e.Unit)).ToList();
+            e.Unit,
+            e.RangeMin,
+            e.RangeMax)).ToList();
     }
 }

@@ -182,6 +182,8 @@ public static class CertificateReportBuilder
         StandardRole.ThermoHygrometer => "Termo-higrômetro",
         StandardRole.ReferenceWeights => "Pesos-Padrão",
         StandardRole.Pycnometer => "Picnômetro",
+        StandardRole.Densimeter => "Densímetro Digital",
+        StandardRole.Other => "Outro Instrumento Auxiliar",
         _ => role.ToString()
     };
 }

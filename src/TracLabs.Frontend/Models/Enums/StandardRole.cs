@@ -10,5 +10,6 @@ public enum StandardRole
     ReferenceWeights = 5,
     ThermoHygrometer = 6,
     Pycnometer = 7,
+    Densimeter = 8,
     Other = 99
 }

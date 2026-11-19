@@ -220,7 +220,7 @@ public class CalibracaoVolumetricaUiValidationTests
 
         hasValidPyc.Should().BeFalse();
         isFormValid.Should().BeFalse();
-        errors.Should().Contain(e => e.Contains("Picnômetro padrão") && e.Contains("PAD-PIC-02") && e.Contains("inválido"));
+        errors.Should().Contain(e => e.Contains("PAD-PIC-02") && e.Contains("inválido"));
 
         // Guard clause inside SaveAndGenerateCertificate
         await ComponentTestHarness.InvokeAsync(comp, "SaveAndGenerateCertificate");
@@ -237,6 +237,32 @@ public class CalibracaoVolumetricaUiValidationTests
         ComponentTestHarness.Invoke(comp, "OnToggleManualDensity", new ChangeEventArgs { Value = true });
         cal.WaterDensityGcm3 = 0.998205m;
         cal.PycnometerStandardId = "pad-pic-01";
+        ComponentTestHarness.Invoke(comp, "Recalculate");
+
+        var hasValidPyc = ComponentTestHarness.GetProperty<bool>(comp, "HasValidPycnometerSelected");
+        var isFormValid = ComponentTestHarness.GetProperty<bool>(comp, "IsFormValid");
+        var errors = ComponentTestHarness.Invoke<List<string>>(comp, "GetValidationErrors")!;
+
+        hasValidPyc.Should().BeTrue();
+        isFormValid.Should().BeTrue();
+        errors.Should().BeEmpty();
+
+        // Successful certificate generation triggers navigation
+        await ComponentTestHarness.InvokeAsync(comp, "SaveAndGenerateCertificate");
+        _navManager.LastNavigatedUri.Should().NotBeNull();
+        _navManager.LastNavigatedUri.Should().StartWith("/certificados/");
+    }
+
+    [Fact]
+    public async Task ManualWaterDensity_WithValidDensimeter_PassesValidation_AndGeneratesCertificate()
+    {
+        var comp = await CreateInitializedComponentAsync();
+        var cal = ComponentTestHarness.GetField<CalibrationRecordDto>(comp, "_calibration")!;
+
+        // Enable manual density with valid densimeter (pad-den-01)
+        ComponentTestHarness.Invoke(comp, "OnToggleManualDensity", new ChangeEventArgs { Value = true });
+        cal.WaterDensityGcm3 = 0.998205m;
+        cal.PycnometerStandardId = "pad-den-01";
         ComponentTestHarness.Invoke(comp, "Recalculate");
 
         var hasValidPyc = ComponentTestHarness.GetProperty<bool>(comp, "HasValidPycnometerSelected");

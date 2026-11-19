@@ -29,6 +29,9 @@ public enum StandardRole
     /// <summary>Picnômetro padrão utilizado para a determinação experimental direta da massa específica da água.</summary>
     Pycnometer = 7,
 
+    /// <summary>Densímetro digital padrão utilizado para a determinação experimental direta da massa específica da água.</summary>
+    Densimeter = 8,
+
     /// <summary>Outro instrumento padrão auxiliar.</summary>
     Other = 99
 }

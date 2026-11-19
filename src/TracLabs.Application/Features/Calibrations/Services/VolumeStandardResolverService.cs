@@ -80,14 +80,14 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
         if (request.WaterDensityGcm3.HasValue && request.WaterDensityGcm3.Value > 0)
         {
             if (!request.PycnometerStandardId.HasValue || request.PycnometerStandardId.Value == Guid.Empty)
-                throw new ArgumentException("Ao informar a massa específica da água calculada por picnômetro, é obrigatório informar o padrão de picnômetro utilizado (com certificado válido).", nameof(request));
+                throw new ArgumentException("Ao informar a massa específica da água manualmente, é obrigatório informar o padrão de picnômetro ou densímetro utilizado (com certificado válido).", nameof(request));
 
-            pycnometer = await LoadAndValidateStandardAsync(request.PycnometerStandardId.Value, "Picnômetro", cancellationToken);
-            pycnometerResolved = ResolveStandard(pycnometer, request.WaterDensityGcm3.Value, "Picnômetro", warnings);
+            pycnometer = await LoadAndValidateStandardAsync(request.PycnometerStandardId.Value, "Picnômetro/Densímetro", cancellationToken);
+            pycnometerResolved = ResolveStandard(pycnometer, request.WaterDensityGcm3.Value, pycnometer.InstrumentType ?? "Picnômetro/Densímetro", warnings);
         }
         else if (request.PycnometerStandardId.HasValue && request.PycnometerStandardId.Value != Guid.Empty)
         {
-            throw new ArgumentException("O padrão de picnômetro foi informado, porém o valor da massa específica da água medida não foi fornecido.", nameof(request));
+            throw new ArgumentException("O padrão de picnômetro ou densímetro foi informado, porém o valor da massa específica da água medida não foi fornecido.", nameof(request));
         }
 
         // ── 3. Determinação dos Pontos Operacionais Médios de Ensaio ─────────
@@ -202,7 +202,7 @@ public class VolumeStandardResolverService : IVolumeStandardResolverService
             if (pycnometer != null && pycnometerResolved != null)
             {
                 var activePycCert = pycnometer.GetActiveCertificate();
-                standardsUsed.Add(new(calibrationRecordId, pycnometer, StandardRole.Pycnometer, pycnometerResolved, activePycCert?.Id, activePycCert?.CertificateNumber, activePycCert?.CalibratingLaboratory, activePycCert?.CalibrationDueDate ?? pycnometer.CalibrationDueDate));
+                standardsUsed.Add(new(calibrationRecordId, pycnometer, pycnometer.Role, pycnometerResolved, activePycCert?.Id, activePycCert?.CertificateNumber, activePycCert?.CalibratingLaboratory, activePycCert?.CalibrationDueDate ?? pycnometer.CalibrationDueDate));
             }
 
             return standardsUsed;

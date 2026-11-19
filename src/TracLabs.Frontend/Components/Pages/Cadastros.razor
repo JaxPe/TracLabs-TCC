@@ -277,12 +277,25 @@
                             <div class="trac-mono" style="font-weight: 600; color: var(--trac-text-primary);">@_selectedEquipment.NominalCapacity @_selectedEquipment.Unit</div>
                         </div>
                         <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">FAIXA DE MEDIÇÃO</div>
+                            <div class="trac-mono" style="color: var(--trac-text-primary);">
+                                @(_selectedEquipment.RangeMin.HasValue && _selectedEquipment.RangeMax.HasValue 
+                                    ? $"{_selectedEquipment.RangeMin} a {_selectedEquipment.RangeMax} {_selectedEquipment.Unit}" 
+                                    : (_selectedEquipment.NominalCapacity > 0 ? $"{_selectedEquipment.NominalCapacity} {_selectedEquipment.Unit} (Ponto Fixo)" : "-"))
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">CLASSE / RESOLUÇÃO</div>
                             <div style="color: var(--trac-text-primary);">@_selectedEquipment.AccuracyClass</div>
                         </div>
                         <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">TOLERÂNCIA EMA (&plusmn;)</div>
                             <div class="trac-mono" style="color: var(--trac-text-primary);">&plusmn;@_selectedEquipment.MaxPermissibleError @_selectedEquipment.Unit</div>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">LOCALIZAÇÃO NO LABORATÓRIO</div>
+                            <div style="color: var(--trac-text-primary);">@(!string.IsNullOrWhiteSpace(_selectedEquipment.CurrentLocation) ? _selectedEquipment.CurrentLocation : "Bancada de Recepção")</div>
                         </div>
                         <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">STATUS ATUAL</div>
@@ -292,16 +305,11 @@
                                 </span>
                             </div>
                         </div>
-
-                        <div class="col-12 col-md-4">
-                            <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">INTERVALO DE CALIBRAÇÃO</div>
-                            <div style="color: var(--trac-text-primary);">@_selectedEquipment.CalibrationIntervalMonths meses</div>
-                        </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">ÚLTIMA CALIBRAÇÃO</div>
                             <div class="trac-mono" style="color: var(--trac-text-primary);">@(_selectedEquipment.LastCalibrationDate?.ToString("dd/MM/yyyy") ?? "Não realizada")</div>
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-3">
                             <div style="font-size: 0.75rem; color: var(--trac-text-muted); font-weight: 600;">PRÓXIMO VENCIMENTO</div>
                             <div class="trac-mono" style="color: var(--trac-text-primary);">@(_selectedEquipment.NextCalibrationDue?.ToString("dd/MM/yyyy") ?? "-")</div>
                         </div>
@@ -1022,6 +1030,28 @@
                         </div>
                     </div>
                     <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Tipo de Instrumento *</label>
+                            <input type="text" class="trac-input" list="clientInstrumentTypes" placeholder="ex: Balão Volumétrico, Micropipeta Monocanal..." @bind="_newEquipment.InstrumentType" required />
+                            <datalist id="clientInstrumentTypes">
+                                <option value="Balão Volumétrico" />
+                                <option value="Pipeta Graduada" />
+                                <option value="Pipeta Volumétrica" />
+                                <option value="Micropipeta Monocanal" />
+                                <option value="Micropipeta Multicanal" />
+                                <option value="Bureta" />
+                                <option value="Proveta" />
+                                <option value="Picnômetro" />
+                                <option value="Frasco Graduado" />
+                                <option value="Cálice Graduado" />
+                            </datalist>
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Localização Física no Laboratório *</label>
+                            <input type="text" class="trac-input" placeholder="Bancada de Recepção" @bind="_newEquipment.CurrentLocation" required />
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-12 col-md-4 mb-2">
                             <label class="trac-label">Fabricante</label>
                             <input type="text" class="trac-input" @bind="_newEquipment.Manufacturer" />
@@ -1051,6 +1081,16 @@
                         <div class="col-12 col-md-4 mb-2">
                             <label class="trac-label">Tolerância EMA (&plusmn;)</label>
                             <input type="number" step="0.001" class="trac-input trac-mono" @bind="_newEquipment.MaxPermissibleError" required />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Mínima (Range Min)</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" placeholder="ex: 0 ou 100" @bind="_newEquipment.RangeMin" />
+                        </div>
+                        <div class="col-12 col-md-6 mb-2">
+                            <label class="trac-label">Faixa Máxima (Range Max)</label>
+                            <input type="number" step="0.001" class="trac-input trac-mono" placeholder="ex: 100 ou 1000" @bind="_newEquipment.RangeMax" />
                         </div>
                     </div>
                     <div class="trac-modal-footer mt-3">
@@ -1144,9 +1184,10 @@
                                 <option value="@StandardRole.ThermoHygrometer">Termo-Higrômetro</option>
                                 <option value="@StandardRole.ReferenceWeights">Pesos Padrão</option>
                                 <option value="@StandardRole.Pycnometer">Picnômetro</option>
+                                <option value="@StandardRole.Densimeter">Densímetro Digital</option>
                                 <option value="@StandardRole.AmbientThermometer">Termômetro Ambiente</option>
                                 <option value="@StandardRole.Hygrometer">Higrômetro</option>
-                                <option value="@StandardRole.Other">Densímetro Digital / Outro</option>
+                                <option value="@StandardRole.Other">Outro Instrumento Auxiliar</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-6 mb-2">
@@ -1257,8 +1298,9 @@
                                 <option value="@StandardRole.AmbientThermometer">Termômetro Ambiente</option>
                                 <option value="@StandardRole.Hygrometer">Higrômetro</option>
                                 <option value="@StandardRole.Pycnometer">Picnômetro</option>
+                                <option value="@StandardRole.Densimeter">Densímetro Digital</option>
                                 <option value="@StandardRole.ReferenceWeights">Pesos Padrão</option>
-                                <option value="@StandardRole.Other">Densímetro Digital / Outro</option>
+                                <option value="@StandardRole.Other">Outro Instrumento Auxiliar</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-6 mb-2">
@@ -1743,7 +1785,10 @@
     private void OpenNewClientModal()
     {
         if (!IsSupervisor) return;
-        _newClient = new ClientDto();
+        _newClient = new ClientDto
+        {
+            Id = string.Empty
+        };
         _showClientModal = true;
     }
     private void CloseClientModal() => _showClientModal = false;
@@ -1765,7 +1810,14 @@
 
     private void OpenNewEquipmentModal()
     {
-        _newEquipment = new ClientEquipmentDto();
+        _newEquipment = new ClientEquipmentDto
+        {
+            Id = string.Empty,
+            InstrumentType = "Balão Volumétrico",
+            Unit = "mL",
+            CurrentLocation = "Bancada de Recepção",
+            AccuracyClass = "Classe A"
+        };
         _showEquipmentModal = true;
     }
     private void CloseEquipmentModal() => _showEquipmentModal = false;
@@ -1773,6 +1825,24 @@
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(_newEquipment.InstrumentType))
+            {
+                _newEquipment.InstrumentType = !string.IsNullOrWhiteSpace(_newEquipment.Description) 
+                    ? _newEquipment.Description 
+                    : "Balão Volumétrico";
+            }
+
+            if (string.IsNullOrWhiteSpace(_newEquipment.CurrentLocation))
+            {
+                _newEquipment.CurrentLocation = "Bancada de Recepção";
+            }
+
+            if (_newEquipment.RangeMin.HasValue && _newEquipment.RangeMax.HasValue && _newEquipment.RangeMax.Value <= _newEquipment.RangeMin.Value)
+            {
+                NotificationModal.ShowWarning("Faixa Inválida", "A Faixa Máxima (Range Max) deve ser estritamente maior que a Faixa Mínima (Range Min).");
+                return;
+            }
+
             var client = _clients.FirstOrDefault(c => c.Id == _newEquipment.ClientId);
             if (client != null) _newEquipment.ClientName = client.Name;
             await DataService.SaveClientEquipmentAsync(_newEquipment);
@@ -1791,6 +1861,7 @@
         if (!IsSupervisor) return;
         _newStandard = new StandardEquipmentDto
         {
+            Id = string.Empty,
             LastCalibrationDate = DateTime.UtcNow,
             CalibrationDueDate = DateTime.UtcNow.AddYears(1)
         };
@@ -1908,8 +1979,9 @@
         StandardRole.AmbientThermometer => "Termômetro Ambiente",
         StandardRole.Hygrometer => "Higrômetro",
         StandardRole.Pycnometer => "Picnômetro",
+        StandardRole.Densimeter => "Densímetro Digital",
         StandardRole.ReferenceWeights => "Pesos Padrão",
-        StandardRole.Other => "Densímetro Digital / Outro",
+        StandardRole.Other => "Outro Instrumento Auxiliar",
         _ => role.ToString()
     };
 

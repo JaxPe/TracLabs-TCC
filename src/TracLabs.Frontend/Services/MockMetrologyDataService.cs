@@ -24,6 +24,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
     public static readonly Guid StandardStandHygrometerId = Guid.Parse("00000001-0000-0000-0000-000000000007");
     public static readonly Guid StandardPycnometerId = Guid.Parse("00000001-0000-0000-0000-000000000008");
     public static readonly Guid StandardPycnometerExpiredId = Guid.Parse("00000001-0000-0000-0000-000000000009");
+    public static readonly Guid StandardDensimeterId = Guid.Parse("00000001-0000-0000-0000-00000000000a");
 
     public MockMetrologyDataService()
     {
@@ -100,6 +101,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 MaxPermissibleError = 0.100m,
                 CalibrationIntervalMonths = 12,
                 Status = EquipmentStatus.InCalibration,
+                CurrentLocation = "Bancada de Recepção",
                 LastCalibrationDate = DateTime.UtcNow.AddMonths(-12),
                 NextCalibrationDue = DateTime.UtcNow.AddDays(7)
             };
@@ -120,6 +122,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 MaxPermissibleError = 0.050m,
                 CalibrationIntervalMonths = 12,
                 Status = EquipmentStatus.Received,
+                CurrentLocation = "Bancada de Recepção",
                 LastCalibrationDate = DateTime.UtcNow.AddMonths(-11),
                 NextCalibrationDue = DateTime.UtcNow.AddMonths(1)
             };
@@ -134,12 +137,15 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 Model = "Research Plus",
                 SerialNumber = "EP-887412",
                 InstrumentType = "Micropipeta Monocanal",
+                RangeMin = 100m,
+                RangeMax = 1000m,
                 NominalCapacity = 1000.0m,
                 Unit = "µL",
                 AccuracyClass = "ISO 8655",
                 MaxPermissibleError = 6.0m,
                 CalibrationIntervalMonths = 6,
                 Status = EquipmentStatus.Calibrated,
+                CurrentLocation = "Bancada de Calibração",
                 LastCalibrationDate = DateTime.UtcNow.AddDays(-2),
                 NextCalibrationDue = DateTime.UtcNow.AddMonths(6)
             };
@@ -154,12 +160,15 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 Model = "Solarus 50",
                 SerialNumber = "HS-552199",
                 InstrumentType = "Bureta Digital",
+                RangeMin = 0m,
+                RangeMax = 50m,
                 NominalCapacity = 50.0m,
                 Unit = "mL",
                 AccuracyClass = "Classe A",
                 MaxPermissibleError = 0.050m,
                 CalibrationIntervalMonths = 12,
                 Status = EquipmentStatus.Approved,
+                CurrentLocation = "Bancada de Recepção",
                 LastCalibrationDate = DateTime.UtcNow.AddMonths(-10),
                 NextCalibrationDue = DateTime.UtcNow.AddMonths(2)
             };
@@ -387,7 +396,32 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 Correction = -0.004m
             };
 
-            _standards.AddRange(new[] { padBal, padTerm, padBar, padHig, padPes, padTermAmb, padHigStand, padPic, padPicExpired });
+            var padDen = new StandardEquipmentDto
+            {
+                Id = "pad-den-01",
+                LabTag = "PAD-DEN-01",
+                Name = "Densímetro Digital de Oscilação Anton Paar DMA 4500",
+                InstrumentType = "Densímetro Digital",
+                Role = StandardRole.Densimeter,
+                Manufacturer = "Anton Paar",
+                Model = "DMA 4500 M",
+                SerialNumber = "AP-DMA-2023-882",
+                Resolution = 0.00001m,
+                RangeMin = 0.500m,
+                RangeMax = 1.500m,
+                Status = StandardEquipmentStatus.Calibrated,
+                CurrentLocation = "Sala de Calibração Volumétrica - Bancada de Densimetria",
+                CalibrationCertificateNumber = "CAL-RBC-2025-9941",
+                CalibratingLaboratory = "IPT / Cetesb (RBC CAL-044)",
+                LastCalibrationDate = DateTime.UtcNow.AddMonths(-4),
+                CalibrationDueDate = DateTime.UtcNow.AddMonths(20),
+                ExpandedUncertainty = 0.00005m,
+                CoverageFactor = 2.00m,
+                Error = 0.00002m,
+                Correction = -0.00002m
+            };
+
+            _standards.AddRange(new[] { padBal, padTerm, padBar, padHig, padPes, padTermAmb, padHigStand, padPic, padPicExpired, padDen });
 
             // 4. Calibração Volumétrica Pré-populada (Planilha Real 11 Repetições)
             var calib = new CalibrationRecordDto
@@ -767,6 +801,23 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                     Correction = -0.004m,
                     ExpandedUncertainty = 0.005m,
                     CoverageFactor = 2.00m
+                },
+                // PAD-DEN-01
+                new StandardCertificateDto
+                {
+                    Id = Guid.Parse("10000001-000a-0000-0000-000000000001"),
+                    StandardEquipmentId = StandardDensimeterId,
+                    CertificateNumber = "CAL-RBC-2025-9941",
+                    CalibratingLaboratory = "IPT / Cetesb (RBC CAL-044)",
+                    CalibrationDate = DateTime.UtcNow.AddMonths(-4),
+                    CalibrationDueDate = DateTime.UtcNow.AddMonths(20),
+                    CalibrationRangeMin = 0.500m,
+                    CalibrationRangeMax = 1.500m,
+                    IsActive = true,
+                    Error = 0.00002m,
+                    Correction = -0.00002m,
+                    ExpandedUncertainty = 0.00005m,
+                    CoverageFactor = 2.00m
                 }
             });
 
@@ -945,6 +996,10 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
     {
         lock (_lock)
         {
+            if (string.IsNullOrWhiteSpace(client.Id))
+            {
+                client.Id = Guid.NewGuid().ToString();
+            }
             var existing = _clients.FirstOrDefault(c => c.Id == client.Id);
             if (existing != null)
             {
@@ -1001,6 +1056,10 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
     {
         lock (_lock)
         {
+            if (string.IsNullOrWhiteSpace(equipment.Id))
+            {
+                equipment.Id = Guid.NewGuid().ToString();
+            }
             var existing = _equipment.FirstOrDefault(e => e.Id == equipment.Id);
             if (existing != null)
             {
@@ -1046,6 +1105,10 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
     {
         lock (_lock)
         {
+            if (string.IsNullOrWhiteSpace(standard.Id))
+            {
+                standard.Id = Guid.NewGuid().ToString();
+            }
             var existing = _standards.FirstOrDefault(s => s.Id == standard.Id);
             if (existing != null)
             {
@@ -1473,6 +1536,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
             (standardId == StandardStandHygrometerId && (s.Id == "pad-hig-02" || s.LabTag == "PAD-HIG-02")) ||
             (standardId == StandardPycnometerId && (s.Id == "pad-pic-01" || s.LabTag == "PAD-PIC-01")) ||
             (standardId == StandardPycnometerExpiredId && (s.Id == "pad-pic-02" || s.LabTag == "PAD-PIC-02")) ||
+            (standardId == StandardDensimeterId && (s.Id == "pad-den-01" || s.LabTag == "PAD-DEN-01")) ||
             (Guid.TryParse(s.Id, out var g) && g == standardId));
     }
 
@@ -1506,6 +1570,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 else if (standard.Id == "pad-hig-02" || standard.LabTag == "PAD-HIG-02") targetGuid = StandardStandHygrometerId;
                 else if (standard.Id == "pad-pic-01" || standard.LabTag == "PAD-PIC-01") targetGuid = StandardPycnometerId;
                 else if (standard.Id == "pad-pic-02" || standard.LabTag == "PAD-PIC-02") targetGuid = StandardPycnometerExpiredId;
+                else if (standard.Id == "pad-den-01" || standard.LabTag == "PAD-DEN-01") targetGuid = StandardDensimeterId;
                 else if (Guid.TryParse(standard.Id, out var parsedGuid)) targetGuid = parsedGuid;
             }
 
@@ -1536,6 +1601,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
                 else if (standard.Id == "pad-hig-02" || standard.LabTag == "PAD-HIG-02") targetGuid = StandardStandHygrometerId;
                 else if (standard.Id == "pad-pic-01" || standard.LabTag == "PAD-PIC-01") targetGuid = StandardPycnometerId;
                 else if (standard.Id == "pad-pic-02" || standard.LabTag == "PAD-PIC-02") targetGuid = StandardPycnometerExpiredId;
+                else if (standard.Id == "pad-den-01" || standard.LabTag == "PAD-DEN-01") targetGuid = StandardDensimeterId;
                 else if (Guid.TryParse(standard.Id, out var parsedGuid)) targetGuid = parsedGuid;
             }
 
@@ -1655,6 +1721,7 @@ public sealed class MockMetrologyDataService : IMetrologyDataService
             else if (standard.Id == "pad-hig-02" || standard.LabTag == "PAD-HIG-02") targetGuid = StandardStandHygrometerId;
             else if (standard.Id == "pad-pic-01" || standard.LabTag == "PAD-PIC-01") targetGuid = StandardPycnometerId;
             else if (standard.Id == "pad-pic-02" || standard.LabTag == "PAD-PIC-02") targetGuid = StandardPycnometerExpiredId;
+            else if (standard.Id == "pad-den-01" || standard.LabTag == "PAD-DEN-01") targetGuid = StandardDensimeterId;
             else if (Guid.TryParse(standard.Id, out var parsedGuid)) targetGuid = parsedGuid;
 
             certificate.StandardEquipmentId = targetGuid;

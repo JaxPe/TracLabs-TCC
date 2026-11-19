@@ -15,4 +15,6 @@ public record EquipmentSummaryDto(
     Guid ClientId,
     string? ClientName,
     decimal? NominalCapacity = null,
-    string? Unit = null);
+    string? Unit = null,
+    decimal? RangeMin = null,
+    decimal? RangeMax = null);

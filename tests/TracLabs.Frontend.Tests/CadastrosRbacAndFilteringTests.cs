@@ -181,6 +181,45 @@ public class CadastrosRbacAndFilteringTests
         equipmentsAfter.Any(e => e.LabTag == "BAL-TECNICO-001").Should().BeTrue();
     }
 
+    [Fact]
+    public async Task SaveEquipment_WithInstrumentTypeRangeAndLocation_PersistsAllPropertiesCorrectly()
+    {
+        var comp = await CreateInitializedComponentAsync(UserRole.Tecnico);
+        var initialEquipments = await _dataService.GetClientEquipmentAsync();
+        var initialCount = initialEquipments.Count;
+
+        var newEq = new ClientEquipmentDto
+        {
+            ClientId = "cli-002",
+            LabTag = "PIP-TEST-999",
+            Description = "Micropipeta Monocanal 100-1000 µL",
+            Manufacturer = "Gilson",
+            Model = "Pipetman P1000",
+            SerialNumber = "SN-GIL-999",
+            InstrumentType = "Micropipeta Monocanal",
+            NominalCapacity = 1000.0m,
+            Unit = "µL",
+            AccuracyClass = "ISO 8655",
+            MaxPermissibleError = 8.0m,
+            RangeMin = 100.0m,
+            RangeMax = 1000.0m,
+            CurrentLocation = "Bancada 03 - Setor Biológico"
+        };
+        ComponentTestHarness.SetField(comp, "_newEquipment", newEq);
+
+        await ComponentTestHarness.InvokeAsync(comp, "SaveEquipment");
+
+        var equipmentsAfter = await _dataService.GetClientEquipmentAsync();
+        equipmentsAfter.Should().HaveCount(initialCount + 1);
+        var created = equipmentsAfter.FirstOrDefault(e => e.LabTag == "PIP-TEST-999");
+        created.Should().NotBeNull();
+        created!.Id.Should().NotBeNullOrWhiteSpace();
+        created.InstrumentType.Should().Be("Micropipeta Monocanal");
+        created.RangeMin.Should().Be(100.0m);
+        created.RangeMax.Should().Be(1000.0m);
+        created.CurrentLocation.Should().Be("Bancada 03 - Setor Biológico");
+    }
+
     #endregion
 
     #region 2. RBAC Rules for Supervisor (Full Access)

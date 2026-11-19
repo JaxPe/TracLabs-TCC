@@ -118,7 +118,7 @@ using (var scope = app.Services.CreateScope())
         else if (text.Contains("higro")) inferred = TracLabs.Domain.Enums.StandardRole.Hygrometer;
         else if (text.Contains("baro") || text.Contains("press")) inferred = TracLabs.Domain.Enums.StandardRole.Barometer;
         else if (text.Contains("picno")) inferred = TracLabs.Domain.Enums.StandardRole.Pycnometer;
-        else if (text.Contains("densim")) inferred = TracLabs.Domain.Enums.StandardRole.Other;
+        else if (text.Contains("densim")) inferred = TracLabs.Domain.Enums.StandardRole.Densimeter;
 
         if (std.Role == TracLabs.Domain.Enums.StandardRole.Balance && inferred != TracLabs.Domain.Enums.StandardRole.Balance)
         {

@@ -51,6 +51,7 @@ public class MockMetrologyDataServiceTests
     [InlineData(StandardRole.Hygrometer)]
     [InlineData(StandardRole.ThermoHygrometer)]
     [InlineData(StandardRole.Pycnometer)]
+    [InlineData(StandardRole.Densimeter)]
     public async Task SeedStandards_CoversAllRequiredMetrologicalRoles(StandardRole role)
     {
         var standards = await _service.GetStandardEquipmentAsync(role: role);
@@ -75,6 +76,20 @@ public class MockMetrologyDataServiceTests
         var expiredPyc = pycnometers.FirstOrDefault(p => !p.IsValid);
         expiredPyc.Should().NotBeNull();
         expiredPyc!.DaysUntilExpiry.Should().BeLessThan(0);
+    }
+
+    [Fact]
+    public async Task SeedStandards_Densimeter_HasValidRbcCertificate()
+    {
+        var densimeters = await _service.GetStandardEquipmentAsync(role: StandardRole.Densimeter);
+
+        densimeters.Should().NotBeEmpty();
+        var validDen = densimeters.FirstOrDefault(d => d.IsValid);
+        validDen.Should().NotBeNull();
+        validDen!.LabTag.Should().Be("PAD-DEN-01");
+        validDen.CalibrationCertificateNumber.Should().NotBeNullOrWhiteSpace();
+        validDen.CalibratingLaboratory.Should().Contain("RBC");
+        validDen.DaysUntilExpiry.Should().BeGreaterThan(0);
     }
 
     [Fact]

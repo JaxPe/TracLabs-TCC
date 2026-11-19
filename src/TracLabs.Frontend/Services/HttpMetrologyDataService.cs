@@ -132,7 +132,8 @@ public class HttpMetrologyDataService : IMetrologyDataService
 
     public async Task<ClientDto> SaveClientAsync(ClientDto client)
     {
-        var isExisting = Guid.TryParse(client.Id, out var existingId) && existingId != Guid.Empty;
+        var hasGuid = Guid.TryParse(client.Id, out var existingId);
+        var isExisting = hasGuid && existingId != Guid.Empty;
 
         var command = new
         {
@@ -157,6 +158,15 @@ public class HttpMetrologyDataService : IMetrologyDataService
                 Content = JsonContent.Create(command, options: _jsonOptions)
             };
             response = await SendWithAuthAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                using var postRequest = new HttpRequestMessage(HttpMethod.Post, "api/v1/clients")
+                {
+                    Content = JsonContent.Create(command, options: _jsonOptions)
+                };
+                response = await SendWithAuthAsync(postRequest);
+            }
         }
         else
         {
@@ -231,7 +241,10 @@ public class HttpMetrologyDataService : IMetrologyDataService
                 Unit = unit,
                 AccuracyClass = "Classe A",
                 MaxPermissibleError = ema,
-                Status = e.Status
+                Status = e.Status,
+                RangeMin = e.RangeMin,
+                RangeMax = e.RangeMax,
+                CurrentLocation = !string.IsNullOrWhiteSpace(e.CurrentLocation) ? e.CurrentLocation : "Bancada de Recepção"
             };
         }).ToList();
     }
@@ -267,7 +280,10 @@ public class HttpMetrologyDataService : IMetrologyDataService
             Unit = !string.IsNullOrWhiteSpace(detail.Unit) ? detail.Unit : "mL",
             AccuracyClass = "Classe A",
             MaxPermissibleError = emaDetail,
-            Status = detail.Status
+            Status = detail.Status,
+            RangeMin = detail.RangeMin,
+            RangeMax = detail.RangeMax,
+            CurrentLocation = !string.IsNullOrWhiteSpace(detail.CurrentLocation) ? detail.CurrentLocation : "Bancada de Recepção"
         };
     }
 
@@ -290,7 +306,8 @@ public class HttpMetrologyDataService : IMetrologyDataService
 
     public async Task<ClientEquipmentDto> SaveClientEquipmentAsync(ClientEquipmentDto equipment)
     {
-        var isExisting = Guid.TryParse(equipment.Id, out var existingId) && existingId != Guid.Empty;
+        var hasGuid = Guid.TryParse(equipment.Id, out var existingId);
+        var isExisting = hasGuid && existingId != Guid.Empty;
         var clientGuid = Guid.TryParse(equipment.ClientId, out var cg) ? cg : Guid.Empty;
 
         var command = new
@@ -302,13 +319,13 @@ public class HttpMetrologyDataService : IMetrologyDataService
             Manufacturer = equipment.Manufacturer,
             SerialNumber = equipment.SerialNumber,
             InstrumentType = equipment.InstrumentType,
-            RangeMin = (decimal?)null,
-            RangeMax = (decimal?)null,
+            RangeMin = equipment.RangeMin,
+            RangeMax = equipment.RangeMax,
             Unit = equipment.Unit,
             Resolution = (decimal?)null,
             NominalCapacity = (decimal?)equipment.NominalCapacity,
             ClientId = clientGuid,
-            CurrentLocation = "Bancada de Recepção",
+            CurrentLocation = !string.IsNullOrWhiteSpace(equipment.CurrentLocation) ? equipment.CurrentLocation : "Bancada de Recepção",
             AcceptanceCriteria = "Conforme ISO 4787 / ISO 8655",
             Status = equipment.Status
         };
@@ -321,6 +338,15 @@ public class HttpMetrologyDataService : IMetrologyDataService
                 Content = JsonContent.Create(command, options: _jsonOptions)
             };
             response = await SendWithAuthAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                using var postRequest = new HttpRequestMessage(HttpMethod.Post, "api/v1/equipment")
+                {
+                    Content = JsonContent.Create(command, options: _jsonOptions)
+                };
+                response = await SendWithAuthAsync(postRequest);
+            }
         }
         else
         {
@@ -347,7 +373,12 @@ public class HttpMetrologyDataService : IMetrologyDataService
             InstrumentType = saved?.InstrumentType ?? equipment.InstrumentType,
             NominalCapacity = saved?.NominalCapacity ?? equipment.NominalCapacity,
             Unit = saved?.Unit ?? equipment.Unit,
-            Status = saved?.Status ?? equipment.Status
+            AccuracyClass = equipment.AccuracyClass,
+            MaxPermissibleError = equipment.MaxPermissibleError,
+            Status = saved?.Status ?? equipment.Status,
+            RangeMin = saved?.RangeMin ?? equipment.RangeMin,
+            RangeMax = saved?.RangeMax ?? equipment.RangeMax,
+            CurrentLocation = !string.IsNullOrWhiteSpace(saved?.CurrentLocation) ? saved.CurrentLocation : (!string.IsNullOrWhiteSpace(equipment.CurrentLocation) ? equipment.CurrentLocation : "Bancada de Recepção")
         };
     }
 
@@ -399,7 +430,8 @@ public class HttpMetrologyDataService : IMetrologyDataService
 
     public async Task<StandardEquipmentDto> SaveStandardEquipmentAsync(StandardEquipmentDto standard)
     {
-        var isExisting = Guid.TryParse(standard.Id, out var existingId) && existingId != Guid.Empty;
+        var hasGuid = Guid.TryParse(standard.Id, out var existingId);
+        var isExisting = hasGuid && existingId != Guid.Empty;
 
         var command = new
         {
@@ -434,6 +466,15 @@ public class HttpMetrologyDataService : IMetrologyDataService
                 Content = JsonContent.Create(command, options: _jsonOptions)
             };
             response = await SendWithAuthAsync(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                using var postRequest = new HttpRequestMessage(HttpMethod.Post, "api/v1/standardequipment")
+                {
+                    Content = JsonContent.Create(command, options: _jsonOptions)
+                };
+                response = await SendWithAuthAsync(postRequest);
+            }
         }
         else
         {
@@ -917,14 +958,14 @@ public class HttpMetrologyDataService : IMetrologyDataService
         if (text.Contains("higro")) return StandardRole.Hygrometer;
         if (text.Contains("baro") || text.Contains("press")) return StandardRole.Barometer;
         if (text.Contains("picno")) return StandardRole.Pycnometer;
-        if (text.Contains("densim")) return StandardRole.Other;
+        if (text.Contains("densim")) return StandardRole.Densimeter;
         return StandardRole.Balance;
     }
 
     // Internal DTO models for JSON deserialization
     private record ApiClientDto(Guid Id, string Name, string TaxId, string Email, string Phone, string? ContactPerson, string? Street, string? City, string? State, string? PostalCode, bool IsActive);
-    private record ApiEquipmentSummaryDto(Guid Id, string LabTag, string Name, string Model, string Manufacturer, string SerialNumber, string InstrumentType, EquipmentStatus Status, string CurrentLocation, Guid ClientId, string? ClientName, decimal? NominalCapacity = null, string? Unit = null);
-    private record ApiEquipmentDetailDto(Guid Id, string LabTag, string Name, string Model, string Manufacturer, string SerialNumber, string InstrumentType, decimal? NominalCapacity, string? Unit, Guid ClientId, string? ClientName, EquipmentStatus Status);
+    private record ApiEquipmentSummaryDto(Guid Id, string LabTag, string Name, string Model, string Manufacturer, string SerialNumber, string InstrumentType, EquipmentStatus Status, string CurrentLocation, Guid ClientId, string? ClientName, decimal? NominalCapacity = null, string? Unit = null, decimal? RangeMin = null, decimal? RangeMax = null);
+    private record ApiEquipmentDetailDto(Guid Id, string LabTag, string Name, string Model, string Manufacturer, string SerialNumber, string InstrumentType, decimal? NominalCapacity, string? Unit, Guid ClientId, string? ClientName, EquipmentStatus Status, decimal? RangeMin = null, decimal? RangeMax = null, string? CurrentLocation = null);
     private record ApiStandardEquipmentDto(Guid Id, string LabTag, string Name, string Model, string Manufacturer, string SerialNumber, string InstrumentType, string CurrentLocation, StandardEquipmentStatus Status, decimal Error, decimal Correction, decimal ExpandedUncertainty, decimal CoverageFactor, decimal Resolution, DateTime LastCalibrationDate, DateTime CalibrationDueDate, string CalibrationCertificateNumber, string CalibratingLaboratory, decimal RangeMin, decimal RangeMax, StandardRole? Role = null);
     private record ApiCalibrationResultDto(Guid Id, Guid EquipmentId, string? EquipmentLabTag, string? EquipmentName, decimal MeanError, decimal MaxAbsoluteError, decimal CombinedStandardUncertainty, decimal ExpandedUncertainty, decimal CoverageFactor, CalibrationResult Result, DateTime CalibrationDate, VolumeCalibrationResultDto? VolumeCalculationDetails = null, string? CertificateNumber = null);
     private record ApiCertificateSummaryDto(Guid Id, string CertificateNumber, Guid CalibrationRecordId, Guid EquipmentId, string EquipmentTag, string EquipmentName, string ClientName, CertificateStatus Status, DateTime CalibrationDate, DateTime? IssuedAt);
