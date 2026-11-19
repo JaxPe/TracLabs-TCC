@@ -12,7 +12,6 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="trac-badge trac-badge-info">ABNT NBR ISO 4787:2013</span>
                 <span class="trac-badge trac-badge-neutral">Método Gravimétrico</span>
             </div>
             <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--trac-text-primary); margin: 0;">
@@ -57,7 +56,6 @@
                     <span style="font-weight: 700; font-size: 0.875rem; color: var(--trac-text-primary);">
                         1. Instrumento sob Calibração
                     </span>
-                    <span class="trac-badge trac-badge-info">@_selectedEquipment.AccuracyClass</span>
                 </div>
                 <div class="trac-card-body">
                     <div class="trac-form-group">
@@ -140,11 +138,6 @@
                         2. Condições Ambientais e Padrões Rastreáveis RBC
                     </span>
                     <!-- Live Metrology Pill -->
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="trac-badge trac-badge-success trac-mono" title="Fator de conversão gravimétrica Z">
-                            Z = @_calibration.CalculatedZFactor.ToString("F5") mL/g
-                        </span>
-                    </div>
                 </div>
                 <div class="trac-card-body">
                     <!-- Calculated Environmental Means Live Panel -->
@@ -377,7 +370,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <strong style="font-size: 0.9375rem; color: var(--trac-status-warning-text);">
-                        Pendências Metrológicas para Emissão de Certificado (ABNT NBR ISO 4787 / ISO 8655 / DOC-CGCRE-027):
+                        Pendências Metrológicas para Emissão de Certificado:
                     </strong>
                 </div>
                 <ul class="mb-0 ps-3" style="font-size: 0.875rem; color: var(--trac-status-warning-text);">
@@ -581,7 +574,6 @@
                         <div class="trac-stat-value" style="font-size: 1.5rem;">
                             @_calibration.SampleStdDev.ToString("F5") <span style="font-size: 0.875rem;">mL</span>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--trac-text-muted);">CV%: @_calibration.CoefficientOfVariationPercent.ToString("F4")%</div>
                     </div>
                 </div>
 
@@ -727,7 +719,7 @@
             AmbientThermometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.AmbientThermometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.AmbientThermometer)?.Id,
             HygrometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Hygrometer && s.IsValid)?.Id ?? _standards.FirstOrDefault(s => s.Role == StandardRole.Hygrometer)?.Id,
             PycnometerStandardId = _standards.FirstOrDefault(s => s.Role == StandardRole.Pycnometer && s.IsValid)?.Id,
-            Measurements = MetrologyCalculations.GetBenchmark100MlPoints()
+            Measurements = new List<VolumeMeasurementPointDto>()
         };
 
         _isManualDensity = _calibration.IsManualWaterDensity;

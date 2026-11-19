@@ -24,7 +24,7 @@ public class CalibracaoVolumetricaUiValidationTests
     private readonly UserContextService _userContext = new();
     private readonly TestNavigationManager _navManager = new();
 
-    private async Task<CalibracaoVolumetrica> CreateInitializedComponentAsync(string? tag = null)
+    private async Task<CalibracaoVolumetrica> CreateInitializedComponentAsync(string? tag = null, bool prefillBenchmark = true)
     {
         var component = new CalibracaoVolumetrica();
         ComponentTestHarness.InitializeComponent(component);
@@ -38,7 +38,25 @@ public class CalibracaoVolumetricaUiValidationTests
         }
 
         await ComponentTestHarness.InvokeAsync(component, "OnInitializedAsync");
+        if (prefillBenchmark)
+        {
+            ComponentTestHarness.Invoke(component, "PrefillBenchmarkData");
+        }
         return component;
+    }
+
+    [Fact]
+    public async Task DefaultInitialization_WithoutMeasurements_HasZeroMeasurements_AndRequiresMeasurements()
+    {
+        var comp = await CreateInitializedComponentAsync(prefillBenchmark: false);
+
+        var isFormValid = ComponentTestHarness.GetProperty<bool>(comp, "IsFormValid");
+        var errors = ComponentTestHarness.Invoke<List<string>>(comp, "GetValidationErrors")!;
+        var cal = ComponentTestHarness.GetField<CalibrationRecordDto>(comp, "_calibration")!;
+
+        isFormValid.Should().BeFalse();
+        cal.Measurements.Should().BeEmpty();
+        errors.Should().Contain(e => e.Contains("Número insuficiente de repetições gravimétricas"));
     }
 
     [Fact]

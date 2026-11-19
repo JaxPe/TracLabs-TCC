@@ -59,7 +59,6 @@
             <div class="trac-stat-card">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="trac-stat-title">Calibrações em Andamento</span>
-                    <span class="trac-badge trac-badge-info">Ativo</span>
                 </div>
                 <div class="trac-stat-value">
                     @if (_isLoading)
@@ -80,7 +79,6 @@
             <div class="trac-stat-card">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="trac-stat-title">Certificados Emitidos (Mês)</span>
-                    <span class="trac-badge trac-badge-success">Oficial</span>
                 </div>
                 <div class="trac-stat-value">
                     @if (_isLoading)
@@ -101,11 +99,7 @@
             <div class="trac-stat-card" style="border-color: @(_metrics.ExpiringStandardsCount > 0 ? "var(--trac-warning-500)" : "var(--trac-border-default)");">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="trac-stat-title">Padrões a Vencer (30d)</span>
-                    <span class="trac-badge trac-badge-warning d-flex align-items-center gap-1">
-                        <span class="trac-pulse-dot" style="background-color: var(--trac-warning-600); width: 6px; height: 6px;"></span>
-                        Atenção
-                    </span>
-                </div>
+               </div>
                 <div class="trac-stat-value" style="color: var(--trac-warning-600);">
                     @if (_isLoading)
                     {
@@ -125,7 +119,6 @@
             <div class="trac-stat-card">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="trac-stat-title">Não Conformidades</span>
-                    <span class="trac-badge trac-badge-danger">Inspeção</span>
                 </div>
                 <div class="trac-stat-value" style="color: var(--trac-danger-600);">
                     @if (_isLoading)
@@ -248,7 +241,6 @@
             <span style="font-weight: 700; font-size: 0.9375rem; color: var(--trac-text-primary);">
                 Linha do Tempo de Atividades Recentes
             </span>
-            <span class="trac-badge trac-badge-info">Auditoria e Rastreabilidade</span>
         </div>
         <div class="trac-card-body">
             @if (_isLoading)

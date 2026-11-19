@@ -17,22 +17,22 @@ public class CertificateDto
     public DateTime NextCalibrationDueDate { get; set; } = DateTime.UtcNow.AddYears(1);
     public CertificateStatus Status { get; set; } = CertificateStatus.Draft;
     public CalibrationResult Result { get; set; } = CalibrationResult.Conforming;
-    
-    public decimal NominalVolume { get; set; } = 100.0m;
-    public decimal MeanVolumeV20 { get; set; } = 99.9431m;
-    public decimal SystematicError { get; set; } = -0.0569m;
-    public decimal ExpandedUncertainty { get; set; } = 0.0077m;
+
+    public decimal NominalVolume { get; set; }
+    public decimal MeanVolumeV20 { get; set; }
+    public decimal SystematicError { get; set; }
+    public decimal ExpandedUncertainty { get; set; }
     public decimal CoverageFactor { get; set; } = 2.02m;
     public string ConfidenceLevel { get; set; } = "95.45%";
     public decimal MaxPermissibleError { get; set; } = 0.100m;
-    
+
     public List<StandardEquipmentDto> StandardsUsed { get; set; } = new();
-    
+
     public string TechnicianName { get; set; } = "Carlos Eduardo Silva";
     public string TechnicianRegistration { get; set; } = "CFT/CRT 198420-SP";
     public string SupervisorName { get; set; } = "Dr. Alexandre Morales";
     public string SupervisorRegistration { get; set; } = "CRQ IV 04218901";
-    
+
     public string QrCodeValidationUrl { get; set; } = string.Empty;
     public string Sha256Hash { get; set; } = string.Empty;
     public DateTime? ApprovalDate { get; set; }
